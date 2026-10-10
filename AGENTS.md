@@ -1,41 +1,66 @@
-This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+# SoundShelf agent instructions
 
-## Expo has changed — do not trust your training data
+SoundShelf is an Android-first, offline-first music player built with Expo, React Native, and TypeScript. The repository documentation is the durable shared source of truth for Codex, OpenCode, Antigravity, and other agents.
 
-Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
+## Scope
 
-1. Read the major version of the `expo` package in `package.json`.
-2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
-3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
+Implement only local music-library browsing, playback, personal-library management, listening analytics, private Replay Stories, and supporting UI/reliability work recorded in [docs/ROADMAP.md](docs/ROADMAP.md).
 
-## Commands
+Do not add yt-dlp or online downloads, streaming or video playback, AI features, mandatory accounts, cloud sync, social features, admin dashboards, or unrelated functionality without explicit user approval. Do not make genres a required browsing category: local files may not contain genre metadata.
 
-Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
+## Required session workflow
 
-```bash
-npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
-npx expo start              # start the dev server
-npx expo lint               # lint
-npx tsc --noEmit            # typecheck
-npx expo-doctor             # diagnose dependency and config issues
-npx expo install --fix      # fix incompatible package versions
-```
+### Before starting work
 
-Run lint and typecheck before declaring any task done.
+1. Read this root `AGENTS.md` and every applicable nested instruction file.
+2. Read [docs/PROGRESS.md](docs/PROGRESS.md) and consult [docs/ROADMAP.md](docs/ROADMAP.md).
+3. Inspect Git status and the relevant source files.
+4. Verify that recorded progress matches the actual implementation.
+5. Identify the current phase and its next appropriate task.
 
-## Navigation & Routing
+### Before ending a session
 
-- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
-- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
-- Docs: https://docs.expo.dev/router/introduction.md
+1. Update `docs/PROGRESS.md` with completed and unfinished work.
+2. Record the exact next step, affected files, known bugs, and unresolved questions.
+3. Record relevant test commands and their actual results.
+4. Update other documentation when meaningful project decisions change.
+5. Never claim unverified work is complete.
 
-## Building with EAS
+### When switching agents
 
-Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
-Docs: https://docs.expo.dev/eas/index.md
+- Check the latest repository state before editing.
+- Protect uncommitted work; do not overwrite another agent's changes.
+- Do not make conflicting edits to the same files concurrently.
+- Verify another agent's changes before building on them.
+- Use Git commits as checkpoints when appropriate.
 
-## Rules
+### When resuming
 
-- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
-- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
-- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+Resume from the verified repository state and latest progress notes. Continue the existing phase unless the user explicitly requests another task. Do not repeat completed work or advance to another phase without user approval.
+
+## Expo and React Native rules
+
+Expo APIs change across SDK releases. Before writing code that touches Expo, EAS, or React Native APIs:
+
+1. Read the installed Expo major version in `package.json` (currently SDK 57).
+2. Consult matching versioned Expo documentation at `https://docs.expo.dev/versions/v<major>.0.0/`.
+3. Read `https://docs.expo.dev/llms.txt` and follow the relevant specific documentation page. Do not rely on remembered APIs.
+
+- This repository uses npm (`package-lock.json` exists; no Bun lockfile). Use `npx expo install <package>` rather than npm/yarn/pnpm/bun to add Expo-compatible packages.
+- Use Expo Router only. Routes belong in `src/app/`; every route is a screen and `_layout.tsx` defines navigation. Put components, hooks, services, database code, and utilities outside `src/app/`.
+- `ios/` and `android/` do not exist because Continuous Native Generation is in use. Never create or manually edit them; configure native behavior through `app.json` and config plugins.
+- Native modules or changed native configuration require a new development build. Do not assume Expo Go tests background playback, media scanning permissions, or release behavior adequately.
+- Use `npx eas-cli@latest <command>` for EAS operations.
+- Run `npm run lint` and `npx tsc --noEmit` before declaring implementation work done.
+
+## Engineering standards
+
+- Prioritize Android compatibility, offline behavior, responsiveness, accessibility, and battery-conscious work.
+- Keep dependencies minimal and prefer Expo modules when they satisfy requirements. Verify compatibility, native requirements, background behavior, and Android permissions before adding a library.
+- Gracefully handle permission denial, no music, incomplete metadata, missing artwork, corrupt/unplayable files, and insufficient listening history. Never invent statistics or show misleading zero-valued recaps when data is insufficient.
+- Preserve user data through schema migrations and avoid broad refactors unrelated to the active task.
+- Explain decisions and changes clearly for a college-level learner, naming exact files and verification results.
+
+## Phase gate
+
+Work in the phase order in `docs/ROADMAP.md`. Planning, research, and documentation are Phase 1. Wait for explicit user approval before starting each subsequent phase.

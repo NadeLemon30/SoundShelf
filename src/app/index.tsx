@@ -1,98 +1,49 @@
-import * as Device from 'expo-device';
-import { Platform, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { Link } from 'expo-router';
+import { Pressable, StyleSheet, View } from 'react-native';
 
-import { AnimatedIcon } from '@/components/animated-icon';
-import { HintRow } from '@/components/hint-row';
 import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-
-function getDevMenuHint() {
-  if (Platform.OS === 'web') {
-    return <ThemedText type="small">use browser devtools</ThemedText>;
-  }
-  if (Device.isDevice) {
-    return (
-      <ThemedText type="small">
-        shake device or press <ThemedText type="code">m</ThemedText> in terminal
-      </ThemedText>
-    );
-  }
-  const shortcut = Platform.OS === 'android' ? 'cmd+m (or ctrl+m)' : 'cmd+d';
-  return (
-    <ThemedText type="small">
-      press <ThemedText type="code">{shortcut}</ThemedText>
-    </ThemedText>
-  );
-}
+import { MiniPlayer } from '@/components/ui/mini-player';
+import { Screen } from '@/components/ui/screen';
+import { Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { useLibrary } from '@/features/library/library-provider';
 
 export default function HomeScreen() {
+  const theme = useTheme();
+  const { scan, status } = useLibrary();
   return (
-    <ThemedView style={styles.container}>
-      <SafeAreaView style={styles.safeArea}>
-        <ThemedView style={styles.heroSection}>
-          <AnimatedIcon />
-          <ThemedText type="title" style={styles.title}>
-            Welcome to&nbsp;Expo
-          </ThemedText>
-        </ThemedView>
-
-        <ThemedText type="code" style={styles.code}>
-          get started
-        </ThemedText>
-
-        <ThemedView type="backgroundElement" style={styles.stepContainer}>
-          <HintRow
-            title="Try editing"
-            hint={<ThemedText type="code">src/app/index.tsx</ThemedText>}
-          />
-          <HintRow title="Dev tools" hint={getDevMenuHint()} />
-          <HintRow
-            title="Fresh start"
-            hint={<ThemedText type="code">npm run reset-project</ThemedText>}
-          />
-        </ThemedView>
-
-        {Platform.OS === 'web' && <WebBadge />}
-      </SafeAreaView>
-    </ThemedView>
+    <Screen>
+      <View style={styles.header}>
+        <ThemedText themeColor="textMuted" type="smallBold">YOUR OFFLINE MUSIC SPACE</ThemedText>
+        <ThemedText type="title" style={styles.title}>SoundShelf</ThemedText>
+        <ThemedText themeColor="textMuted" style={styles.subtitle}>A calm home for the music already on your device.</ThemedText>
+      </View>
+      <View style={[styles.heroCard, { backgroundColor: theme.accentMuted }]}>
+        <ThemedText type="subtitle" style={styles.heroTitle}>Your music stays on your device.</ThemedText>
+        <ThemedText themeColor="textMuted">Scan the audio already saved on this device. SoundShelf requests audio access only when you choose to scan.</ThemedText>
+        <Pressable accessibilityRole="button" accessibilityLabel="Scan device music library" disabled={status === 'scanning'} onPress={scan} style={({ pressed }) => [styles.primaryButton, { backgroundColor: theme.accent }, (pressed || status === 'scanning') && styles.pressed]}>
+          <ThemedText style={styles.primaryButtonText}>{status === 'scanning' ? 'Scanning music…' : 'Scan device music'}</ThemedText>
+        </Pressable>
+        <Link href="/library" asChild>
+          <Pressable accessibilityRole="button"><ThemedText themeColor="accent" type="smallBold">View library</ThemedText></Pressable>
+        </Link>
+      </View>
+      <View style={styles.section}>
+        <ThemedText type="smallBold" themeColor="textMuted">UP NEXT</ThemedText>
+        <MiniPlayer />
+      </View>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    flexDirection: 'row',
-  },
-  safeArea: {
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    alignItems: 'center',
-    gap: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.three,
-    maxWidth: MaxContentWidth,
-  },
-  heroSection: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    flex: 1,
-    paddingHorizontal: Spacing.four,
-    gap: Spacing.four,
-  },
-  title: {
-    textAlign: 'center',
-  },
-  code: {
-    textTransform: 'uppercase',
-  },
-  stepContainer: {
-    gap: Spacing.three,
-    alignSelf: 'stretch',
-    paddingHorizontal: Spacing.three,
-    paddingVertical: Spacing.four,
-    borderRadius: Spacing.four,
-  },
+  header: { gap: Spacing.two, paddingTop: Spacing.two },
+  title: { fontSize: 46, lineHeight: 52, letterSpacing: -1.4 },
+  subtitle: { maxWidth: 420 },
+  heroCard: { gap: Spacing.three, padding: Spacing.four, borderRadius: 24 },
+  heroTitle: { fontSize: 27, lineHeight: 33 },
+  primaryButton: { alignSelf: 'flex-start', paddingVertical: 12, paddingHorizontal: Spacing.three, borderRadius: 14 },
+  primaryButtonText: { color: '#FFFFFF', fontWeight: '700' },
+  section: { gap: Spacing.two },
+  pressed: { opacity: 0.78 },
 });
