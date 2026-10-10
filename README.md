@@ -36,6 +36,10 @@ npx expo-doctor
 
 Use `npx expo install <package>` for any future Expo or React Native dependency so its version matches Expo SDK 57. Use `npx eas-cli@latest <command>` for EAS operations because this is an npm project.
 
+## GitHub APK releases
+
+Push a version tag such as `v1.0.0` to trigger the **Release Android APK** GitHub Actions workflow. It generates the Android project through Expo CNG, builds an APK, creates the matching GitHub Release, and attaches `SoundShelf-v1.0.0.apk` to it. The current APK is signed with the generated debug signing key and is suitable for direct test installation, not Play Store distribution.
+
 ## Documentation
 
 - [Agent workflow and project rules](AGENTS.md)

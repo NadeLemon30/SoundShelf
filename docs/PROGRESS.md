@@ -9,6 +9,12 @@
 - **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
 - **Native projects:** no `android/` or `ios/` directories; use CNG/config plugins when native configuration is needed.
 
+## GitHub APK release automation (2026-10-11)
+
+- Added `.github/workflows/release-apk.yml`. Pushing a Git tag whose name starts with `v` (for example, `v1.0.0`) now starts a GitHub Actions workflow that installs dependencies, runs Expo prebuild in the ephemeral runner, builds Android `assembleRelease`, and uploads `SoundShelf-<tag>.apk` to the generated GitHub Release.
+- The workflow intentionally retains Continuous Native Generation: it does not commit or manually maintain `android/`.
+- The generated release APK currently uses Expo/React Native's debug signing configuration, as this repository has no distribution keystore. It is installable for testing, but it is not a Play Store-signed artifact. Add a protected signing-key workflow later before public distribution.
+
 ## Phase 3 update (2026-10-11)
 
 - **Current phase:** 3 — Local music library.
@@ -90,6 +96,8 @@
 | `npx.cmd tsc --noEmit` after Phase 3 increment | Passed. |
 | `npx.cmd expo config --type public` after Phase 3 increment | Passed; plugin resolves with Android `READ_MEDIA_AUDIO` plus module-provided compatibility declarations. |
 | `git diff --check` after Phase 3 increment | Passed. |
+| GitHub APK workflow static review | Passed: tag trigger, release write permission, CNG prebuild, Java 17, Node 22.13.1, Gradle APK path, and release asset upload are configured. GitHub-hosted execution remains unverified until a `v*` tag is pushed. |
+| `npm.cmd run lint`, `npx.cmd tsc --noEmit`, `npx.cmd expo config --type public`, and `git diff --check` after GitHub workflow addition | Passed. |
 
 ## Exact next step
 
