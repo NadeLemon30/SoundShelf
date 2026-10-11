@@ -8,10 +8,12 @@
 - The Android development build installed and launched. Navigation, light/dark themes, safe areas, and the mini-player placeholder passed the device check.
 - Audio permission was requested, but the first release-APK scan failed before returning any tracks. The displayed error identified the cause: the legacy MediaLibrary call received `true` as a sort key.
 - Fixed the malformed legacy `sortBy` value in `src/features/library/media-library-service.ts` by nesting the `[key, ascending]` tuple inside the `sortBy` list. Artist, album, artwork, URI/playback, and corrupt-file behavior remain unverified until a rebuilt APK is tested.
+- A rebuilt GitHub APK now scans successfully. The provider also subscribes to media-library changes after a successful scan and marks the library for a user-triggered rescan. This behavior still needs device verification.
+- Removed the stale explicit Android permission list from `app.json`; the installed Expo MediaLibrary plugin remains responsible for its generated, version-compatible audio permission declarations.
 
 ## Current next step
 
-Build and install a GitHub release APK containing the sort fix, then test scanning local audio again. Record the number of tracks returned, skipped items, URI/playback behavior, and metadata/artwork availability. If scanning still fails, capture the displayed error and, if available, filtered ADB logcat before adding artist, album, artwork, or a metadata-native module.
+Build and install a GitHub release APK containing the rescan update, add or remove a local audio file, and confirm that SoundShelf displays the rescan notice and refreshes the track list. Record the number of tracks returned, skipped items, URI/playback behavior, and metadata/artwork availability. Do not add artist, album, or artwork support until the available device metadata is documented.
 
 - **Current phase:** 2 — Foundation and UI.
 - **Phase status:** implementation is complete in the workspace; Android device navigation testing remains before Phase 2 can be marked complete. Do not begin Phase 3 without explicit owner approval.
@@ -112,6 +114,7 @@ Build and install a GitHub release APK containing the sort fix, then test scanni
 | `npm.cmd run lint`, `npx.cmd tsc --noEmit`, `npx.cmd expo config --type public`, and `git diff --check` after GitHub workflow addition | Passed. |
 | README documentation review | Passed: the README matches the implemented in-memory audio scan/search flow and labels unverified or unimplemented functionality as limitations. |
 | `npm.cmd run lint`, `npx.cmd tsc --noEmit`, `npx.cmd expo config --type public`, and `git diff --check` after the sort fix | Passed. |
+| `npm.cmd run lint`, `npx.cmd tsc --noEmit`, `npx.cmd expo config --type public`, and `git diff --check` after the rescan update and permission-config cleanup | Passed. Expo config resolves the MediaLibrary module's Android compatibility declarations, including `READ_MEDIA_AUDIO`. |
 
 ## Exact next step
 

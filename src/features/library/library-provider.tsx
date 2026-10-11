@@ -1,5 +1,5 @@
-import { requestPermissionsAsync } from 'expo-media-library/legacy';
-import { createContext, type PropsWithChildren, useCallback, useContext, useMemo, useState } from 'react';
+import * as MediaLibrary from 'expo-media-library/legacy';
+import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { scanDeviceAudio } from './media-library-service';
 import type { LibraryTrack } from './types';
@@ -11,6 +11,7 @@ type LibraryContextValue = {
   tracks: LibraryTrack[];
   skippedAssetCount: number;
   errorMessage: string | null;
+  needsRescan: boolean;
   scan: () => Promise<void>;
 };
 
@@ -21,12 +22,24 @@ export function LibraryProvider({ children }: PropsWithChildren) {
   const [tracks, setTracks] = useState<LibraryTrack[]>([]);
   const [skippedAssetCount, setSkippedAssetCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [needsRescan, setNeedsRescan] = useState(false);
+
+  useEffect(() => {
+    if (status !== 'ready') {
+      return;
+    }
+
+    const subscription = MediaLibrary.addListener(() => {
+      setNeedsRescan(true);
+    });
+    return () => subscription.remove();
+  }, [status]);
 
   const scan = useCallback(async () => {
     setStatus('scanning');
     setErrorMessage(null);
     try {
-      const permission = await requestPermissionsAsync(false, ['audio']);
+      const permission = await MediaLibrary.requestPermissionsAsync(false, ['audio']);
       if (permission.status !== 'granted') {
         setStatus('denied');
         return;
@@ -35,6 +48,7 @@ export function LibraryProvider({ children }: PropsWithChildren) {
       const result = await scanDeviceAudio();
       setTracks(result.tracks);
       setSkippedAssetCount(result.skippedAssetCount);
+      setNeedsRescan(false);
       setStatus('ready');
     } catch (error) {
       setStatus('error');
@@ -43,7 +57,7 @@ export function LibraryProvider({ children }: PropsWithChildren) {
     }
   }, []);
 
-  const value = useMemo(() => ({ status, tracks, skippedAssetCount, errorMessage, scan }), [errorMessage, scan, skippedAssetCount, status, tracks]);
+  const value = useMemo(() => ({ status, tracks, skippedAssetCount, errorMessage, needsRescan, scan }), [errorMessage, needsRescan, scan, skippedAssetCount, status, tracks]);
   return <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>;
 }
 
