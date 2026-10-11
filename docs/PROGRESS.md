@@ -2,6 +2,17 @@
 
 ## Verified state
 
+## Latest verified update (2026-10-12)
+
+- **Current phase:** 3 — Local music library. Owner approval is recorded.
+- The Android development build installed and launched. Navigation, light/dark themes, safe areas, and the mini-player placeholder passed the device check.
+- Audio permission was requested, but the first release-APK scan failed before returning any tracks. The displayed error identified the cause: the legacy MediaLibrary call received `true` as a sort key.
+- Fixed the malformed legacy `sortBy` value in `src/features/library/media-library-service.ts` by nesting the `[key, ascending]` tuple inside the `sortBy` list. Artist, album, artwork, URI/playback, and corrupt-file behavior remain unverified until a rebuilt APK is tested.
+
+## Current next step
+
+Build and install a GitHub release APK containing the sort fix, then test scanning local audio again. Record the number of tracks returned, skipped items, URI/playback behavior, and metadata/artwork availability. If scanning still fails, capture the displayed error and, if available, filtered ADB logcat before adding artist, album, artwork, or a metadata-native module.
+
 - **Current phase:** 2 — Foundation and UI.
 - **Phase status:** implementation is complete in the workspace; Android device navigation testing remains before Phase 2 can be marked complete. Do not begin Phase 3 without explicit owner approval.
 - **Repository baseline:** initial commit `d0f2289` (`Initial commit`), now followed by uncommitted Phase 1 documentation and Phase 2 foundation work.
@@ -27,6 +38,7 @@
 
 ## Completed in this session (2026-10-11)
 
+- Rewrote `README.md` as current app documentation: implemented local scanning/search behavior, privacy boundaries, installation and Android development-build guidance, validation commands, APK-release workflow, project layout, and known limitations.
 - Inspected root instructions, source tree, package/app configuration, starter routes, Git status, and existing documentation.
 - Confirmed the project is a new starter rather than an existing SoundShelf implementation. Existing routes and components are Expo starter UI and are intentionally untouched.
 - Replaced the generic starter README with SoundShelf setup and workflow information.
@@ -98,6 +110,8 @@
 | `git diff --check` after Phase 3 increment | Passed. |
 | GitHub APK workflow static review | Passed: tag trigger, release write permission, CNG prebuild, Java 17, Node 22.13.1, Gradle APK path, and release asset upload are configured. GitHub-hosted execution remains unverified until a `v*` tag is pushed. |
 | `npm.cmd run lint`, `npx.cmd tsc --noEmit`, `npx.cmd expo config --type public`, and `git diff --check` after GitHub workflow addition | Passed. |
+| README documentation review | Passed: the README matches the implemented in-memory audio scan/search flow and labels unverified or unimplemented functionality as limitations. |
+| `npm.cmd run lint`, `npx.cmd tsc --noEmit`, `npx.cmd expo config --type public`, and `git diff --check` after the sort fix | Passed. |
 
 ## Exact next step
 

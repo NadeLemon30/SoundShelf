@@ -48,7 +48,7 @@ export async function scanDeviceAudio(): Promise<LibraryScanResult> {
       first: PAGE_SIZE,
       after,
       mediaType: MediaLibrary.MediaType.audio,
-      sortBy: [MediaLibrary.SortBy.creationTime, true],
+      sortBy: [[MediaLibrary.SortBy.creationTime, true]],
     });
 
     assets.push(...page.assets);
