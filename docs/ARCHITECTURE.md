@@ -2,7 +2,7 @@
 
 ## Status and guiding constraints
 
-This is a proposed architecture for a fresh Expo SDK 57 / React Native 0.86 / TypeScript starter. It is intentionally not implemented yet. Android is the first target; the app operates on device-local media and stores all user data locally. Expo Router remains the only navigation layer and Continuous Native Generation remains enabled.
+This is the architecture for a fresh Expo SDK 57 / React Native 0.86 / TypeScript starter. Android is the first target; the app operates on device-local media and stores all user data locally. Expo Router remains the only navigation layer and Continuous Native Generation remains enabled. Phases 2–4 are implemented (app shell, local library, foreground playback); later sections below remain proposed until their phase begins.
 
 ## Proposed structure
 
@@ -72,9 +72,13 @@ Implemented album browsing groups tracks by the Android album id each asset repo
 
 ## Playback and operating-system integration
 
-Plan to evaluate `expo-audio` first. SDK 57 exposes audio players and playlists, queue-oriented operations, loop modes, playback status, global audio modes, lock-screen metadata, and Android background-playback configuration. Background behavior needs the `expo-audio` config plugin, `shouldPlayInBackground`, `doNotMix` interruption mode, and active lock-screen controls. On Android, the controls are required for sustained background playback. This changes native configuration, so validate in an Android development build and later a release-like build, not only Expo Go.
+`expo-audio` is the playback engine (see `DECISIONS.md` D-003, D-010). SDK 57 exposes audio players and playlists, queue-oriented operations, loop modes, playback status, global audio modes, lock-screen metadata, and Android background-playback configuration.
 
-The audio service owns player lifecycle and translates platform status/events into the app’s playback state. UI components never manipulate native player objects directly. Persist checkpoints at bounded intervals and lifecycle transitions—not every render—and record listened time only while playback is audibly active.
+**Implemented (foreground only, Phase 4).** `src/features/playback/playback-provider.tsx` owns a single `expo-audio` player created at the app root, plus the queue, play order, current index, repeat mode, and shuffle flag. The provider subscribes to `playbackStatusUpdate` directly so position ticks do not re-render the app; components that display progress (mini-player, Now Playing) read status through `useAudioPlayerStatus`. Pure modules (`playlist.ts`, `format.ts`, `types.ts`) hold the shuffle/order and time-formatting logic so they can be verified without native calls. The mini-player appears on each tab and opens a `Modal`-based Now Playing view. The config plugin is intentionally foreground-only for this phase (no microphone permission, no background service, `shouldPlayInBackground: false`).
+
+**Planned (Phase 5).** Background behavior needs the `expo-audio` config plugin with `enableBackgroundPlayback`, `shouldPlayInBackground`, `doNotMix` interruption mode, and active lock-screen controls. On Android, the controls are required for sustained background playback. This changes native configuration, so validate in an Android development build and later a release-like build, not only Expo Go.
+
+The audio layer owns player lifecycle and translates platform status/events into the app's playback state. UI components do not construct native player objects directly. When persistence arrives, persist checkpoints at bounded intervals and lifecycle transitions—not every render—and record listened time only while playback is audibly active.
 
 ## Analytics and Replay integrity
 

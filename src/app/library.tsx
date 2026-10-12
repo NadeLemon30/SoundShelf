@@ -9,12 +9,14 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { LibraryAlbumRow, LibraryTrackRow } from '@/features/library/components/library-rows';
 import { useLibrary } from '@/features/library/library-provider';
+import { usePlayback } from '@/features/playback/playback-provider';
 
 type LibraryView = 'songs' | 'albums';
 
 export default function LibraryScreen() {
   const theme = useTheme();
   const { status, tracks, albums, skippedAssetCount, errorMessage, needsRescan, permissionBlocked, scan } = useLibrary();
+  const { currentTrack, playTrack } = usePlayback();
   const [view, setView] = useState<LibraryView>('songs');
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
   const isBusy = status === 'scanning';
@@ -22,6 +24,8 @@ export default function LibraryScreen() {
   const isBlocked = isDenied && permissionBlocked;
   const isScannedEmpty = status === 'ready' && tracks.length === 0;
   const selectedAlbum = albums.find((album) => album.id === selectedAlbumId) ?? null;
+  const currentTrackId = currentTrack?.id ?? null;
+  const listTracks = selectedAlbum ? selectedAlbum.tracks : view === 'songs' ? tracks : [];
 
   const rescan = () => {
     setSelectedAlbumId(null);
@@ -37,7 +41,7 @@ export default function LibraryScreen() {
     <Screen>
       <View style={styles.header}>
         <ThemedText type="title" style={styles.title}>Library</ThemedText>
-        <ThemedText themeColor="textMuted">Songs on this device, plus albums grouped by the folders Android reports. Artist and embedded-tag data are not read yet.</ThemedText>
+        <ThemedText themeColor="textMuted">Songs on this device, plus albums grouped by the folders Android reports. Tap a song to play it. Artist and embedded-tag data are not read yet.</ThemedText>
       </View>
       {status === 'ready' && tracks.length > 0 ? <View style={styles.content}>
         <View style={[styles.segmented, { backgroundColor: theme.surfaceRaised }]}>
@@ -56,7 +60,7 @@ export default function LibraryScreen() {
             <ThemedText numberOfLines={1} style={styles.listLabel} type="smallBold" themeColor="textMuted">{selectedAlbum ? selectedAlbum.title.toLocaleUpperCase() : view === 'songs' ? `${tracks.length} SONG${tracks.length === 1 ? '' : 'S'}` : `${albums.length} ALBUM${albums.length === 1 ? '' : 'S'}`}</ThemedText>
             {selectedAlbum ? <Pressable accessibilityRole="button" onPress={() => setSelectedAlbumId(null)}><ThemedText type="smallBold" themeColor="accent">All albums</ThemedText></Pressable> : <Pressable accessibilityRole="button" onPress={rescan}><ThemedText type="smallBold" themeColor="accent">Rescan</ThemedText></Pressable>}
           </View>
-          {(selectedAlbum ? selectedAlbum.tracks : view === 'songs' ? tracks : null)?.map((track) => <LibraryTrackRow key={track.id} track={track} />)}
+          {listTracks.map((track) => <LibraryTrackRow key={track.id} track={track} isCurrent={track.id === currentTrackId} onPress={() => playTrack(track, listTracks)} />)}
           {!selectedAlbum && view === 'albums' ? albums.map((album) => <LibraryAlbumRow album={album} key={album.id} onPress={() => setSelectedAlbumId(album.id)} />) : null}
         </View>
         {skippedAssetCount > 0 ? <ThemedText themeColor="textMuted" type="small">{skippedAssetCount} audio item{skippedAssetCount === 1 ? '' : 's'} could not be opened and {skippedAssetCount === 1 ? 'was' : 'were'} left out.</ThemedText> : null}

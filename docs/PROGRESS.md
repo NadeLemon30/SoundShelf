@@ -2,11 +2,26 @@
 
 ## Current state
 
-- **Current phase:** 3 — Local music library. Owner approval is recorded (2026-10-11). Phase 2's device check (navigation, light/dark themes, safe areas, mini-player placeholder) passed.
-- **Repository baseline:** `d0f2289` (`Initial commit`); the latest committed work is `29a85fb` (`rescan update`). The 2026-10-12 album-browsing increment described below is uncommitted at the time of writing.
+- **Current phase:** 4 — Core playback (foreground). The owner reported a Phase 3 device test on 2026-10-12 and approved moving to Phase 4.
+- **Repository baseline:** `d0f2289` (`Initial commit`). Recent committed work includes the album-browsing, permission-denial, and empty-library increments on 2026-10-12; the Phase 4 foreground-playback increment is described below.
 - **Framework:** Expo SDK 57 (`expo ~57.0.27`), React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57.
 - **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
 - **Native projects:** no `android/` or `ios/` directories; use CNG/config plugins when native configuration is needed.
+
+## Update (2026-10-12) — Phase 4 foreground playback
+
+- Installed SDK-compatible `expo-audio` `~57.0.5` with `npx expo install`. `expo install` added the `expo-audio` config plugin; it was then constrained explicitly to `recordAudioAndroid: false`, `enableBackgroundPlayback: false`, `enableBackgroundRecording: false` so Phase 4 does not request the microphone permission or add the Android background-service/permission set (that is Phase 5 scope).
+- Added `src/features/playback/`:
+  - `types.ts` — `RepeatMode` and the `off → all → one` cycle (pure).
+  - `playlist.ts` — pure `naturalOrder`, `shuffledOrder` (Fisher-Yates with injectable RNG, keeps the current track first), and `positionInOrder`.
+  - `format.ts` — pure `formatPlaybackTime` and `playbackPercent`.
+  - `playback-provider.tsx` — one root `expo-audio` player plus queue, play `order`, index, repeat, shuffle, and actions; subscribes to `playbackStatusUpdate` directly to keep position ticks out of the app-wide render path.
+  - `components/now-playing.tsx` — a `Modal`-based Now Playing view (seek, previous/play-pause/next, shuffle, repeat).
+- Rewrote `src/components/ui/mini-player.tsx` into a working mini-player: shows the current track, play/pause, next, a thin progress bar, and opens Now Playing. Shows an idle state when nothing is playing.
+- Wired playback into `src/app/library.tsx` (Songs and album detail) and `src/app/search.tsx` via new `LibraryTrackRow` press handling and a "current track" indicator; wrapped the app in `PlaybackProvider` in `src/app/_layout.tsx`.
+- Playback is **foreground-only** and the configured audio mode is `interruptionMode: 'doNotMix'`, `playsInSilentMode: true`, `shouldPlayInBackground: false`.
+- **Not device-verified:** queue semantics, seek, next/previous, shuffle/repeat, track-end advance, the Now Playing modal, and playing a real local file all require a rebuilt development build containing the new native module. `expo-audio` is native, so an older build cannot play audio.
+- Files: `app.json`, `package.json`, `package-lock.json`, `src/app/_layout.tsx`, `src/app/library.tsx`, `src/app/search.tsx`, `src/components/ui/mini-player.tsx`, `src/features/library/components/library-rows.tsx`, and the new `src/features/playback/*`.
 
 ## Update (2026-10-12) — honest empty-library state
 
@@ -66,17 +81,18 @@
 ## Device-test history
 
 - **2026-10-11:** Owner selected a local ADB build. Android SDK found at `C:\Users\Nade\AppData\Local\Android\Sdk`. An authorized USB device `25078RA3EA` (Android 15 / API 35) was connected and `npx.cmd expo run:android --device 25078RA3EA` generated the CNG `android/` project and built the app. The Android development build installed and launched; navigation, themes, safe areas, and the mini-player placeholder passed the check.
-- **2026-10-12:** A rebuilt GitHub release APK scanned successfully (see the rescan-fix update above).
-- No device has been attached since; `adb devices` was empty during the album-browsing session.
+- **2026-10-12:** A rebuilt GitHub release APK scanned successfully (see the rescan-fix update above). The owner subsequently reported device testing completed and approved moving to Phase 4; detailed figures were not captured in this session.
+- **2026-10-12 (Phase 4):** No device was attached during the foreground-playback implementation (`adb devices` not checked into this session). Playback requires a rebuilt development build that includes `expo-audio`.
 
 ## Unfinished work / known constraints
 
-- Playback, persistence, analytics, and Replay Stories are not implemented.
-- `expo-audio` and `expo-sqlite` remain recommendations only; neither is installed or configured. `expo-media-library` is installed and used.
-- Local-media discovery and album grouping are implemented but not yet verified on a physical device with real files.
+- Playback is **foreground-only**; persistence, background playback, analytics, and Replay Stories are not implemented.
+- `expo-audio` is now installed and used for foreground playback. `expo-sqlite` is still a recommendation only; `expo-media-library` is installed and used.
+- Phase 4 foreground playback is implemented but not yet device-verified. `expo-audio` is a native module, so it requires a freshly generated development build; an older build cannot play audio.
+- Local-media discovery and album grouping are implemented; the owner reported a device test, but detailed figures were not recorded in this session.
 - Whether `expo-media-library` exposes enough real-device audio metadata and embedded artwork remains unverified. Album grouping uses the device album id and is not the same as parsed audio tags; artist and artwork are not available from this API and are not fabricated.
 - The local environment uses Node 22.12.0, while several Expo SDK 57 / React Native transitive packages report a minimum Node 22.13.0. Lint and type-check pass, but upgrade Node before relying on local Metro or build behavior.
-- Background playback must be validated in an Android development build after the Audio config plugin is introduced; Expo Go is insufficient release evidence.
+- Background playback must be validated in an Android development build after the audio config plugin is enabled for it (`enableBackgroundPlayback`) and lock-screen controls are wired; Expo Go is insufficient release evidence.
 - Play-count qualification, local time-zone bucket policy, Replay eligibility, Android support floor, and folder-browsing expectations are still open.
 
 ## Files changed in recent increments
@@ -106,6 +122,22 @@ Empty-library state (2026-10-12):
 - `src/app/search.tsx`
 - `docs/PROGRESS.md`
 
+Phase 4 foreground playback (2026-10-12):
+
+- `src/features/playback/types.ts` (new)
+- `src/features/playback/playlist.ts` (new)
+- `src/features/playback/format.ts` (new)
+- `src/features/playback/playback-provider.tsx` (new)
+- `src/features/playback/components/now-playing.tsx` (new)
+- `src/components/ui/mini-player.tsx`
+- `src/features/library/components/library-rows.tsx`
+- `src/app/_layout.tsx`
+- `src/app/library.tsx`
+- `src/app/search.tsx`
+- `app.json` (expo-audio plugin, foreground-only options)
+- `package.json`, `package-lock.json` (added `expo-audio ~57.0.5`)
+- `README.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/PROGRESS.md`
+
 ## Verification record
 
 | Command / check | Result |
@@ -129,9 +161,17 @@ Empty-library state (2026-10-12):
 | `npx.cmd tsc --noEmit` after the permission-denial increment | Passed. |
 | `npm.cmd run lint` after the empty-library increment | Passed. |
 | `npx.cmd tsc --noEmit` after the empty-library increment | Passed. |
+| `npx.cmd expo install expo-audio` | Passed; installed `expo-audio` 57.0.5 and added the plugin to `app.json` (same Node-engine warnings). |
+| `npm.cmd run lint` after the Phase 4 playback increment | Passed. |
+| `npx.cmd tsc --noEmit` after the Phase 4 playback increment | Passed. |
+| `npx.cmd expo config --type public` after the Phase 4 plugin configuration | Passed; resolved `expo-audio` with `recordAudioAndroid: false` and `enableBackgroundPlayback: false`. |
+| Pure-helper execution checks (`node --experimental-strip-types`) | Passed: `naturalOrder`, `shuffledOrder` (keeps current track first, valid permutation), `positionInOrder`, `formatPlaybackTime`, `playbackPercent`, and the repeat-mode cycle `off → all → one → off`. |
+| Physical-device playback check | Pending: requires a rebuilt development build that contains the new `expo-audio` native module. |
 
 ## Exact next step
 
-Build and install a GitHub release APK containing the rescan update and the album-browsing increment, add or remove a local audio file, and confirm that SoundShelf displays the rescan notice and refreshes the track list. On the same device check, open the Albums view and record: number of tracks returned, skipped items, album groups and their names (versus the folders on the device), any "Unknown album" grouping, URI/playback behavior, and metadata/artwork availability.
+1. Rebuild and install a development build that contains the new `expo-audio` native module (`npx expo run:android --device` or a fresh release-APK tag), since playback cannot work on an older build.
+2. On the physical device: scan music, then on the device verify each foreground-playback item and record results in `docs/PROGRESS.md`: tapping a song starts audio; the mini-player shows the track and works across Home/Library/Search; play/pause, next/previous (including the >3-second restart rule), seek by tapping the Now Playing bar, shuffle (order only changes), repeat off/all/one, track-end advance/wrap/stop, the "current track" indicator following playback in Songs/album/Search lists, and how an unplayable/corrupt file surfaces via the Now Playing error text.
+3. Confirm the foreground-only boundary: audio stops when the app is backgrounded (expected until Phase 5), and no microphone permission is requested (the `expo-audio` plugin only adds `MODIFY_AUDIO_SETTINGS` on Android).
 
-Do not mark Phase 3 complete or add artist/artwork support until that proof is recorded. If the device proof shows `expo-media-library` cannot supply artist or embedded-artwork data, record the finding in `DECISIONS.md` before evaluating a minimal native metadata module.
+Do not mark Phase 4 complete until those device results are recorded. Phase 5 (background playback) must not start without explicit owner approval, and it will flip the audio config to `enableBackgroundPlayback: true` and add lock-screen/notification controls.

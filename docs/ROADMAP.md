@@ -10,23 +10,23 @@ Phase advancement requires user approval. Completion criteria mean evidence exis
 
 **Completion criteria:** documentation is internally consistent, audio/media assumptions are sourced, and the owner approves the next phase or targeted proof of concept.
 
-## 2. Foundation and UI — current
+## 2. Foundation and UI — completed
 
 **Objective:** replace starter UI with the app shell and reusable mobile-first interface foundation.
 
 **Tasks:** define routes and tabs with Expo Router; establish light/dark tokens; build reusable screen, list-row, artwork-placeholder, empty-state, error-state, mini-player shell, and accessible controls; establish animation and responsive-layout conventions.
 
-**Completion criteria:** Android device navigation works, themes are complete, and the app shell has no starter screens.
+**Completion criteria:** Android device navigation works, themes are complete, and the app shell has no starter screens. *(Verified on a physical Android device, 2026-10-11.)*
 
-## 3. Local music library
+## 3. Local music library — implemented; device proof owner-reported
 
 **Objective:** discover and browse local Android audio without assuming metadata quality.
 
-**Tasks:** request only audio-media access at an appropriate user action; query and page audio assets; normalize stable track identifiers and available metadata; validate playback URIs; implement Songs, Artists, Albums, and search; render artwork when available with a fallback; define a rescan/update strategy.
+**Tasks:** request only audio-media access at an appropriate user action; query and page audio assets; normalize stable track identifiers and available metadata; validate playback URIs; implement Songs, and search (Artists and artwork remain blocked on a metadata source); define a rescan/update strategy.
 
-**Completion criteria:** tested on a physical Android device with real files, including permission denial, empty library, missing fields/artwork, and an unplayable file.
+**Completion criteria:** tested on a physical Android device with real files, including permission denial, empty library, missing fields/artwork, and an unplayable file. *(The owner reported device testing completed on 2026-10-12 and approved moving on; detailed figures were not captured in this session. Artists and embedded artwork remain unavailable from `expo-media-library` — see D-009.)*
 
-## 4. Core playback
+## 4. Core playback — current
 
 **Objective:** play local tracks reliably in the foreground.
 

@@ -14,13 +14,13 @@ SoundShelf will read music already stored on the device and store app data local
 
 Use the existing Expo Router setup and keep native projects generated. Route files stay in `src/app/`; native configuration goes through `app.json` config plugins. This preserves the starter convention and allows Expo-compatible native modules without hand-editing generated Android files.
 
-## D-003: Prefer Expo Audio for playback, pending a Phase 4 device spike
+## D-003: Use Expo Audio for playback, pending a Phase 4 device spike
 
-**Status:** recommended; not implemented (2026-10-11)
+**Status:** implemented for foreground playback (2026-10-12); background behavior pending Phase 5
 
-Use SDK 57 `expo-audio` as the first playback candidate. Its documentation covers player/playlist APIs, queue/loop behavior, global audio/interruption configuration, headphone/Bluetooth disconnect behavior, and Android lock-screen/notification background playback via its config plugin. It avoids adding a third-party native dependency before a demonstrated need.
+Use SDK 57 `expo-audio` as the playback engine. It covers player/playlist APIs, queue/loop behavior, global audio/interruption configuration, headphone/Bluetooth disconnect behavior, and Android lock-screen/notification background playback via its config plugin. It avoids adding a third-party native dependency.
 
-The competing `react-native-track-player` has strong music-player capabilities, but its current V5 is commercially licensed for commercial use and imposes New Architecture requirements. Do not add it unless the Expo Audio spike documents a missing required capability and the project license is approved. If evaluated later, it requires a custom development build/native integration and its exact supported Expo SDK/React Native combination must be verified then.
+The competing `react-native-track-player` has strong music-player capabilities, but its current V5 is commercially licensed for commercial use and imposes New Architecture requirements. Do not add it unless a later phase documents a missing required capability and the project license is approved. If evaluated, it requires a custom development build/native integration and its exact supported Expo SDK/React Native combination must be verified then.
 
 ## D-004: Use `expo-media-library` first for Android audio discovery, pending Phase 3 proof
 
@@ -64,6 +64,23 @@ The Library screen gained a Songs/Albums switch. Albums are built from the album
 
 This deliberately does not read embedded ID3/MP4 tags. The legacy audio API exposes no artist, title, genre, or embedded-artwork fields, so SoundShelf does not fabricate artist data and does not present folder names as verified album tags. Two folders with the same display name stay separate groups, and tracks without an album id share one "Unknown album" group. Artists and artwork remain blocked on the Phase 3 device proof and, if the API proves insufficient, a separately approved native metadata module (see D-004/D-008).
 
+## D-010: Phase 4 foreground playback architecture
+
+**Status:** implemented; physical-device validation pending (2026-10-12)
+
+A single `expo-audio` player is created once at the app root (`useAudioPlayer(null)` in `src/features/playback/playback-provider.tsx`) and lives for the whole session. Playback state is split deliberately:
+
+- The provider owns the queue, a separate play `order` (index permutation), the current index, repeat mode, and shuffle flag, and exposes actions. It subscribes to `playbackStatusUpdate` directly (`player.addListener`) rather than using `useAudioPlayerStatus`, so per-tick position updates do not re-render the whole tree.
+- Position/progress is read only where it is displayed (mini-player, Now Playing) via `useAudioPlayerStatus(player)`, which the provider exposes through context.
+
+Play order and formatting live in pure modules (`playlist.ts`, `format.ts`, `types.ts`) so shuffle correctness and time formatting can be verified without a device.
+
+The config plugin is intentionally constrained to foreground-only for this phase: `recordAudioAndroid: false`, `enableBackgroundPlayback: false`, `enableBackgroundRecording: false`. This avoids requesting the microphone permission and avoids adding the Android foreground-service/permission set until Phase 5 introduces background playback. Audio mode requests `interruptionMode: 'doNotMix'` (take audio focus) with `playsInSilentMode: true` and `shouldPlayInBackground: false`.
+
+Now Playing is implemented as a React Native `Modal` overlay rather than a new Expo Router route. The app uses `NativeTabs`, and its trigger list is the verified navigation shell; adding a non-tab route or nesting a Stack inside the tabs at this point would restructure tested navigation for a purely presentational screen. A modal keeps the verified shell intact. If Phase 9 wants a routable Now Playing screen with back-stack behavior, revisit the tab/stack structure then.
+
+Track-end behavior: `repeat: 'one'` repeats the current track; `'all'` wraps to the first track; `'off'` stops and remains paused on the final track. `didJustFinish` is guarded by a ref so one finish cannot skip multiple tracks. Track-end and manual next/previous operate on the shuffled `order`, so shuffled playback advances through the shuffled sequence.
+
 ## Open questions requiring owner input or device evidence
 
 1. Which Android OS versions and physical devices are the initial support/test floor?
@@ -71,6 +88,7 @@ This deliberately does not read embedded ID3/MP4 tags. The legacy audio API expo
 3. Should SoundShelf treat user-created folders as a browse/filter concept, or only derive Songs, Artists, Albums, and search from MediaStore?
 4. What threshold should qualify a play and make an annual Replay eligible? Until decided, do not display hard-coded recap numbers.
 5. Does the Phase 3 device proof show that `expo-media-library` supplies enough metadata and artwork? If not, select and test a minimal native alternative before feature implementation.
+6. Phase 4 foreground playback (queue semantics, seek, track-end, shuffle/repeat, and an unplayable file) is implemented but still needs a physical-device check; record the results before treating Phase 4 as complete.
 
 ## Research references
 

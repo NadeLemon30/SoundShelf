@@ -12,8 +12,9 @@ The project is in active development. Its current local-library work is an early
 - Filename-based song titles, resolved local URIs, duration and file timestamps where available.
 - A Songs/Albums library view and local, in-memory search by song title or filename. Albums use Android's per-file album id (the storage folder); tracks with no album id appear under "Unknown album".
 - Clear empty, permission-denied (with an app-settings path when Android stops prompting), scan-error, and skipped-file states.
+- **Foreground playback** with a queue, play/pause, next/previous, seek, shuffle, repeat (off/all/one), and automatic track-end advance. A mini-player sits on every tab and opens a full-screen Now Playing view.
 
-Library metadata is intentionally conservative: artist, genre, and embedded artwork are not shown yet. Album names reflect Android's reported folder names rather than parsed audio tags. A scan is not yet saved across app restarts.
+Library metadata is intentionally conservative: artist, genre, and embedded artwork are not shown yet. Album names reflect Android's reported folder names rather than parsed audio tags. A scan is not yet saved across app restarts, and playback stops when the app leaves the foreground.
 
 ## Planned scope
 
@@ -42,15 +43,17 @@ npm install
 npx expo start
 ```
 
-For the currently implemented device-library scan, connect an Android device with USB debugging enabled and create/run a local development build:
+For the currently implemented device-library scan and foreground playback, connect an Android device with USB debugging enabled and create/run a local development build:
 
 ```bash
 npx expo run:android --device
 ```
 
+`expo-audio` is a native module, so playback requires a fresh development build (rebuilt after this change); an older build without it cannot play audio.
+
 Expo uses Continuous Native Generation for this repository. The command generates the Android project as part of the build; do not add or manually edit a committed `android/` directory.
 
-Once installed, open SoundShelf, select **Scan device music**, grant audio permission, then review the Library and Search tabs. Test both a device containing audio files and the no-audio / permission-denied cases.
+Once installed, open SoundShelf, select **Scan device music**, grant audio permission, then review the Library and Search tabs. Tap a song to play it; the mini-player opens the Now Playing screen, where you can seek, skip, shuffle, and change repeat. Test both a device containing audio files and the no-audio / permission-denied cases.
 
 ## Quality checks
 
@@ -79,6 +82,7 @@ At present, the workflow uses the generated debug signing configuration. Its APK
 src/app/               Expo Router screens and navigation layouts
 src/components/        reusable UI components
 src/features/library/  local-media permission, scanning, and album grouping logic
+src/features/playback/ queue, shuffle/repeat helpers, player provider, and Now Playing UI
 src/hooks/             reusable React hooks
 src/constants/         theme tokens and shared values
 docs/                  roadmap, architecture, decisions, and handoff notes
@@ -97,8 +101,9 @@ Routes belong in `src/app/`; feature logic and reusable code belong outside it.
 
 ## Current limitations
 
-- Playback controls, queues, and background playback are not implemented.
-- Scanned tracks are held only in memory and are lost after restarting the app.
+- Background playback, playlists, favourites, analytics, and Replay Stories are not implemented.
+- Playback is foreground-only: audio stops when the app is backgrounded, and lock-screen/notification controls are not added yet.
+- Scanned tracks are held only in memory and are lost after restarting the app; playback does not survive a restart.
 - Artist, embedded artwork, and corrupt-file behavior require physical-device validation.
-- Album grouping and names are implemented from Android's media store but are not yet device-verified.
+- Album grouping and names are implemented from Android's media store but are not yet recorded as device-verified.
 - The local-media flow requires a development-build test before it can be considered verified.
