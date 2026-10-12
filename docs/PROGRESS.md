@@ -2,11 +2,21 @@
 
 ## Current state
 
-- **Current phase:** 4 — Core playback (foreground). The owner reported a Phase 3 device test on 2026-10-12 and approved moving to Phase 4.
-- **Repository baseline:** `d0f2289` (`Initial commit`). Recent committed work includes the album-browsing, permission-denial, and empty-library increments on 2026-10-12; the Phase 4 foreground-playback increment is described below.
+- **Current phase:** 5 — Background playback. The owner reported a Phase 4 device test on 2026-10-13 and approved moving to Phase 5.
+- **Repository baseline:** `d0f2289` (`Initial commit`). Recent committed work: album browsing, permission denial, empty-library, and Phase 4 foreground playback increments on 2026-10-12; the Phase 5 background-playback increment is described below.
 - **Framework:** Expo SDK 57 (`expo ~57.0.27`), React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57.
 - **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
 - **Native projects:** no `android/` or `ios/` directories; use CNG/config plugins when native configuration is needed.
+
+## Update (2026-10-13) — Phase 5 background playback configuration
+
+- Enabled background playback through the `expo-audio` config plugin: `enableBackgroundPlayback: true`. The resolved native config now declares `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, and the `AudioControlsService` mediaPlayback foreground service; `recordAudioAndroid: false` and `enableBackgroundRecording: false` keep microphone permissions out (verified via `expo config --type introspect`).
+- The audio session now sets `shouldPlayInBackground: true` (keeping `doNotMix` audio focus and `playsInSilentMode: true`).
+- The provider activates lock-screen controls on every track change via `player.setActiveForLockScreen(true, { title }, { showSeekBackward, showSeekForward })`, which on Android is also what keeps the foreground service alive for sustained background playback. Only honest metadata is shown: the track title (no fabricated artist/album/artwork).
+- Android 13+ notifications need `POST_NOTIFICATIONS`: the plugin only adds it for recording, so `app.json` now declares it under `android.permissions`, and the provider requests it once per session at the first user-initiated play via `requestNotificationPermissionsAsync()` (Android-only, non-blocking; denial does not stop playback).
+- **Not device-verified:** sustained screen-off playback, the notification/lock-screen actions, interruption recovery, and disconnect behavior all require a rebuilt development build containing the audio config change and a physical-device session.
+- **Deferred within Phase 5:** persisting/restoring a playback checkpoint — planned for the next increment using `expo-sqlite`'s key/value API (D-005/D-011), combined with the Phase 6 database foundation so both native modules arrive in one development build.
+- Files: `app.json`, `src/features/playback/playback-provider.tsx`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` (D-011), `docs/ROADMAP.md`, `docs/PROGRESS.md`.
 
 ## Update (2026-10-12) — Phase 4 foreground playback
 
@@ -82,17 +92,17 @@
 
 - **2026-10-11:** Owner selected a local ADB build. Android SDK found at `C:\Users\Nade\AppData\Local\Android\Sdk`. An authorized USB device `25078RA3EA` (Android 15 / API 35) was connected and `npx.cmd expo run:android --device 25078RA3EA` generated the CNG `android/` project and built the app. The Android development build installed and launched; navigation, themes, safe areas, and the mini-player placeholder passed the check.
 - **2026-10-12:** A rebuilt GitHub release APK scanned successfully (see the rescan-fix update above). The owner subsequently reported device testing completed and approved moving to Phase 4; detailed figures were not captured in this session.
-- **2026-10-12 (Phase 4):** No device was attached during the foreground-playback implementation (`adb devices` not checked into this session). Playback requires a rebuilt development build that includes `expo-audio`.
+- **2026-10-13:** The owner reported Phase 4 foreground playback testing completed and approved moving to Phase 5; detailed results were not captured in this session. Phase 5 will require a rebuilt development build that includes the background-playback native configuration.
 
 ## Unfinished work / known constraints
 
-- Playback is **foreground-only**; persistence, background playback, analytics, and Replay Stories are not implemented.
-- `expo-audio` is now installed and used for foreground playback. `expo-sqlite` is still a recommendation only; `expo-media-library` is installed and used.
-- Phase 4 foreground playback is implemented but not yet device-verified. `expo-audio` is a native module, so it requires a freshly generated development build; an older build cannot play audio.
+- Background playback is configured and coded but **not device-verified**; the playback checkpoint is still to be implemented (planned with `expo-sqlite`'s key/value API, combined with the Phase 6 database foundation). Persistence, analytics, and Replay Stories remain unimplemented.
+- `expo-audio` is installed and used. `expo-sqlite` is still a recommendation only; `expo-media-library` is installed and used.
+- Phase 4 foreground playback is implemented; the owner reported a device test on 2026-10-13, but detailed results were not captured in this session.
 - Local-media discovery and album grouping are implemented; the owner reported a device test, but detailed figures were not recorded in this session.
 - Whether `expo-media-library` exposes enough real-device audio metadata and embedded artwork remains unverified. Album grouping uses the device album id and is not the same as parsed audio tags; artist and artwork are not available from this API and are not fabricated.
 - The local environment uses Node 22.12.0, while several Expo SDK 57 / React Native transitive packages report a minimum Node 22.13.0. Lint and type-check pass, but upgrade Node before relying on local Metro or build behavior.
-- Background playback must be validated in an Android development build after the audio config plugin is enabled for it (`enableBackgroundPlayback`) and lock-screen controls are wired; Expo Go is insufficient release evidence.
+- Background playback must be validated in an Android development build with the enabled audio config and lock-screen controls; Expo Go is insufficient release evidence. On Android 13+, the notification shade controls require the user to grant notification permission (requested once, non-blocking, at first play).
 - Play-count qualification, local time-zone bucket policy, Replay eligibility, Android support floor, and folder-browsing expectations are still open.
 
 ## Files changed in recent increments
@@ -138,6 +148,12 @@ Phase 4 foreground playback (2026-10-12):
 - `package.json`, `package-lock.json` (added `expo-audio ~57.0.5`)
 - `README.md`, `docs/ARCHITECTURE.md`, `docs/DECISIONS.md`, `docs/ROADMAP.md`, `docs/PROGRESS.md`
 
+Phase 5 background playback (2026-10-13):
+
+- `app.json` (`enableBackgroundPlayback: true`, added `android.permissions.POST_NOTIFICATIONS`)
+- `src/features/playback/playback-provider.tsx` (audio mode `shouldPlayInBackground: true`, lock-screen controls on track change, one-time notification-permission request)
+- `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` (D-011), `docs/ROADMAP.md`, `docs/PROGRESS.md`
+
 ## Verification record
 
 | Command / check | Result |
@@ -166,12 +182,22 @@ Phase 4 foreground playback (2026-10-12):
 | `npx.cmd tsc --noEmit` after the Phase 4 playback increment | Passed. |
 | `npx.cmd expo config --type public` after the Phase 4 plugin configuration | Passed; resolved `expo-audio` with `recordAudioAndroid: false` and `enableBackgroundPlayback: false`. |
 | Pure-helper execution checks (`node --experimental-strip-types`) | Passed: `naturalOrder`, `shuffledOrder` (keeps current track first, valid permutation), `positionInOrder`, `formatPlaybackTime`, `playbackPercent`, and the repeat-mode cycle `off → all → one → off`. |
-| Physical-device playback check | Pending: requires a rebuilt development build that contains the new `expo-audio` native module. |
+| SDK 57 background-playback documentation review | Passed: consulted the SDK 57 `expo-audio` docs and the installed type definitions; `setActiveForLockScreen(active, metadata?, options?)`, `AudioLockScreenOptions` (`showSeekForward`/`showSeekBackward`/`isLiveStream`), `requestNotificationPermissionsAsync()` (Android-only, required for the notification shade), and `doNotMix`-required lock-screen binding were confirmed against installed types; headphone/Bluetooth disconnect stops audio automatically (OS-level behavior, device-verify only). |
+| `npx.cmd expo config --type introspect` after the Phase 5 configuration | Passed: resolved manifest declares `POST_NOTIFICATIONS`, `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, `MODIFY_AUDIO_SETTINGS`, and `expo.modules.audio.service.AudioControlsService` with `foregroundServiceType: mediaPlayback`; no `RECORD_AUDIO`. |
+| `npm.cmd run lint` after the Phase 5 background-playback increment | Passed. |
+| `npx.cmd tsc --noEmit` after the Phase 5 background-playback increment | Passed. |
+| `npx.cmd expo export --platform android` bundle check after the Phase 5 increment | Passed; single Android `.hbc` bundle built; temporary `.temp-export` output removed. |
+| Physical-device playback check (Phase 4) | Owner-reported 2026-10-13; detailed results were not captured in this session. |
+| Physical-device background-playback check (Phase 5) | Pending: requires a rebuilt development build that contains the background-playback native configuration and lock-screen/notification wiring. |
 
 ## Exact next step
 
-1. Rebuild and install a development build that contains the new `expo-audio` native module (`npx expo run:android --device` or a fresh release-APK tag), since playback cannot work on an older build.
-2. On the physical device: scan music, then on the device verify each foreground-playback item and record results in `docs/PROGRESS.md`: tapping a song starts audio; the mini-player shows the track and works across Home/Library/Search; play/pause, next/previous (including the >3-second restart rule), seek by tapping the Now Playing bar, shuffle (order only changes), repeat off/all/one, track-end advance/wrap/stop, the "current track" indicator following playback in Songs/album/Search lists, and how an unplayable/corrupt file surfaces via the Now Playing error text.
-3. Confirm the foreground-only boundary: audio stops when the app is backgrounded (expected until Phase 5), and no microphone permission is requested (the `expo-audio` plugin only adds `MODIFY_AUDIO_SETTINGS` on Android).
-
-Do not mark Phase 4 complete until those device results are recorded. Phase 5 (background playback) must not start without explicit owner approval, and it will flip the audio config to `enableBackgroundPlayback: true` and add lock-screen/notification controls.
+1. Rebuild and install a development build that contains the background-playback native configuration and the new lock-screen/notification wiring (`npx expo run:android --device`), since the audio config plugin change requires a rebuilt app; an older build cannot validate Phase 5.
+2. On the physical device, verify and record in `docs/PROGRESS.md`:
+   - Foreground playback regression on the background-enabled build: tap-to-play, mini-player across Home/Library/Search, play/pause, next/previous (including the >3-second restart rule), tap-to-seek, shuffle, repeat off/all/one, track-end advance/wrap/stop, current-track indicator, and unplayable-file error text.
+   - Background behavior: playback continues with the screen off and when the app is backgrounded; the media notification appears in the shade with play/pause and next/previous; lock-screen controls show the current track title and seek actions; pressing notification/lock-screen actions updates the mini-player and Now Playing state.
+   - Android 13+: notification permission is requested once at the first user play (grant → controls appear; deny → playback continues without the notification surface); no microphone permission is requested.
+   - Audio focus/interruptions: starting other audio pauses SoundShelf (doNotMix); resuming SoundShelf works afterward.
+   - Headphone/Bluetooth disconnect: audio stops automatically (documented OS-level expo-audio behavior) and playback can be restarted.
+3. Confirm whether pressing the notification/lock-screen play button after the last track finishes (repeat off) restarts the track or does nothing; record the observed behavior.
+4. Do not mark Phase 5 complete until those device results are recorded. The remaining Phase 5 task — persisting and restoring a playback checkpoint — is planned as the next increment using `expo-sqlite`'s key/value API (D-005/D-011), combined with the Phase 6 database foundation so both native modules arrive in one development build. Do not start Phase 6 without explicit owner approval.

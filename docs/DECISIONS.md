@@ -75,11 +75,23 @@ A single `expo-audio` player is created once at the app root (`useAudioPlayer(nu
 
 Play order and formatting live in pure modules (`playlist.ts`, `format.ts`, `types.ts`) so shuffle correctness and time formatting can be verified without a device.
 
-The config plugin is intentionally constrained to foreground-only for this phase: `recordAudioAndroid: false`, `enableBackgroundPlayback: false`, `enableBackgroundRecording: false`. This avoids requesting the microphone permission and avoids adding the Android foreground-service/permission set until Phase 5 introduces background playback. Audio mode requests `interruptionMode: 'doNotMix'` (take audio focus) with `playsInSilentMode: true` and `shouldPlayInBackground: false`.
+The config plugin was constrained to foreground-only for Phase 4: `recordAudioAndroid: false`, `enableBackgroundPlayback: false`, `enableBackgroundRecording: false`. This avoided requesting the microphone permission and avoided the Android foreground-service/permission set while playback was foreground-only. Audio mode used `interruptionMode: 'doNotMix'` (take audio focus), `playsInSilentMode: true`, and `shouldPlayInBackground: false`. Phase 5 supersedes the background values (see D-011); microphone recording stays disabled.
 
 Now Playing is implemented as a React Native `Modal` overlay rather than a new Expo Router route. The app uses `NativeTabs`, and its trigger list is the verified navigation shell; adding a non-tab route or nesting a Stack inside the tabs at this point would restructure tested navigation for a purely presentational screen. A modal keeps the verified shell intact. If Phase 9 wants a routable Now Playing screen with back-stack behavior, revisit the tab/stack structure then.
 
 Track-end behavior: `repeat: 'one'` repeats the current track; `'all'` wraps to the first track; `'off'` stops and remains paused on the final track. `didJustFinish` is guarded by a ref so one finish cannot skip multiple tracks. Track-end and manual next/previous operate on the shuffled `order`, so shuffled playback advances through the shuffled sequence.
+
+## D-011: Phase 5 background playback configuration
+
+**Status:** implemented; physical-device validation pending (2026-10-13)
+
+Background playback uses the `expo-audio` config plugin: `enableBackgroundPlayback: true` (which declares `FOREGROUND_SERVICE`, `FOREGROUND_SERVICE_MEDIA_PLAYBACK`, and the `AudioControlsService` mediaPlayback foreground service on Android), while `recordAudioAndroid: false` and `enableBackgroundRecording: false` keep the microphone out of the app.
+
+Notifications on Android 13+ need `POST_NOTIFICATIONS` declared and granted at runtime. The `expo-audio` plugin only adds that permission for background *recording*, so the app adds it through `app.json` `android.permissions`. The provider requests it once per session at the first user-initiated play via `requestNotificationPermissionsAsync()` (Android only, non-blocking); if denied, playback continues and only the notification/lock-screen surface is affected.
+
+The audio session is set to `shouldPlayInBackground: true` (plus the existing `doNotMix` focus and `playsInSilentMode: true`). The provider activates lock-screen controls on every track change with `setActiveForLockScreen(true, { title })` and seek-forward/backward actions; `doNotMix` is required for the controls to associate with the player. Only honest metadata is shown: the track title, since `expo-media-library` exposes no artist/album/artwork (D-009). Headphone/Bluetooth disconnect stops audio automatically at the OS level (documented expo-audio behavior) and needs device verification only.
+
+The remaining Phase 5 task — persisting and restoring a playback checkpoint — is deferred to the next increment: it will use `expo-sqlite`'s key/value API (per D-005) with a snapshot policy and a validate-before-restore step, and adding that native module should be combined with the Phase 6 database work so both arrive in one development build.
 
 ## Open questions requiring owner input or device evidence
 
@@ -89,6 +101,7 @@ Track-end behavior: `repeat: 'one'` repeats the current track; `'all'` wraps to 
 4. What threshold should qualify a play and make an annual Replay eligible? Until decided, do not display hard-coded recap numbers.
 5. Does the Phase 3 device proof show that `expo-media-library` supplies enough metadata and artwork? If not, select and test a minimal native alternative before feature implementation.
 6. Phase 4 foreground playback (queue semantics, seek, track-end, shuffle/repeat, and an unplayable file) is implemented but still needs a physical-device check; record the results before treating Phase 4 as complete.
+7. Phase 5 needs physical-device evidence for sustained screen-off playback, notification/lock-screen actions, interruption recovery, and disconnect behavior, plus a playback-checkpoint persistence decision (snapshot policy and restore validation).
 
 ## Research references
 

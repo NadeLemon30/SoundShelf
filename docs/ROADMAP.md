@@ -24,15 +24,23 @@ Phase advancement requires user approval. Completion criteria mean evidence exis
 
 **Tasks:** request only audio-media access at an appropriate user action; query and page audio assets; normalize stable track identifiers and available metadata; validate playback URIs; implement Songs, and search (Artists and artwork remain blocked on a metadata source); define a rescan/update strategy.
 
-**Completion criteria:** tested on a physical Android device with real files, including permission denial, empty library, missing fields/artwork, and an unplayable file. *(The owner reported device testing completed on 2026-10-12 and approved moving on; detailed figures were not captured in this session. Artists and embedded artwork remain unavailable from `expo-media-library` — see D-009.)*
+**Completion criteria:** tested on a physical Android device with real files, including permission denial, empty library, missing fields/artwork, and an unplayable file. *(The owner reported device testing on 2026-10-12; detailed figures were not captured in this session. Artists and embedded artwork remain unavailable from `expo-media-library` — see D-009.)*
 
-## 4. Core playback — current
+## 4. Core playback — implemented; device proof owner-reported
 
 **Objective:** play local tracks reliably in the foreground.
 
 **Tasks:** introduce the approved audio module; implement player lifecycle, queue, seek, next/previous, shuffle, repeat modes, track-end behavior, and mini-player/Now Playing integration.
 
-**Completion criteria:** queue semantics and all controls are device-tested with local media.
+**Completion criteria:** queue semantics and all controls are device-tested with local media. *(The owner reported device testing on 2026-10-13; detailed results were not captured in this session.)*
+
+## 5. Background playback — current
+
+**Objective:** preserve expected music-player behavior outside the foreground.
+
+**Tasks:** add required config plugin/settings and development build; wire notification and lock-screen controls; configure interruptions/audio focus; verify headphone/Bluetooth disconnect behavior; persist and restore an appropriate playback checkpoint.
+
+**Completion criteria:** physical-device tests confirm sustained screen-off playback, notification/lock-screen actions, interruption recovery, disconnect behavior, and resume policy.
 
 ## 5. Background playback
 

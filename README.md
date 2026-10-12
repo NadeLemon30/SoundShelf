@@ -13,8 +13,9 @@ The project is in active development. Its current local-library work is an early
 - A Songs/Albums library view and local, in-memory search by song title or filename. Albums use Android's per-file album id (the storage folder); tracks with no album id appear under "Unknown album".
 - Clear empty, permission-denied (with an app-settings path when Android stops prompting), scan-error, and skipped-file states.
 - **Foreground playback** with a queue, play/pause, next/previous, seek, shuffle, repeat (off/all/one), and automatic track-end advance. A mini-player sits on every tab and opens a full-screen Now Playing view.
+- **Background-playback configuration**: the audio session keeps playing when the app is backgrounded, and the current track is surfaced through lock-screen and notification media controls. This is implemented but still needs physical-device verification.
 
-Library metadata is intentionally conservative: artist, genre, and embedded artwork are not shown yet. Album names reflect Android's reported folder names rather than parsed audio tags. A scan is not yet saved across app restarts, and playback stops when the app leaves the foreground.
+Library metadata is intentionally conservative: artist, genre, and embedded artwork are not shown yet. Album names reflect Android's reported folder names rather than parsed audio tags. A scan is not yet saved across app restarts, and the playback position is not yet restored after a restart.
 
 ## Planned scope
 
@@ -34,7 +35,7 @@ See the ordered [roadmap](docs/ROADMAP.md) for completion criteria and the curre
 - npm; the repository uses `package-lock.json`.
 - Android Studio / Android SDK and a physical Android device for device-library and playback testing.
 
-Expo Go can be useful for basic UI checks, but it is not sufficient evidence for Android media-library or future background-playback behavior. Use a SoundShelf development build for those tests.
+Expo Go can be useful for basic UI checks, but it is not sufficient evidence for Android media-library or background-playback behavior. Use a SoundShelf development build for those tests.
 
 ## Install and run
 
@@ -49,7 +50,7 @@ For the currently implemented device-library scan and foreground playback, conne
 npx expo run:android --device
 ```
 
-`expo-audio` is a native module, so playback requires a fresh development build (rebuilt after this change); an older build without it cannot play audio.
+`expo-audio` is a native module, so playback requires a fresh development build (rebuilt after this change); an older build without it cannot play audio. Background playback and the lock-screen/notification controls also require a rebuilt development build, because they change native configuration through the `expo-audio` config plugin. On Android 13+, grant the notification permission when prompted at first play to see the media notification in the shade.
 
 Expo uses Continuous Native Generation for this repository. The command generates the Android project as part of the build; do not add or manually edit a committed `android/` directory.
 
@@ -101,8 +102,8 @@ Routes belong in `src/app/`; feature logic and reusable code belong outside it.
 
 ## Current limitations
 
-- Background playback, playlists, favourites, analytics, and Replay Stories are not implemented.
-- Playback is foreground-only: audio stops when the app is backgrounded, and lock-screen/notification controls are not added yet.
+- Background playback is configured and coded but **not yet device-verified**; playlists, favourites, analytics, and Replay Stories are not implemented.
+- Playback does not survive a restart: scanned tracks are held only in memory, and there is no restore-checkpoint yet. Lock-screen/notification controls are added and wait on a physical-device check; the remaining Phase 5 task is persisting/restoring a playback checkpoint.
 - Scanned tracks are held only in memory and are lost after restarting the app; playback does not survive a restart.
 - Artist, embedded artwork, and corrupt-file behavior require physical-device validation.
 - Album grouping and names are implemented from Android's media store but are not yet recorded as device-verified.

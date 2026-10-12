@@ -1,5 +1,6 @@
-import { type AudioPlayer, setAudioModeAsync, useAudioPlayer } from 'expo-audio';
+import { type AudioPlayer, requestNotificationPermissionsAsync, setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Platform } from 'react-native';
 
 import type { LibraryTrack } from '@/features/library/types';
 
@@ -48,13 +49,15 @@ export function PlaybackProvider({ children }: PropsWithChildren) {
   const finishHandledRef = useRef(false);
   /** Set while a freshly loaded source should start playing as soon as it is ready. */
   const pendingPlayRef = useRef(false);
+  /** Android's notification permission is requested once per session, at the first user play. */
+  const notificationRequestedRef = useRef(false);
 
   const currentTrack = order.length > 0 && index >= 0 && index < order.length ? queue[order[index]] ?? null : null;
 
-  // Foreground music playback: take audio focus so other apps pause, and keep playing
-  // when the device ringer is on silent. Background playback is a later phase.
+  // Music playback: take audio focus (other apps pause), keep playing in silent mode,
+  // and continue in the background so playback survives app backgrounding and screen lock.
   useEffect(() => {
-    setAudioModeAsync({ interruptionMode: 'doNotMix', playsInSilentMode: true, shouldPlayInBackground: false }).catch(() => {
+    setAudioModeAsync({ interruptionMode: 'doNotMix', playsInSilentMode: true, shouldPlayInBackground: true }).catch(() => {
       // Non-fatal: playback still works with the platform defaults.
     });
   }, []);
@@ -67,6 +70,13 @@ export function PlaybackProvider({ children }: PropsWithChildren) {
     finishHandledRef.current = false;
     pendingPlayRef.current = true;
     player.replace({ uri: currentTrack.uri });
+    // Activate media controls (notification drawer / lock screen) for the current track.
+    // On Android this also keeps the foreground service alive for sustained background playback.
+    player.setActiveForLockScreen(
+      true,
+      { title: currentTrack.title },
+      { showSeekBackward: true, showSeekForward: true },
+    );
   }, [currentTrack, player]);
 
   const advanceForFinish = useCallback(() => {
@@ -118,6 +128,14 @@ export function PlaybackProvider({ children }: PropsWithChildren) {
     (track: LibraryTrack, list: LibraryTrack[]) => {
       if (list.length === 0) {
         return;
+      }
+      // Android 13+ needs notification permission to show media controls in the shade.
+      // Ask once per session, at the first user-initiated play, without blocking playback.
+      if (Platform.OS === 'android' && !notificationRequestedRef.current) {
+        notificationRequestedRef.current = true;
+        requestNotificationPermissionsAsync().catch(() => {
+          // Playback continues; the lock-screen notification may simply be unavailable.
+        });
       }
       const startIndex = list.findIndex((item) => item.id === track.id);
       const safeStart = startIndex >= 0 ? startIndex : 0;
