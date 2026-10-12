@@ -8,6 +8,12 @@
 - **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
 - **Native projects:** no `android/` or `ios/` directories; use CNG/config plugins when native configuration is needed.
 
+## Update (2026-10-12) — honest empty-library state
+
+- A finished scan that returns zero tracks now shows "No music found" with a "Scan again" action instead of the pre-scan "No music scanned yet" copy, which wrongly implied the user had not scanned at all. The Search tab reflects the same distinction.
+- **Not device-verified:** the empty-library flow needs a device with no audio (or with its audio removed).
+- Files: `src/app/library.tsx`, `src/app/search.tsx`.
+
 ## Update (2026-10-12) — permission denial handling
 
 - The Library screen now distinguishes a temporary denial from a permanent one. When `requestPermissionsAsync` reports `canAskAgain === false`, the denied state explains that access is turned off and offers an "Open app settings" button (`Linking.openSettings()`) instead of a retry that Android would silently ignore.
@@ -94,6 +100,12 @@ Permission denial handling (2026-10-12):
 - `src/app/library.tsx`
 - `docs/PROGRESS.md`
 
+Empty-library state (2026-10-12):
+
+- `src/app/library.tsx`
+- `src/app/search.tsx`
+- `docs/PROGRESS.md`
+
 ## Verification record
 
 | Command / check | Result |
@@ -115,6 +127,8 @@ Permission denial handling (2026-10-12):
 | `adb devices` during the album-browsing session | No device attached; album grouping/titles remain device-unverified. |
 | `npm.cmd run lint` after the permission-denial increment | Passed. |
 | `npx.cmd tsc --noEmit` after the permission-denial increment | Passed. |
+| `npm.cmd run lint` after the empty-library increment | Passed. |
+| `npx.cmd tsc --noEmit` after the empty-library increment | Passed. |
 
 ## Exact next step
 

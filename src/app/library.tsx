@@ -20,6 +20,7 @@ export default function LibraryScreen() {
   const isBusy = status === 'scanning';
   const isDenied = status === 'denied';
   const isBlocked = isDenied && permissionBlocked;
+  const isScannedEmpty = status === 'ready' && tracks.length === 0;
   const selectedAlbum = albums.find((album) => album.id === selectedAlbumId) ?? null;
 
   const rescan = () => {
@@ -60,8 +61,8 @@ export default function LibraryScreen() {
         </View>
         {skippedAssetCount > 0 ? <ThemedText themeColor="textMuted" type="small">{skippedAssetCount} audio item{skippedAssetCount === 1 ? '' : 's'} could not be opened and {skippedAssetCount === 1 ? 'was' : 'were'} left out.</ThemedText> : null}
       </View> : <View style={styles.emptyWrap}>
-        <EmptyState title={isDenied ? 'Audio access is needed' : status === 'error' ? 'Library scan unavailable' : isBusy ? 'Scanning your music' : 'No music scanned yet'} description={isDenied ? (isBlocked ? 'Audio access is turned off for SoundShelf. Open the app settings and allow music and audio access, then scan again.' : 'Allow audio access to let SoundShelf list music already on this device.') : errorMessage ?? (isBusy ? 'Reading local audio files. This can take a moment for larger libraries.' : 'Nothing is read until you choose to scan your device music.')} />
-        <Pressable accessibilityRole="button" accessibilityLabel={isBlocked ? 'Open SoundShelf app settings' : 'Scan device music library'} disabled={isBusy} onPress={isBlocked ? () => { void Linking.openSettings(); } : scan} style={({ pressed }) => [styles.scanButton, { backgroundColor: theme.accent }, (pressed || isBusy) && styles.pressed]}><ThemedText style={styles.scanLabel}>{isBusy ? 'Scanning music…' : isBlocked ? 'Open app settings' : isDenied ? 'Try audio access again' : 'Scan device music'}</ThemedText></Pressable>
+        <EmptyState title={isDenied ? 'Audio access is needed' : status === 'error' ? 'Library scan unavailable' : isBusy ? 'Scanning your music' : isScannedEmpty ? 'No music found' : 'No music scanned yet'} description={isDenied ? (isBlocked ? 'Audio access is turned off for SoundShelf. Open the app settings and allow music and audio access, then scan again.' : 'Allow audio access to let SoundShelf list music already on this device.') : errorMessage ?? (isBusy ? 'Reading local audio files. This can take a moment for larger libraries.' : isScannedEmpty ? 'The scan finished but found no audio on this device. Add music, then scan again.' : 'Nothing is read until you choose to scan your device music.')} />
+        <Pressable accessibilityRole="button" accessibilityLabel={isBlocked ? 'Open SoundShelf app settings' : 'Scan device music library'} disabled={isBusy} onPress={isBlocked ? () => { void Linking.openSettings(); } : scan} style={({ pressed }) => [styles.scanButton, { backgroundColor: theme.accent }, (pressed || isBusy) && styles.pressed]}><ThemedText style={styles.scanLabel}>{isBusy ? 'Scanning music…' : isBlocked ? 'Open app settings' : isDenied ? 'Try audio access again' : isScannedEmpty ? 'Scan again' : 'Scan device music'}</ThemedText></Pressable>
       </View>}
       <MiniPlayer />
     </Screen>

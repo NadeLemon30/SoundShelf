@@ -26,7 +26,7 @@ export default function SearchScreen() {
       {status === 'ready' && tracks.length > 0 ? <View style={styles.results}>
         <TextInput accessibilityLabel="Search local songs" autoCapitalize="none" autoCorrect={false} onChangeText={setQuery} placeholder="Search songs" placeholderTextColor={theme.textMuted} style={[styles.input, { backgroundColor: theme.surfaceRaised, color: theme.text }]} value={query} />
         {query ? results.length ? results.map((track) => <View key={track.id} style={[styles.result, { borderColor: theme.outline }]}><ThemedText type="smallBold" numberOfLines={1}>{track.title}</ThemedText><ThemedText type="small" themeColor="textMuted" numberOfLines={1}>{track.filename}</ThemedText></View>) : <EmptyState title="No matching songs" description="Try a different song or filename." /> : <EmptyState title="Search your songs" description="Type a song name or filename to search your scanned library." />}
-      </View> : <EmptyState title="Scan music to search it" description="Your local songs become searchable after you scan the device library from Home or Library." />}
+      </View> : <EmptyState title={status === 'ready' ? 'No music found' : 'Scan music to search it'} description={status === 'ready' ? 'The scan found no audio on this device, so there is nothing to search yet. Add music, then scan from the Library tab.' : 'Your local songs become searchable after you scan the device library from Home or Library.'} />}
       <MiniPlayer />
     </Screen>
   );
