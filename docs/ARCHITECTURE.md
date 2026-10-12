@@ -64,7 +64,7 @@ Planned tables: `schema_migrations`, `settings`, `playback_checkpoint`, `playlis
 
 ## Media discovery and metadata
 
-The first implementation must request audio access only, query Android audio assets incrementally, and use content URIs rather than filesystem paths. Permission denial is a first-class screen with a retry/settings route; an empty library is a separate state. Metadata and artwork are optional: display filename-derived or “Unknown” fallbacks and a generated placeholder.
+The first implementation must request audio access only, query Android audio assets incrementally, and use content URIs rather than filesystem paths. Permission denial is a first-class screen: a temporary denial offers a retry, while a permanent denial (`canAskAgain === false`) offers an app-settings route. Returning to the foreground re-checks access and resumes a scan if it was granted. An empty library is a separate state. Metadata and artwork are optional: display filename-derived or “Unknown” fallbacks and a generated placeholder.
 
 Implemented album browsing groups tracks by the Android album id each asset reports (`BUCKET_ID` / `Asset.albumId`) and labels each group with `getAlbumsAsync()`'s folder name. This is a device-derived grouping, not parsed audio tags: artists, embedded titles, and artwork are still not read (see `DECISIONS.md` D-009).
 

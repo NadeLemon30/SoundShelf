@@ -8,6 +8,13 @@
 - **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
 - **Native projects:** no `android/` or `ios/` directories; use CNG/config plugins when native configuration is needed.
 
+## Update (2026-10-12) — permission denial handling
+
+- The Library screen now distinguishes a temporary denial from a permanent one. When `requestPermissionsAsync` reports `canAskAgain === false`, the denied state explains that access is turned off and offers an "Open app settings" button (`Linking.openSettings()`) instead of a retry that Android would silently ignore.
+- While the library is denied, returning to the foreground re-checks `getPermissionsAsync`. If access was granted in system settings the scan runs automatically; otherwise the blocked flag is refreshed so the correct action stays visible.
+- **Not device-verified:** permission flows require a physical Android device; this increment is verified by lint/type-check only.
+- Files: `src/features/library/library-provider.tsx`, `src/app/library.tsx`.
+
 ## Update (2026-10-12) — album browsing
 
 - Added a Songs/Albums switch to the Library screen. Albums are grouped from each track's Android album id (`MediaStore` `BUCKET_ID`, exposed as legacy `expo-media-library` `Asset.albumId`). Album names come from `getAlbumsAsync()` (`BUCKET_DISPLAY_NAME`, the Android storage folder name).
@@ -66,7 +73,9 @@
 - Background playback must be validated in an Android development build after the Audio config plugin is introduced; Expo Go is insufficient release evidence.
 - Play-count qualification, local time-zone bucket policy, Replay eligibility, Android support floor, and folder-browsing expectations are still open.
 
-## Files changed in the album-browsing increment
+## Files changed in recent increments
+
+Album browsing (2026-10-12):
 
 - `src/features/library/types.ts`
 - `src/features/library/albums.ts` (new)
@@ -77,6 +86,12 @@
 - `README.md`
 - `docs/ARCHITECTURE.md`
 - `docs/DECISIONS.md`
+- `docs/PROGRESS.md`
+
+Permission denial handling (2026-10-12):
+
+- `src/features/library/library-provider.tsx`
+- `src/app/library.tsx`
 - `docs/PROGRESS.md`
 
 ## Verification record
@@ -98,6 +113,8 @@
 | `npx.cmd tsc --noEmit` after the album-browsing increment | Passed. |
 | `git diff --check` after the album-browsing increment | Passed (only pre-existing LF→CRLF warnings). |
 | `adb devices` during the album-browsing session | No device attached; album grouping/titles remain device-unverified. |
+| `npm.cmd run lint` after the permission-denial increment | Passed. |
+| `npx.cmd tsc --noEmit` after the permission-denial increment | Passed. |
 
 ## Exact next step
 

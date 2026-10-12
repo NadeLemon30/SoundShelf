@@ -11,7 +11,7 @@ The project is in active development. Its current local-library work is an early
 - Local audio discovery through Android's media library, paged for larger collections.
 - Filename-based song titles, resolved local URIs, duration and file timestamps where available.
 - A Songs/Albums library view and local, in-memory search by song title or filename. Albums use Android's per-file album id (the storage folder); tracks with no album id appear under "Unknown album".
-- Clear empty, permission-denied, scan-error, and skipped-file states.
+- Clear empty, permission-denied (with an app-settings path when Android stops prompting), scan-error, and skipped-file states.
 
 Library metadata is intentionally conservative: artist, genre, and embedded artwork are not shown yet. Album names reflect Android's reported folder names rather than parsed audio tags. A scan is not yet saved across app restarts.
 
