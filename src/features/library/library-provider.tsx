@@ -2,13 +2,14 @@ import * as MediaLibrary from 'expo-media-library/legacy';
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 
 import { scanDeviceAudio } from './media-library-service';
-import type { LibraryTrack } from './types';
+import type { LibraryAlbum, LibraryTrack } from './types';
 
 type LibraryStatus = 'notRequested' | 'scanning' | 'ready' | 'denied' | 'error';
 
 type LibraryContextValue = {
   status: LibraryStatus;
   tracks: LibraryTrack[];
+  albums: LibraryAlbum[];
   skippedAssetCount: number;
   errorMessage: string | null;
   needsRescan: boolean;
@@ -20,6 +21,7 @@ const LibraryContext = createContext<LibraryContextValue | null>(null);
 export function LibraryProvider({ children }: PropsWithChildren) {
   const [status, setStatus] = useState<LibraryStatus>('notRequested');
   const [tracks, setTracks] = useState<LibraryTrack[]>([]);
+  const [albums, setAlbums] = useState<LibraryAlbum[]>([]);
   const [skippedAssetCount, setSkippedAssetCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [needsRescan, setNeedsRescan] = useState(false);
@@ -47,6 +49,7 @@ export function LibraryProvider({ children }: PropsWithChildren) {
 
       const result = await scanDeviceAudio();
       setTracks(result.tracks);
+      setAlbums(result.albums);
       setSkippedAssetCount(result.skippedAssetCount);
       setNeedsRescan(false);
       setStatus('ready');
@@ -57,7 +60,7 @@ export function LibraryProvider({ children }: PropsWithChildren) {
     }
   }, []);
 
-  const value = useMemo(() => ({ status, tracks, skippedAssetCount, errorMessage, needsRescan, scan }), [errorMessage, needsRescan, scan, skippedAssetCount, status, tracks]);
+  const value = useMemo(() => ({ status, tracks, albums, skippedAssetCount, errorMessage, needsRescan, scan }), [albums, errorMessage, needsRescan, scan, skippedAssetCount, status, tracks]);
   return <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>;
 }
 

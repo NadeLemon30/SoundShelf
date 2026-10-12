@@ -10,10 +10,10 @@ The project is in active development. Its current local-library work is an early
 - A deliberate **Scan device music** action that requests Android audio access only when selected.
 - Local audio discovery through Android's media library, paged for larger collections.
 - Filename-based song titles, resolved local URIs, duration and file timestamps where available.
-- A library list and local, in-memory search by song title or filename.
+- A Songs/Albums library view and local, in-memory search by song title or filename. Albums use Android's per-file album id (the storage folder); tracks with no album id appear under "Unknown album".
 - Clear empty, permission-denied, scan-error, and skipped-file states.
 
-Library metadata is intentionally conservative: artist, album, embedded artwork, and genre are not shown unless device testing verifies that they are available reliably. A scan is not yet saved across app restarts.
+Library metadata is intentionally conservative: artist, genre, and embedded artwork are not shown yet. Album names reflect Android's reported folder names rather than parsed audio tags. A scan is not yet saved across app restarts.
 
 ## Planned scope
 
@@ -78,7 +78,7 @@ At present, the workflow uses the generated debug signing configuration. Its APK
 ```text
 src/app/               Expo Router screens and navigation layouts
 src/components/        reusable UI components
-src/features/library/  local-media permission and scanning logic
+src/features/library/  local-media permission, scanning, and album grouping logic
 src/hooks/             reusable React hooks
 src/constants/         theme tokens and shared values
 docs/                  roadmap, architecture, decisions, and handoff notes
@@ -99,5 +99,6 @@ Routes belong in `src/app/`; feature logic and reusable code belong outside it.
 
 - Playback controls, queues, and background playback are not implemented.
 - Scanned tracks are held only in memory and are lost after restarting the app.
-- Artist, album, artwork, and corrupt-file behavior require physical-device validation.
+- Artist, embedded artwork, and corrupt-file behavior require physical-device validation.
+- Album grouping and names are implemented from Android's media store but are not yet device-verified.
 - The local-media flow requires a development-build test before it can be considered verified.

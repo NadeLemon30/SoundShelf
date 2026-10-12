@@ -56,6 +56,14 @@ Persist qualified listening events/duration, then derive all day/week/month/year
 
 The installed new API's TypeScript contract exposes no audio tag or embedded-artwork fields. Therefore the current UI derives a display title from the filename and does not fabricate artists, albums, or cover art. A physical Android proof must determine whether the API behavior is sufficient for playback and whether a minimal native MediaStore/tag reader needs to be evaluated before completing Phase 3.
 
+## D-009: Album browsing groups by MediaStore bucket id, without embedded tags
+
+**Status:** implemented; physical-device validation pending (2026-10-12)
+
+The Library screen gained a Songs/Albums switch. Albums are built from the album id each audio asset reports (Android MediaStore `BUCKET_ID`, surfaced as the legacy `expo-media-library` `Asset.albumId`). Album names come from `getAlbumsAsync()` (`BUCKET_DISPLAY_NAME`, which on Android is the storage folder name). Grouping is a pure function in `src/features/library/albums.ts` so it can be reviewed without native calls.
+
+This deliberately does not read embedded ID3/MP4 tags. The legacy audio API exposes no artist, title, genre, or embedded-artwork fields, so SoundShelf does not fabricate artist data and does not present folder names as verified album tags. Two folders with the same display name stay separate groups, and tracks without an album id share one "Unknown album" group. Artists and artwork remain blocked on the Phase 3 device proof and, if the API proves insufficient, a separately approved native metadata module (see D-004/D-008).
+
 ## Open questions requiring owner input or device evidence
 
 1. Which Android OS versions and physical devices are the initial support/test floor?

@@ -66,6 +66,8 @@ Planned tables: `schema_migrations`, `settings`, `playback_checkpoint`, `playlis
 
 The first implementation must request audio access only, query Android audio assets incrementally, and use content URIs rather than filesystem paths. Permission denial is a first-class screen with a retry/settings route; an empty library is a separate state. Metadata and artwork are optional: display filename-derived or “Unknown” fallbacks and a generated placeholder.
 
+Implemented album browsing groups tracks by the Android album id each asset reports (`BUCKET_ID` / `Asset.albumId`) and labels each group with `getAlbumsAsync()`'s folder name. This is a device-derived grouping, not parsed audio tags: artists, embedded titles, and artwork are still not read (see `DECISIONS.md` D-009).
+
 `expo-media-library` is the planned first option because SDK 57 supports `MediaType.AUDIO` and Android granular permissions. Its real-device proof of concept must verify: enumerable audio files, usable URI handoff to `expo-audio`, title/artist/album/duration availability, artwork availability, pagination/refresh behavior, and behavior across Android versions. If it cannot provide required metadata/artwork, record findings in `DECISIONS.md` and evaluate a narrowly scoped native MediaStore/metadata module before implementation proceeds.
 
 ## Playback and operating-system integration
