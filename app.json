@@ -28,6 +28,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "plugins": [
+      "./plugins/with-strip-activity-fragment-state",
       "expo-router",
       [
         "expo-media-library",

@@ -44,15 +44,16 @@ npm install
 npx expo start
 ```
 
-For the currently implemented device-library scan and foreground playback, connect an Android device with USB debugging enabled and create/run a local development build:
+For the currently implemented device-library scan and playback, connect an Android device with USB debugging enabled and create/run a local development build:
 
 ```bash
+npx expo prebuild --clean --platform android
 npx expo run:android --device
 ```
 
 `expo-audio` is a native module, so playback requires a fresh development build (rebuilt after this change); an older build without it cannot play audio. Background playback and the lock-screen/notification controls also require a rebuilt development build, because they change native configuration through the `expo-audio` config plugin. On Android 13+, grant the notification permission when prompted at first play to see the media notification in the shade.
 
-Expo uses Continuous Native Generation for this repository. The command generates the Android project as part of the build; do not add or manually edit a committed `android/` directory.
+Expo uses Continuous Native Generation for this repository. The `android/` directory is generated and git-ignored; do not commit or manually edit it. After any `app.json` or config-plugin change you must run `npx expo prebuild --clean --platform android` (or delete `android/`) before `npx expo run:android` — otherwise the existing `android/` folder is reused and the new native config never reaches the installed app. This is the usual reason a config change appears correct (e.g., in `npx expo config --type introspect`) yet has no effect on the device.
 
 Once installed, open SoundShelf, select **Scan device music**, grant audio permission, then review the Library and Search tabs. Tap a song to play it; the mini-player opens the Now Playing screen, where you can seek, skip, shuffle, and change repeat. Test both a device containing audio files and the no-audio / permission-denied cases.
 

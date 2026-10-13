@@ -67,6 +67,31 @@ export function LibraryProvider({ children }: PropsWithChildren) {
   }, []);
 
   /**
+   * On launch, if audio access is already granted (for example the process was killed
+   * and restarted after a previous scan), scan automatically so the library comes back
+   * without forcing a manual "Scan device music" tap. When access is not granted yet,
+   * the manual flow stays untouched so the first scan still explains the permission.
+   */
+  useEffect(() => {
+    if (status !== 'notRequested') {
+      return;
+    }
+    let cancelled = false;
+    MediaLibrary.getPermissionsAsync(false, ['audio'])
+      .then((permission) => {
+        if (!cancelled && permission.status === 'granted') {
+          void scan();
+        }
+      })
+      .catch(() => {
+        // Leave the notRequested state if the permission query fails.
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [scan, status]);
+
+  /**
    * When access is denied, re-check on return from the system settings screen. If the
    * user granted access there, continue straight into a scan; otherwise refresh whether
    * Android will still prompt so the UI can offer the correct action.
