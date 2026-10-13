@@ -7,6 +7,21 @@
 - **Framework:** Expo SDK 57 (`expo ~57.0.27`), React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57.
 - **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
 - **Native projects:** `android/` is generated locally by `expo run:android` and is git-ignored. Regenerate it with `npx expo prebuild --clean --platform android` after any `app.json`/config-plugin change — a plain `expo run:android` reuses a stale `android/` and silently ignores the new config. `ios/` is not generated locally.
+- **Latest increment (2026-10-13):** app icon now sourced from `assets/SoundShelf.png` (Android adaptive icon + iOS icon regenerated from it), Expo-blue splash replaced with the SoundShelf logo, and a simple launch animation added (`src/components/startup-animation.tsx`). See the update below. **Not device-verified** — `app.json` changed, so the native project must be regenerated before the next `expo run:android`.
+
+## Update (2026-10-13) — app icon and launch animation
+
+Owner request: use the `assets/SoundShelf.png` asset as the app icon and add a simple startup animation.
+
+- **Icon source of truth.** `assets/SoundShelf.png` is a 496x496 RGBA illustration (dark teal; opaque edge colour sampled at `#185048`; only the rounded corners are transparent). It is **byte-identical** to the previously committed `assets/images/icon.png` (same SHA-256), so the visible icon was already this artwork for the `icon` field. What was still Expo-branded was everything else: the Android adaptive icon (Expo's white/blue starter foreground+background), the iOS icon (`assets/expo.icon`, an Expo-symbol icon-composer bundle), and the splash (Expo logo on `#208AEF`).
+- **Android.** `expo.android.adaptiveIcon.foregroundImage` is now a generated `assets/images/android-icon-foreground.png` (512x512, transparent background, artwork scaled to 66% = 338px and centred, so it sits inside Android's adaptive safe zone) and `adaptiveIcon.backgroundColor` is `#185048` — the artwork's own edge colour, so the safe-zone padding blends with the illustration instead of showing a hard ring. `backgroundImage` and `monochromeImage` were removed: both were Expo-starter assets, and a monochrome (themed-icon) silhouette cannot be derived honestly from a full-bleed illustration, so Android 13+ themed icons fall back to the normal icon.
+- **iOS.** `expo.ios.icon` now points at a generated `assets/images/icon-ios.png` (1024x1024, fully opaque — iOS icons must not carry alpha) instead of the Expo icon-composer bundle.
+- **Base icon.** `expo.icon` now points directly at `./assets/SoundShelf.png` (this is also the legacy `ic_launcher` source). The older, identical `assets/images/icon.png` was left in place rather than deleted.
+- **Splash.** The `expo-splash-screen` plugin now uses `./assets/SoundShelf.png` at `imageWidth: 160` on `#185048` (previously the Expo logo at 76pt on Expo blue `#208AEF`).
+- **Launch animation.** New `src/components/startup-animation.tsx` (plus a `.web.tsx` variant that returns `null`, since web has no native splash). It renders a full-screen overlay that is pixel-identical to the native splash (same `#185048` field, same 160pt logo), calls `SplashScreen.hideAsync()` on its first `onLayout` so the two hand off invisibly, then fades the overlay out over 450 ms with a small `1 → 1.06` scale drift before unmounting via `scheduleOnRN`. It is `pointerEvents="none"`, so it never blocks input, and it uses the same Reanimated `Keyframe` + `react-native-worklets` pattern as the SDK 57 starter. `src/app/_layout.tsx` now calls `SplashScreen.preventAutoHideAsync()` at module scope and renders `<StartupAnimation />` above `<AppTabs />` inside a `flex: 1` `View`.
+- **How the assets were produced.** A one-off Node script using `jimp-compact` (already present as a transitive dependency of `@expo/image-utils`) resized/composited `assets/SoundShelf.png` into the two generated PNGs. The script was deliberately **not** committed (it would add an undeclared dependency on a transitive package); the committed PNGs are the artifacts. Regenerate values: Android foreground = 512x512, artwork 338px centred at (87,87); iOS icon = 1024x1024, opaque `#185048`, artwork 676px centred at (174,174).
+- **Not device-verified.** The launcher icon, the splash, and the launch animation all require a regenerated native project and a rebuilt development build. Because `app.json` changed, run `npx expo prebuild --clean --platform android` before `npx expo run:android --device`; a plain `run:android` would silently reuse the stale `android/` and keep the old Expo icons. The [SDK 57 `expo-splash-screen` docs](https://docs.expo.dev/versions/v57.0.0/sdk/splash-screen/) warn that since SDK 52 a development build does not reflect every config-plugin splash property, so the splash itself should be judged on a release APK (Expo Go shows the app icon instead of the splash at all). No `dark` splash variant was configured; an app-level splash background is the only appearance.
+- Files: `app.json`, `assets/SoundShelf.png` (now referenced), `assets/images/android-icon-foreground.png` (regenerated), `assets/images/icon-ios.png` (new), `src/components/startup-animation.tsx` (new), `src/components/startup-animation.web.tsx` (new), `src/app/_layout.tsx`, `docs/PROGRESS.md`.
 
 ## Update (2026-10-13) — background playback FIXED on device: a backgrounding crash was the real root cause
 
@@ -185,6 +200,17 @@ Phase 5 background playback (2026-10-13):
 - `src/features/library/library-provider.tsx` (auto-scan on launch when audio permission already granted)
 - `docs/ARCHITECTURE.md`, `docs/DECISIONS.md` (D-011), `docs/ROADMAP.md`, `docs/PROGRESS.md`
 
+App icon and launch animation (2026-10-13):
+
+- `app.json` (top-level `icon`, `ios.icon`, `android.adaptiveIcon`, `expo-splash-screen` plugin)
+- `assets/SoundShelf.png` (now referenced as the icon/splash source; previously unreferenced)
+- `assets/images/android-icon-foreground.png` (regenerated from `SoundShelf.png`)
+- `assets/images/icon-ios.png` (new)
+- `src/components/startup-animation.tsx` (new)
+- `src/components/startup-animation.web.tsx` (new)
+- `src/app/_layout.tsx`
+- `docs/PROGRESS.md`
+
 ## Verification record
 
 | Command / check | Result |
@@ -232,8 +258,19 @@ Phase 5 background playback (2026-10-13):
 | Auto-scan-on-launch change (`library-provider.tsx`) — lint and types | Passed (`npm run lint`, `npx tsc --noEmit`). |
 | Second local release build (`.\gradlew.bat :app:assembleRelease` with daemon) | Passed; incremental build reused caches (5m 8s vs ~51m cold). |
 | Auto-scan device verification (2026-10-13, rebuilt APK) | Passed, owner-confirmed: (1) launch fills the library automatically with no scan tap; (2) after swiping the app away in Recents and reopening, the library restores itself automatically. |
+| `assets/SoundShelf.png` vs committed `assets/images/icon.png` | Identical (SHA-256 `b592f013f2e6f5159443e10e59a7c69eef6a9757abc7039c166b1e6ebc060714`); the base app icon was therefore already this artwork. |
+| Generated-asset inspection (`android-icon-foreground.png`, `icon-ios.png`) | Passed: Android foreground is 512x512 with a fully transparent background and opaque artwork bounds exactly 338x338 centred at (87,87) — i.e. inside the 66% safe zone; iOS icon is 1024x1024 with alpha 254-255 (no transparency) and `#185048` corners. |
+| `npm run lint` after the app-icon + launch-animation increment | Passed. |
+| `npx tsc --noEmit` after the app-icon + launch-animation increment | Passed, after switching `StyleSheet.absoluteFillObject` to `StyleSheet.absoluteFill` (RN 0.86 exposes `absoluteFill` as the plain `AbsoluteFillStyle` object; `absoluteFillObject` no longer exists in the installed types). |
+| `npx expo config --type introspect` after the app-icon change | Passed: `icon` resolves to `./assets/SoundShelf.png`, splash image `./assets/SoundShelf.png` with `imageWidth` 160 and resize mode `contain`, `colors.xml` `iconBackground` and `splashscreen_background` both resolve to `#185048`, and `android:icon`/`android:roundIcon` still point at `@mipmap/ic_launcher`/`@mipmap/ic_launcher_round`. |
+| `npx expo export --platform android` bundle check after the app-icon + launch-animation increment | Passed: single Android bundle built, so `require('@/assets/SoundShelf.png')` resolves through Metro. |
+| Device check of the launcher icon, splash, and launch animation | **Not run:** needs `npx expo prebuild --clean --platform android` plus a rebuilt build. Remains device-unverified; per the SDK 57 docs the splash should be judged on a release APK, not a development build or Expo Go. |
 
 ## Exact next step
+
+0. Newest increment (app icon + launch animation) — verify before the Phase 5 items below:
+   - Run `npx expo prebuild --clean --platform android` (mandatory, `app.json` changed) then `npx expo run:android --device`. Confirm the Android launcher icon is the SoundShelf artwork (not the Expo starter icon), that the splash shows the SoundShelf logo on `#185048`, and that the overlay fades out smoothly into the Home tab with no flash and no blocked taps. On Android 13+, confirm the themed-icon behaviour: the adaptive icon has no monochrome layer, so themed icons should fall back to the normal icon rather than showing a wrong-brand silhouette.
+   - Then commit `app.json`, `assets/SoundShelf.png`, `assets/images/android-icon-foreground.png`, `assets/images/icon-ios.png`, and the two `startup-animation` components.
 
 1. Finish Phase 5 device verification on the installed fixed build and record results in `docs/PROGRESS.md`:
    - Audio-focus/interruptions: starting other audio pauses SoundShelf (`doNotMix`) and resuming SoundShelf works afterward.
