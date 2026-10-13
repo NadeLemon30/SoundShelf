@@ -3,7 +3,7 @@
 ## Current state
 
 - **Current phase:** 5 — Background playback. The owner reported a Phase 4 device test on 2026-10-13 and approved moving to Phase 5. **Background playback is now device-verified and working** (2026-10-13): the true root cause of "audio stops on Home/lock" was a backgrounding crash, fixed by the config plugin below. Remaining Phase 5 item: playback-checkpoint persistence (still deferred to combine with the Phase 6 database foundation).
-- **Repository baseline:** `d0f2289` (`Initial commit`). Recent committed work: album browsing, permission denial, empty-library, and Phase 4 foreground playback increments on 2026-10-12; the Phase 5 background-playback increment is described below.
+- **Repository baseline:** `d0f2289` (`Initial commit`); latest checkpoint `d6d81c5` (Phase 5 background-crash fix + auto-scan). Recent committed work: album browsing, permission denial, empty-library, and Phase 4 foreground playback increments on 2026-10-12; the Phase 5 background-playback increments are described below.
 - **Framework:** Expo SDK 57 (`expo ~57.0.27`), React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57.
 - **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
 - **Native projects:** `android/` is generated locally by `expo run:android` and is git-ignored. Regenerate it with `npx expo prebuild --clean --platform android` after any `app.json`/config-plugin change — a plain `expo run:android` reuses a stale `android/` and silently ignores the new config. `ios/` is not generated locally.
