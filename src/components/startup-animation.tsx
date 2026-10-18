@@ -1,9 +1,7 @@
 import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
-import { useState } from 'react';
-import { StyleSheet, View } from 'react-native';
-import Animated, { Easing, Keyframe } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import { useRef, useState } from 'react';
+import { Animated, Easing, StyleSheet } from 'react-native';
 
 /**
  * Keep these in sync with the `expo-splash-screen` plugin in `app.json` so the native splash
@@ -12,59 +10,62 @@ import { scheduleOnRN } from 'react-native-worklets';
 const BACKGROUND = '#185048';
 const LOGO_SIZE = 160;
 
-const FADE_OUT_MS = 450;
-
-/** Hold, then fade the overlay away while the logo drifts slightly outward. */
-const fadeOut = new Keyframe({
-  0: { opacity: 1, transform: [{ scale: 1 }] },
-  35: { opacity: 1, transform: [{ scale: 1 }] },
-  100: { opacity: 0, transform: [{ scale: 1.06 }], easing: Easing.in(Easing.quad) },
-});
+const EXIT_DURATION_MS = 800;
 
 /**
- * Simple launch animation: a full-screen overlay that matches the native splash screen, painted
- * on top of the app for the first frame and then faded out.
+ * A full-screen overlay that matches the native splash screen. Once the native screen is hidden,
+ * the logo visibly expands while the overlay dissolves to reveal the app underneath.
  */
 export function StartupAnimation() {
-  const [fading, setFading] = useState(false);
   const [mounted, setMounted] = useState(true);
+  const hasStarted = useRef(false);
+  const progress = useRef(new Animated.Value(0)).current;
 
   if (!mounted) return null;
 
-  const logo = (
-    <Image
-      accessibilityIgnoresInvertColors
-      contentFit="contain"
-      source={require('@/assets/SoundShelf.png')}
-      style={styles.logo}
-    />
-  );
+  const startExitAnimation = () => {
+    if (hasStarted.current) return;
 
-  // First frame: identical to the native splash screen, so hiding it reveals this overlay seamlessly.
-  if (!fading) {
-    return (
-      <View
-        pointerEvents="none"
-        style={styles.overlay}
-        onLayout={() => {
-          SplashScreen.hideAsync().finally(() => setFading(true));
-        }}>
-        {logo}
-      </View>
-    );
-  }
+    hasStarted.current = true;
+    Animated.timing(progress, {
+      toValue: 1,
+      duration: EXIT_DURATION_MS,
+      easing: Easing.out(Easing.cubic),
+      useNativeDriver: true,
+    }).start(({ finished }) => {
+      if (finished) setMounted(false);
+    });
+  };
+
+  const overlayOpacity = progress.interpolate({
+    inputRange: [0, 0.45, 1],
+    outputRange: [1, 1, 0],
+  });
+  const logoOpacity = progress.interpolate({
+    inputRange: [0, 0.6, 1],
+    outputRange: [1, 1, 0],
+  });
+  const logoScale = progress.interpolate({
+    inputRange: [0, 1],
+    outputRange: [1, 1.28],
+  });
 
   return (
     <Animated.View
       pointerEvents="none"
-      style={styles.overlay}
-      entering={fadeOut.duration(FADE_OUT_MS).withCallback((finished) => {
-        'worklet';
-        if (finished) {
-          scheduleOnRN(setMounted, false);
-        }
-      })}>
-      {logo}
+      style={[styles.overlay, { opacity: overlayOpacity }]}
+      onLayout={() => {
+        // The matching React overlay has painted, so hiding native splash cannot expose a blank frame.
+        void SplashScreen.hideAsync().finally(startExitAnimation);
+      }}>
+      <Animated.View style={{ opacity: logoOpacity, transform: [{ scale: logoScale }] }}>
+        <Image
+          accessibilityIgnoresInvertColors
+          contentFit="contain"
+          source={require('@/assets/SoundShelf.png')}
+          style={styles.logo}
+        />
+      </Animated.View>
     </Animated.View>
   );
 }
