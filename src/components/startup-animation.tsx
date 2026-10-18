@@ -13,8 +13,8 @@ const LOGO_SIZE = 160;
 const EXIT_DURATION_MS = 800;
 
 /**
- * A full-screen overlay that matches the native splash screen. Once the native screen is hidden,
- * the logo visibly expands while the overlay dissolves to reveal the app underneath.
+ * A full-screen overlay that takes over as soon as React draws. It starts its visible exit on the
+ * very next frame after the native splash is hidden, so it never becomes a second static splash.
  */
 export function StartupAnimation() {
   const [mounted, setMounted] = useState(true);
@@ -55,8 +55,10 @@ export function StartupAnimation() {
       pointerEvents="none"
       style={[styles.overlay, { opacity: overlayOpacity }]}
       onLayout={() => {
-        // The matching React overlay has painted, so hiding native splash cannot expose a blank frame.
-        void SplashScreen.hideAsync().finally(startExitAnimation);
+        // The overlay has painted, so hide synchronously and start motion on the next displayed frame.
+        // `hide()` is the current SDK API; `hideAsync()` exists only for backwards compatibility.
+        SplashScreen.hide();
+        requestAnimationFrame(startExitAnimation);
       }}>
       <Animated.View style={{ opacity: logoOpacity, transform: [{ scale: logoScale }] }}>
         <Image

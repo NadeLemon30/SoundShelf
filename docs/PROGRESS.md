@@ -16,7 +16,7 @@
 Owner report: the launch showed the SoundShelf icon but no perceptible motion. The original custom overlay used a 450 ms dissolve with a stationary hold and only a 6% logo scale change, which was too subtle to read as animation during a real device launch.
 
 - Reworked `src/components/startup-animation.tsx` to retain one React Native `Animated.View` overlay throughout the native-splash handoff instead of replacing a static `View` with a Reanimated entering view.
-- After the matching React overlay is laid out and `SplashScreen.hideAsync()` resolves, the SoundShelf logo now visibly scales from 1x to 1.28x and fades, while the overlay begins dissolving after 360 ms and completes at 800 ms. The UI thread drives opacity and transform with `useNativeDriver: true`; the overlay remains `pointerEvents="none"`.
+- After the matching React overlay is laid out, `SplashScreen.hide()` hides the native splash immediately and the next displayed frame starts the custom exit. The SoundShelf logo visibly scales from 1x to 1.28x and fades, while the overlay begins dissolving after 360 ms and completes at 800 ms. The UI thread drives opacity and transform with `useNativeDriver: true`; the overlay remains `pointerEvents="none"`.
 - The existing icon/splash device verification is still required. This behavioral adjustment is static-check verified only; it is not yet verified on hardware.
 
 Files: `src/components/startup-animation.tsx`, `docs/PROGRESS.md`.
