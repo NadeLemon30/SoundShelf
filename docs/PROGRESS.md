@@ -21,6 +21,15 @@ Owner report: the launch showed the SoundShelf icon but no perceptible motion. T
 
 Files: `src/components/startup-animation.tsx`, `docs/PROGRESS.md`.
 
+## Update (2026-10-20) - extended launch hold and graphic exit
+
+- The native/React handoff retains the matching SoundShelf icon splash for an intentional **two seconds** after React's overlay has drawn. Only then does the graphic exit begin, so the branded icon is visible long enough to register before the app appears.
+- The exit is now music-inspired rather than a logo-only dissolve: two expanding teal sound rings, a soft diagonal light sweep, and a three-bar equalizer animate around the logo while it grows and fades. All properties use React Native's native animation driver; the overlay remains non-interactive and unmounts when finished.
+- This is a JavaScript-only visual change, so no native rebuild is required to compile it. It remains device-unverified and should be assessed alongside the existing launcher/splash verification on a release APK.
+- Static verification: `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check` passed (the only Git output was the repository's existing LF-to-CRLF warning).
+
+Files: `src/components/startup-animation.tsx`, `docs/PROGRESS.md`.
+
 Owner request: use the `assets/SoundShelf.png` asset as the app icon and add a simple startup animation.
 
 - **Icon source of truth.** `assets/SoundShelf.png` is a 496x496 RGBA illustration (dark teal; opaque edge colour sampled at `#185048`; only the rounded corners are transparent). It is **byte-identical** to the previously committed `assets/images/icon.png` (same SHA-256), so the visible icon was already this artwork for the `icon` field. What was still Expo-branded was everything else: the Android adaptive icon (Expo's white/blue starter foreground+background), the iOS icon (`assets/expo.icon`, an Expo-symbol icon-composer bundle), and the splash (Expo logo on `#208AEF`).
