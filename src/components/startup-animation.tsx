@@ -13,13 +13,32 @@ const ICON_HOLD_MS = 2_000;
 const GRAPHIC_EXIT_DURATION_MS = 1_150;
 
 /**
+ * Module-level animation driver. `StartupAnimation` renders at most once per app lifetime
+ * (it unmounts itself), so a stable module-level `Animated.Value` is safe and lets us keep
+ * all the derived interpolations outside React's render path — which satisfies the
+ * react-hooks/refs compiler rule without needing refs or useMemo inside the component.
+ */
+const _progress = new Animated.Value(0);
+const overlayOpacity = _progress.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 1, 0] });
+const logoOpacity = _progress.interpolate({ inputRange: [0, 0.72, 1], outputRange: [1, 1, 0] });
+const logoScale = _progress.interpolate({ inputRange: [0, 0.62, 1], outputRange: [1, 1.1, 1.3] });
+const graphicsOpacity = _progress.interpolate({ inputRange: [0, 0.12, 0.72, 1], outputRange: [0, 1, 1, 0] });
+const innerRingScale = _progress.interpolate({ inputRange: [0, 1], outputRange: [0.75, 1.45] });
+const outerRingScale = _progress.interpolate({ inputRange: [0, 1], outputRange: [0.55, 2.05] });
+const innerRingOpacity = _progress.interpolate({ inputRange: [0, 0.7, 1], outputRange: [0.5, 0.1, 0] });
+const outerRingOpacity = _progress.interpolate({ inputRange: [0, 0.75, 1], outputRange: [0.32, 0.06, 0] });
+const sweepTranslateY = _progress.interpolate({ inputRange: [0, 1], outputRange: [130, -180] });
+const barOneScale = _progress.interpolate({ inputRange: [0, 0.3, 0.62, 1], outputRange: [0.28, 1, 0.5, 1.15] });
+const barTwoScale = _progress.interpolate({ inputRange: [0, 0.24, 0.55, 1], outputRange: [0.72, 0.3, 1.2, 0.42] });
+const barThreeScale = _progress.interpolate({ inputRange: [0, 0.38, 0.7, 1], outputRange: [0.42, 1.12, 0.32, 0.92] });
+
+/**
  * A full-screen overlay that takes over as soon as React draws. It deliberately holds the same
  * icon-only splash for two seconds, then plays a brief music-inspired exit before revealing the app.
  */
 export function StartupAnimation() {
   const [mounted, setMounted] = useState(true);
   const hasStarted = useRef(false);
-  const progress = useRef(new Animated.Value(0)).current;
 
   if (!mounted) return null;
 
@@ -27,7 +46,7 @@ export function StartupAnimation() {
     if (hasStarted.current) return;
 
     hasStarted.current = true;
-    Animated.timing(progress, {
+    Animated.timing(_progress, {
       toValue: 1,
       duration: GRAPHIC_EXIT_DURATION_MS,
       easing: Easing.out(Easing.cubic),
@@ -36,31 +55,6 @@ export function StartupAnimation() {
       if (finished) setMounted(false);
     });
   };
-
-  const overlayOpacity = progress.interpolate({
-    inputRange: [0, 0.7, 1],
-    outputRange: [1, 1, 0],
-  });
-  const logoOpacity = progress.interpolate({
-    inputRange: [0, 0.72, 1],
-    outputRange: [1, 1, 0],
-  });
-  const logoScale = progress.interpolate({
-    inputRange: [0, 0.62, 1],
-    outputRange: [1, 1.1, 1.3],
-  });
-  const graphicsOpacity = progress.interpolate({
-    inputRange: [0, 0.12, 0.72, 1],
-    outputRange: [0, 1, 1, 0],
-  });
-  const innerRingScale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.75, 1.45] });
-  const outerRingScale = progress.interpolate({ inputRange: [0, 1], outputRange: [0.55, 2.05] });
-  const innerRingOpacity = progress.interpolate({ inputRange: [0, 0.7, 1], outputRange: [0.5, 0.1, 0] });
-  const outerRingOpacity = progress.interpolate({ inputRange: [0, 0.75, 1], outputRange: [0.32, 0.06, 0] });
-  const sweepTranslateY = progress.interpolate({ inputRange: [0, 1], outputRange: [130, -180] });
-  const barOneScale = progress.interpolate({ inputRange: [0, 0.3, 0.62, 1], outputRange: [0.28, 1, 0.5, 1.15] });
-  const barTwoScale = progress.interpolate({ inputRange: [0, 0.24, 0.55, 1], outputRange: [0.72, 0.3, 1.2, 0.42] });
-  const barThreeScale = progress.interpolate({ inputRange: [0, 0.38, 0.7, 1], outputRange: [0.42, 1.12, 0.32, 0.92] });
 
   return (
     <Animated.View

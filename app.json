@@ -27,6 +27,7 @@
     },
     "plugins": [
       "./plugins/with-strip-activity-fragment-state",
+      "./plugins/with-audio-focus-and-noisy-fix",
       "expo-router",
       [
         "expo-media-library",

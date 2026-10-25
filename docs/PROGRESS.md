@@ -7,7 +7,7 @@
 - **Framework:** Expo SDK 57 (`expo ~57.0.27`), React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57.
 - **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
 - **Native projects:** `android/` is generated locally by `expo run:android` and is git-ignored. Regenerate it with `npx expo prebuild --clean --platform android` after any `app.json`/config-plugin change — a plain `expo run:android` reuses a stale `android/` and silently ignores the new config. `ios/` is not generated locally.
-- **Latest increment (2026-10-13):** app icon now sourced from `assets/SoundShelf.png` (Android adaptive icon + iOS icon regenerated from it), Expo-blue splash replaced with the SoundShelf logo, and a simple launch animation added (`src/components/startup-animation.tsx`). See the update below. **Not device-verified** — `app.json` changed, so the native project must be regenerated before the next `expo run:android`.
+- **Latest increment (2026-10-13, refined through 2026-10-20):** app icon now sourced from `assets/SoundShelf.png` (Android adaptive icon + iOS icon regenerated from it), Expo-blue splash replaced with the SoundShelf logo, and a launch animation added (`src/components/startup-animation.tsx`). The owner confirmed on 2026-10-26 that the splash animation works. Launcher-icon and themed-icon verification remain unrecorded.
 
 ## Update (2026-10-13) — app icon and launch animation
 
@@ -39,7 +39,7 @@ Owner request: use the `assets/SoundShelf.png` asset as the app icon and add a s
 - **Splash.** The `expo-splash-screen` plugin now uses `./assets/SoundShelf.png` at `imageWidth: 160` on `#185048` (previously the Expo logo at 76pt on Expo blue `#208AEF`).
 - **Launch animation.** New `src/components/startup-animation.tsx` (plus a `.web.tsx` variant that returns `null`, since web has no native splash). It renders a full-screen overlay that is pixel-identical to the native splash (same `#185048` field, same 160pt logo), calls `SplashScreen.hideAsync()` on its first `onLayout` so the two hand off invisibly, then fades the overlay out over 450 ms with a small `1 → 1.06` scale drift before unmounting via `scheduleOnRN`. It is `pointerEvents="none"`, so it never blocks input, and it uses the same Reanimated `Keyframe` + `react-native-worklets` pattern as the SDK 57 starter. `src/app/_layout.tsx` now calls `SplashScreen.preventAutoHideAsync()` at module scope and renders `<StartupAnimation />` above `<AppTabs />` inside a `flex: 1` `View`.
 - **How the assets were produced.** A one-off Node script using `jimp-compact` (already present as a transitive dependency of `@expo/image-utils`) resized/composited `assets/SoundShelf.png` into the two generated PNGs. The script was deliberately **not** committed (it would add an undeclared dependency on a transitive package); the committed PNGs are the artifacts. Regenerate values: Android foreground = 512x512, artwork 338px centred at (87,87); iOS icon = 1024x1024, opaque `#185048`, artwork 676px centred at (174,174).
-- **Not device-verified.** The launcher icon, the splash, and the launch animation all require a regenerated native project and a rebuilt development build. Because `app.json` changed, run `npx expo prebuild --clean --platform android` before `npx expo run:android --device`; a plain `run:android` would silently reuse the stale `android/` and keep the old Expo icons. The [SDK 57 `expo-splash-screen` docs](https://docs.expo.dev/versions/v57.0.0/sdk/splash-screen/) warn that since SDK 52 a development build does not reflect every config-plugin splash property, so the splash itself should be judged on a release APK (Expo Go shows the app icon instead of the splash at all). No `dark` splash variant was configured; an app-level splash background is the only appearance.
+- **Device verification.** The owner confirmed on 2026-10-26 that the splash animation works. Launcher-icon and Android 13+ themed-icon behavior remain unrecorded. Because `app.json` changed, native verification requires `npx expo prebuild --clean --platform android` before `npx expo run:android --device`; a plain `run:android` would silently reuse a stale `android/` project. The [SDK 57 `expo-splash-screen` docs](https://docs.expo.dev/versions/v57.0.0/sdk/splash-screen/) warn that since SDK 52 a development build does not reflect every config-plugin splash property, so the splash itself should be judged on a release APK (Expo Go shows the app icon instead of the splash at all). No `dark` splash variant was configured; an app-level splash background is the only appearance.
 - Files: `app.json`, `assets/SoundShelf.png` (now referenced), `assets/images/android-icon-foreground.png` (regenerated), `assets/images/icon-ios.png` (new), `src/components/startup-animation.tsx` (new), `src/components/startup-animation.web.tsx` (new), `src/app/_layout.tsx`, `docs/PROGRESS.md`.
 
 ## Update (2026-10-13) — background playback FIXED on device: a backgrounding crash was the real root cause
@@ -283,19 +283,33 @@ App icon and launch animation (2026-10-13):
 | `npx tsc --noEmit` after the app-icon + launch-animation increment | Passed, after switching `StyleSheet.absoluteFillObject` to `StyleSheet.absoluteFill` (RN 0.86 exposes `absoluteFill` as the plain `AbsoluteFillStyle` object; `absoluteFillObject` no longer exists in the installed types). |
 | `npx expo config --type introspect` after the app-icon change | Passed: `icon` resolves to `./assets/SoundShelf.png`, splash image `./assets/SoundShelf.png` with `imageWidth` 160 and resize mode `contain`, `colors.xml` `iconBackground` and `splashscreen_background` both resolve to `#185048`, and `android:icon`/`android:roundIcon` still point at `@mipmap/ic_launcher`/`@mipmap/ic_launcher_round`. |
 | `npx expo export --platform android` bundle check after the app-icon + launch-animation increment | Passed: single Android bundle built, so `require('@/assets/SoundShelf.png')` resolves through Metro. |
-| Device check of the launcher icon, splash, and launch animation | **Not run:** needs `npx expo prebuild --clean --platform android` plus a rebuilt build. Remains device-unverified; per the SDK 57 docs the splash should be judged on a release APK, not a development build or Expo Go. |
+| Device check of the splash and launch animation | Passed, owner-confirmed 2026-10-26: the splash animation works. Launcher-icon and Android 13+ themed-icon behavior remain unrecorded. |
+| Phase 5 device-test availability (2026-10-26) | Not available: Android SDK platform-tools was found at `C:\\Users\\Nade\\AppData\\Local\\Android\\Sdk\\platform-tools\\adb.exe`, but `adb devices` reported no attached device or emulator. |
+
+## Update (2026-10-26) — lint fix + audio-focus/noisy-fix plugin committed
+
+- **Lint fix (`startup-animation.tsx`):** The React Compiler `react-hooks/refs` rule flagged all 12 `Animated.Value.interpolate()` calls (24 errors total) because they were derived from a `useRef().current` value inside the render function body. Fix: `_progress` (`Animated.Value`) and all its derived interpolations are now module-level constants. `StartupAnimation` renders at most once per app lifetime (it unmounts itself), so a module-level value is safe and permanently removes the calls from React's render path. `npm run lint` and `npx tsc --noEmit` both pass clean.
+- **`with-audio-focus-and-noisy-fix.js` plugin committed:** This previously-untracked config plugin addresses two expo-audio Android bugs:
+  - **Bug 1 (audio-focus type):** expo-audio requests `AUDIOFOCUS_GAIN_TRANSIENT` for `doNotMix` mode; the correct type for a long-running music player is `AUDIOFOCUS_GAIN`. The plugin patches `AudioModule.kt` post-prebuild to replace it.
+  - **Bug 2 (headphone disconnect):** expo-audio has no `ACTION_AUDIO_BECOMING_NOISY` receiver, so audio continues through the speaker after headphone unplug or Bluetooth disconnect. The plugin injects a `NoisyAudioReceiver.kt` and wires it into `AudioModule.kt`'s `onCreate`/`onDestroy`.
+  - Both patches are applied via `withDangerousMod`, are idempotent, and require `npx expo prebuild --clean --platform android` before they reach a device build.
+- Files: `src/components/startup-animation.tsx`, `plugins/with-audio-focus-and-noisy-fix.js`, `app.json`, `docs/PROGRESS.md`.
+- Static verification: `npm run lint` ✅, `npx tsc --noEmit` ✅.
 
 ## Exact next step
 
-0. Newest increment (app icon + launch animation) — verify before the Phase 5 items below:
-   - Run `npx expo prebuild --clean --platform android` (mandatory, `app.json` changed) then `npx expo run:android --device`. Confirm the Android launcher icon is the SoundShelf artwork (not the Expo starter icon), that the splash shows the SoundShelf logo on `#185048`, and that the overlay fades out smoothly into the Home tab with no flash and no blocked taps. On Android 13+, confirm the themed-icon behaviour: the adaptive icon has no monochrome layer, so themed icons should fall back to the normal icon rather than showing a wrong-brand silhouette.
-   - Then commit `app.json`, `assets/SoundShelf.png`, `assets/images/android-icon-foreground.png`, `assets/images/icon-ios.png`, and the two `startup-animation` components.
+0. App icon + launch animation (owner-confirmed 2026-10-26): the splash animation works. At the next device session, confirm the Android launcher icon is the SoundShelf artwork (not the Expo starter icon). On Android 13+, confirm themed icons fall back gracefully. Already committed.
 
-1. Finish Phase 5 device verification on the installed fixed build and record results in `docs/PROGRESS.md`:
-   - Audio-focus/interruptions: starting other audio pauses SoundShelf (`doNotMix`) and resuming SoundShelf works afterward.
-   - Headphone/Bluetooth disconnect: audio stops automatically (documented OS-level expo-audio behavior) and playback can be restarted.
-   - Notification/lock-screen actions round-trip (play/pause, next/previous) update mini-player and Now Playing state; pressing play after the last track finishes (repeat off) — record the observed behavior.
-   - Confirm the notification-permission prompt appears once at first play on the fresh install.
-2. Verify the owner-approved interim fix for the re-scan issue on the rebuilt APK: force-kill SoundShelf (MIUI recents swipe-away), reopen, and confirm the library restores itself without tapping "Scan device music". The durable fix remains the Phase 6 database foundation; Phase 6 must not start without explicit owner approval.
-3. Commit and push the fix (config plugin + `app.json` + docs) so the next `v*` tag triggers a GitHub release APK that includes it; the locally installed APK is debug-signed and is not the distribution artifact.
-4. Do not mark Phase 5 fully complete until the remaining device checks above are recorded. The remaining Phase 5 task — persisting and restoring a playback checkpoint — is planned as the next increment using `expo-sqlite`'s key/value API (D-005/D-011), combined with the Phase 6 database foundation so both native modules arrive in one development build.
+1. **Rebuild the native project** with `npx expo prebuild --clean --platform android` to apply the `with-audio-focus-and-noisy-fix` patches to `AudioModule.kt`, then build and install on device (`npx expo run:android --device`).
+
+2. **Finish Phase 5 device verification** and record results in `docs/PROGRESS.md`:
+   - **Test B:** Notification/lock-screen play/pause/next/previous round-trip → mini-player and Now Playing update.
+   - **Test C:** Audio-focus interruption: another app starts audio → SoundShelf pauses (`doNotMix`), resumes after.
+   - **Test D:** Headphone/Bluetooth disconnect → audio stops (not blasted through speaker). Requires the noisy-fix plugin in the build.
+   - **Test E:** Notification-permission prompt appears once at first play on a fresh install.
+   - **Test G:** Launcher icon shows SoundShelf artwork (not Expo icon).
+   - **Test H:** Android 13+ themed icon falls back gracefully.
+
+3. **Push + tag** (`v*`) to trigger a GitHub release APK with all Phase 5 fixes included.
+
+4. After all device tests are recorded, get **owner approval** before starting Phase 6 (personal library / `expo-sqlite` database foundation + playback checkpoint). The remaining Phase 5 implementation item — persisting/restoring a playback checkpoint — is planned with `expo-sqlite`'s key/value API (D-005/D-011), combined with the Phase 6 database foundation so both native modules arrive in one build.
