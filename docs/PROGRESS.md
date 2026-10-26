@@ -3,7 +3,7 @@
 ## Current state
 
 - **Current phase:** 5 — Background playback. The owner reported a Phase 4 device test on 2026-10-13 and approved moving to Phase 5. **Background playback is now device-verified and working** (2026-10-13): the true root cause of "audio stops on Home/lock" was a backgrounding crash, fixed by the config plugin below. Remaining Phase 5 item: playback-checkpoint persistence (still deferred to combine with the Phase 6 database foundation).
-- **Repository baseline:** `d0f2289` (`Initial commit`); latest checkpoint `d6d81c5` (Phase 5 background-crash fix + auto-scan), followed by the launcher/splash work and the 2026-10-26 bug-fix/hygiene pass recorded below. Recent committed work: album browsing, permission denial, empty-library, and Phase 4 foreground playback increments on 2026-10-12; the Phase 5 background-playback increments are described below.
+- **Repository baseline:** `d0f2289` (`Initial commit`); latest checkpoint `d6d81c5` (Phase 5 background-crash fix + auto-scan). Release `v0.3.5` (`be26715`, 2026-10-26) includes the launcher/splash work, the bug-fix/hygiene pass, and the expo-audio source-build fix recorded below. Recent committed work: album browsing, permission denial, empty-library, and Phase 4 foreground playback increments on 2026-10-12; the Phase 5 background-playback increments are described below.
 - **Framework:** Expo SDK 57 (`expo ~57.0.27`), React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57.
 - **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
 - **Native projects:** `android/` is generated locally by `expo run:android` and is git-ignored. Regenerate it with `npx expo prebuild --clean --platform android` after any `app.json`/config-plugin change — a plain `expo run:android` reuses a stale `android/` and silently ignores the new config. `ios/` is not generated locally.
@@ -315,6 +315,7 @@ The first clean release build **succeeded but did not contain the receiver**: `c
 - **Verified by a second release build (3m 31s):** the Gradle log contains `:expo-audio:compileReleaseKotlin`, `:expo-audio:compileReleaseJavaWithJavac` and `:expo-audio:bundleLibCompileToJarRelease`, and `classes4.dex` in `app-release.apk` contains both `expo.modules.audio` and `NoisyAudioReceiver`. This is the evidence that the patched source is actually in the packaged APK.
 - `AGENTS.md` now warns that SDK 57 may link Expo modules as AARs and that patch presence must be checked in the Gradle log/dex, not the source tree.
 - The tag-driven release workflow now extracts `classes*.dex` from the built APK and fails if `NoisyAudioReceiver` is missing, so a green release cannot silently ship the unpatched AAR again.
+- **Released as `v0.3.5`:** GitHub Actions run [#40330494212](https://github.com/NadeLemon30/SoundShelf/actions/runs/40330494212) completed successfully, the new dex guard passed, and `SoundShelf-v0.3.5.apk` (102.6 MB) was published at <https://github.com/NadeLemon30/SoundShelf/releases/tag/v0.3.5>.
 
 ### UI / accessibility fixes
 
@@ -347,6 +348,7 @@ The first clean release build **succeeded but did not contain the receiver**: `c
 - `npx expo prebuild --clean --platform android --no-install` ✅ (regenerated `android/`; the plugin re-ran and reported the patch already present)
 - First local release build (default prebuilt AAR) ✅ 44m 36s; `android/app/build/outputs/apk/release/app-release.apk` 102.6 MB — dex check found `AudioModule` but **not** `NoisyAudioReceiver`
 - Second local release build after `buildFromSource` ✅ 3m 31s; `:expo-audio:compileReleaseKotlin` executed, and `classes4.dex` now contains `NoisyAudioReceiver`
+- GitHub release workflow for `v0.3.5` ✅ ([run 40330494212](https://github.com/NadeLemon30/SoundShelf/actions/runs/40330494212)); install, prebuild, Gradle, dex verification, and release upload all succeeded; asset `SoundShelf-v0.3.5.apk` (102.6 MB)
 - `git push origin main` ✅ (5 commits pushed, `e92fd56..fd42d51`)
 - `git diff --check` ✅ (only the repository's pre-existing LF→CRLF warnings)
 
@@ -361,7 +363,7 @@ The first clean release build **succeeded but did not contain the receiver**: `c
 
 0. App icon + launch animation (owner-confirmed 2026-10-26): the splash animation works. At the next device session, confirm the Android launcher icon is the SoundShelf artwork (not the Expo starter icon). On Android 13+, confirm themed icons fall back gracefully. Already committed.
 
-1. **Rebuild and install**: `npx expo prebuild --clean --platform android` is still required after `app.json`/icon changes, then `npx expo run:android --device`. The expo-audio patches are applied by `postinstall` and re-applied idempotently by prebuild, and `package.json` forces source compilation. Do not trust the source tree as proof: confirm the Gradle log contains `:expo-audio:compileReleaseKotlin` and that `classes*.dex` in the installed APK contains `NoisyAudioReceiver` (the local release build was verified this way on 2026-10-26). Use that build for Test D.
+1. **Install the release APK**: download `SoundShelf-v0.3.5.apk` from <https://github.com/NadeLemon30/SoundShelf/releases/tag/v0.3.5> and install it on the device (or use `adb install -r SoundShelf-v0.3.5.apk`). This build includes the icon/splash changes and the verified expo-audio source patch; the release workflow's dex guard passed. If you rebuild locally instead, run `npx expo prebuild --clean --platform android` then `npx expo run:android --device`, and confirm the Gradle log contains `:expo-audio:compileReleaseKotlin` and the installed APK's dex contains `NoisyAudioReceiver`.
 
 2. **Finish Phase 5 device verification** and record results in `docs/PROGRESS.md`:
    - **Test B:** Notification/lock-screen play/pause/next/previous round-trip → mini-player and Now Playing update.
@@ -371,6 +373,6 @@ The first clean release build **succeeded but did not contain the receiver**: `c
    - **Test G:** Launcher icon shows SoundShelf artwork (not Expo icon).
    - **Test H:** Android 13+ themed icon falls back gracefully.
 
-3. **Tag a pushed commit** (`v*`) to trigger a GitHub release APK with all Phase 5 fixes included. The plugin, UI/a11y, hygiene and doc fixes are already pushed; tagging is the only remaining release step.
+3. **Release note:** `v0.3.5` was published on 2026-10-26 from commit `be26715`; it is debug-signed and not Play Store ready. Use this APK for the tests above, then reserve the next tag for the build that also includes the Phase 6 database foundation.
 
 4. After all device tests are recorded, get **owner approval** before starting Phase 6 (personal library / `expo-sqlite` database foundation + playback checkpoint). The remaining Phase 5 implementation item — persisting/restoring a playback checkpoint — is planned with `expo-sqlite`'s key/value API (D-005/D-011), combined with the Phase 6 database foundation so both native modules arrive in one build.
