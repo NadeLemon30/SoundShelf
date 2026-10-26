@@ -14,13 +14,13 @@ import { ThemedText } from '../themed-text';
 
 export function MiniPlayer() {
   const theme = useTheme();
-  const { player, currentTrack, hasTrack, togglePlayPause, next } = usePlayback();
+  const { player, currentTrack, hasTrack, errorMessage, togglePlayPause, next } = usePlayback();
   const status = useAudioPlayerStatus(player);
   const [nowPlayingOpen, setNowPlayingOpen] = useState(false);
 
   if (!hasTrack || !currentTrack) {
     return (
-      <View accessibilityLabel="Nothing playing. Start a song from your library." style={[styles.container, { backgroundColor: theme.surface, borderColor: theme.outline }]}>
+      <View accessible accessibilityLabel="Nothing playing. Start a song from your library." style={[styles.container, { backgroundColor: theme.surface, borderColor: theme.outline }]}>
         <ArtworkPlaceholder size={40} />
         <View style={styles.copy}>
           <ThemedText numberOfLines={1} type="smallBold">Nothing playing</ThemedText>
@@ -40,7 +40,11 @@ export function MiniPlayer() {
         <ArtworkPlaceholder size={40} />
         <View style={styles.copy}>
           <ThemedText numberOfLines={1} type="smallBold">{currentTrack.title}</ThemedText>
-          <ThemedText numberOfLines={1} themeColor="textMuted" type="small">{currentTrack.filename}</ThemedText>
+          {errorMessage ? (
+            <ThemedText numberOfLines={1} style={{ color: theme.danger }} type="small">Could not play this track</ThemedText>
+          ) : (
+            <ThemedText numberOfLines={1} themeColor="textMuted" type="small">{currentTrack.filename}</ThemedText>
+          )}
         </View>
       </Pressable>
       <Pressable

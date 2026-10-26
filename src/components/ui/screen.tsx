@@ -11,7 +11,7 @@ export function Screen({ children, contentContainerStyle, ...props }: ScreenProp
   const theme = useTheme();
   return (
     <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
-      <ScrollView {...props} contentContainerStyle={[styles.content, { paddingBottom: BottomTabInset + Spacing.six }, contentContainerStyle]} showsVerticalScrollIndicator={false}>
+      <ScrollView {...props} contentContainerStyle={[styles.content, { paddingBottom: BottomTabInset + Spacing.six }, contentContainerStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
         {children}
       </ScrollView>
     </SafeAreaView>

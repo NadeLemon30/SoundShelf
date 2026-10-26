@@ -33,6 +33,14 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
     seekTo(ratio * duration);
   };
 
+  /** Screen-reader seek: Android exposes no drag gesture, so step forwards/backwards. */
+  const seekBy = (deltaSeconds: number) => {
+    if (!canSeek) {
+      return;
+    }
+    seekTo(Math.min(duration, Math.max(0, status.currentTime + deltaSeconds)));
+  };
+
   return (
     <Modal animationType="slide" onRequestClose={onClose} statusBarTranslucent transparent visible={visible}>
       <SafeAreaView edges={['top', 'bottom']} style={[styles.safeArea, { backgroundColor: theme.background }]}>
@@ -56,9 +64,20 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
 
           <View style={styles.progressSection}>
             <Pressable
+              accessibilityActions={[
+                { name: 'increment', label: 'Forward 10 seconds' },
+                { name: 'decrement', label: 'Back 10 seconds' },
+              ]}
               accessibilityLabel={`Seek, ${formatPlaybackTime(status.currentTime)} of ${canSeek ? formatPlaybackTime(duration) : 'an unknown duration'}`}
               accessibilityRole="adjustable"
+              accessibilityValue={{
+                min: 0,
+                max: canSeek ? Math.round(duration) : 0,
+                now: Math.round(status.currentTime),
+                text: `${formatPlaybackTime(status.currentTime)} of ${canSeek ? formatPlaybackTime(duration) : 'an unknown duration'}`,
+              }}
               disabled={!canSeek}
+              onAccessibilityAction={(event) => seekBy(event.nativeEvent.actionName === 'increment' ? 10 : -10)}
               onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
               onPress={(event) => seekFromTap(event.nativeEvent.locationX)}
               style={[styles.progressTrack, { backgroundColor: theme.surfaceRaised }]}>

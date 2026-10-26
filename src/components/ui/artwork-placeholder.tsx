@@ -7,7 +7,7 @@ type ArtworkPlaceholderProps = { size?: number; label?: string; style?: ViewStyl
 export function ArtworkPlaceholder({ size = 56, label = '♫', style }: ArtworkPlaceholderProps) {
   const theme = useTheme();
   return (
-    <View accessibilityLabel="Album artwork unavailable" style={[styles.artwork, { width: size, height: size, backgroundColor: theme.accentMuted }, style]}>
+    <View accessible accessibilityLabel="Album artwork unavailable" accessibilityRole="image" style={[styles.artwork, { width: size, height: size, backgroundColor: theme.accentMuted }, style]}>
       <Text style={[styles.label, { fontSize: size * 0.38, color: theme.accent }]}>{label}</Text>
     </View>
   );

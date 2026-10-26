@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Animated, Easing, StyleSheet } from 'react-native';
 
 /**
@@ -39,6 +39,17 @@ const barThreeScale = _progress.interpolate({ inputRange: [0, 0.38, 0.7, 1], out
 export function StartupAnimation() {
   const [mounted, setMounted] = useState(true);
   const hasStarted = useRef(false);
+  const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // The timer is only a launch-time hold; clear it if the overlay unmounts first
+  // (fast refresh, or a future route change that removes it).
+  useEffect(() => {
+    return () => {
+      if (exitTimer.current) {
+        clearTimeout(exitTimer.current);
+      }
+    };
+  }, []);
 
   if (!mounted) return null;
 
@@ -65,7 +76,7 @@ export function StartupAnimation() {
         // for two seconds before starting its graphic exit.
         // `hide()` is the current SDK API; `hideAsync()` exists only for backwards compatibility.
         SplashScreen.hide();
-        setTimeout(startExitAnimation, ICON_HOLD_MS);
+        exitTimer.current = setTimeout(startExitAnimation, ICON_HOLD_MS);
       }}>
       <Animated.View pointerEvents="none" style={[styles.graphicLayer, { opacity: graphicsOpacity }]}>
         <Animated.View style={[styles.ring, styles.innerRing, { opacity: innerRingOpacity, transform: [{ scale: innerRingScale }] }]} />

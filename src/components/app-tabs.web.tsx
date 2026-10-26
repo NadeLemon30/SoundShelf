@@ -1,7 +1,7 @@
 import { Tabs, TabList, TabSlot, TabTrigger, type TabListProps, type TabTriggerSlotProps } from 'expo-router/ui';
 import { Pressable, StyleSheet, View } from 'react-native';
 
-import { Colors, MaxContentWidth, Spacing } from '@/constants/theme';
+import { MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { ThemedText } from './themed-text';
@@ -35,9 +35,10 @@ function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
 }
 
 function CustomTabList(props: TabListProps) {
+  const theme = useTheme();
   return (
     <View {...props} style={styles.tabListContainer}>
-      <ThemedView type="surface" style={styles.innerContainer}>
+      <ThemedView type="surface" style={[styles.innerContainer, { borderColor: theme.outline }]}>
         <ThemedText type="smallBold" style={styles.brandText}>SoundShelf</ThemedText>
         {props.children}
       </ThemedView>
@@ -48,7 +49,7 @@ function CustomTabList(props: TabListProps) {
 const styles = StyleSheet.create({
   slot: { height: '100%' },
   tabListContainer: { position: 'absolute', width: '100%', padding: Spacing.three, justifyContent: 'center', alignItems: 'center' },
-  innerContainer: { width: '100%', padding: Spacing.one, borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: Spacing.half, maxWidth: MaxContentWidth, borderWidth: 1, borderColor: Colors.light.outline },
+  innerContainer: { width: '100%', padding: Spacing.one, borderRadius: 18, flexDirection: 'row', alignItems: 'center', gap: Spacing.half, maxWidth: MaxContentWidth, borderWidth: 1 },
   brandText: { marginRight: 'auto', marginLeft: Spacing.one },
   tabButton: { paddingVertical: 10, paddingHorizontal: Spacing.three, borderRadius: 12 },
   pressed: { opacity: 0.72 },
