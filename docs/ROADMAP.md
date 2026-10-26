@@ -40,15 +40,7 @@ Phase advancement requires user approval. Completion criteria mean evidence exis
 
 **Tasks:** add required config plugin/settings and development build; wire notification and lock-screen controls; configure interruptions/audio focus; verify headphone/Bluetooth disconnect behavior; persist and restore an appropriate playback checkpoint.
 
-**Completion criteria:** physical-device tests confirm sustained screen-off playback, notification/lock-screen actions, interruption recovery, disconnect behavior, and resume policy.
-
-## 5. Background playback
-
-**Objective:** preserve expected music-player behavior outside the foreground.
-
-**Tasks:** add required config plugin/settings and development build; wire notification and lock-screen controls; configure interruptions/audio focus; verify headphone/Bluetooth disconnect behavior; persist and restore an appropriate playback checkpoint.
-
-**Completion criteria:** physical-device tests confirm sustained screen-off playback, notification/lock-screen actions, interruption recovery, disconnect behavior, and resume policy.
+**Completion criteria:** physical-device tests confirm sustained screen-off playback, notification/lock-screen actions, interruption recovery, disconnect behavior, and resume policy. *(Sustained screen-off playback with the media session active was confirmed on 2026-10-13. The notification/lock-screen round-trip, audio-focus interruption, disconnect behavior, and the playback checkpoint are still open — see `PROGRESS.md`.)*
 
 ## 6. Personal library
 

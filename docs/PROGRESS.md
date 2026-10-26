@@ -3,7 +3,7 @@
 ## Current state
 
 - **Current phase:** 5 — Background playback. The owner reported a Phase 4 device test on 2026-10-13 and approved moving to Phase 5. **Background playback is now device-verified and working** (2026-10-13): the true root cause of "audio stops on Home/lock" was a backgrounding crash, fixed by the config plugin below. Remaining Phase 5 item: playback-checkpoint persistence (still deferred to combine with the Phase 6 database foundation).
-- **Repository baseline:** `d0f2289` (`Initial commit`); latest checkpoint `d6d81c5` (Phase 5 background-crash fix + auto-scan). Recent committed work: album browsing, permission denial, empty-library, and Phase 4 foreground playback increments on 2026-10-12; the Phase 5 background-playback increments are described below.
+- **Repository baseline:** `d0f2289` (`Initial commit`); latest checkpoint `d6d81c5` (Phase 5 background-crash fix + auto-scan), followed by the launcher/splash work and the 2026-10-26 bug-fix/hygiene pass recorded below. Recent committed work: album browsing, permission denial, empty-library, and Phase 4 foreground playback increments on 2026-10-12; the Phase 5 background-playback increments are described below.
 - **Framework:** Expo SDK 57 (`expo ~57.0.27`), React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57.
 - **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
 - **Native projects:** `android/` is generated locally by `expo run:android` and is git-ignored. Regenerate it with `npx expo prebuild --clean --platform android` after any `app.json`/config-plugin change — a plain `expo run:android` reuses a stale `android/` and silently ignores the new config. `ios/` is not generated locally.
@@ -296,11 +296,59 @@ App icon and launch animation (2026-10-13):
 - Files: `src/components/startup-animation.tsx`, `plugins/with-audio-focus-and-noisy-fix.js`, `app.json`, `docs/PROGRESS.md`.
 - Static verification: `npm run lint` ✅, `npx tsc --noEmit` ✅.
 
+## Update (2026-10-26) — bug-fix and hygiene pass
+
+### Build-critical: the audio patch never ran on a clean prebuild
+
+The committed `with-audio-focus-and-noisy-fix` plugin searched `android/app/src/main/java/**/AudioModule.kt`. That file is never there: Expo autolinking compiles `node_modules/expo-audio/android` in place, which was confirmed against the generated `android/` tree. A clean `expo prebuild` (and therefore the GitHub release workflow) would have thrown "Could not find AudioModule.kt" — or, with an older tolerant path, silently built without either fix.
+
+- Extracted the patch logic into `plugins/expo-audio-patch.js`; `with-audio-focus-and-noisy-fix.js` is now a thin `withDangerousMod` wrapper around it.
+- Added `scripts/patch-expo-audio.js` and a `postinstall` script so `npm install`/`npm ci` patches the installed library even when prebuild is not re-run. The patch is idempotent.
+- Anchor handling is now fail-fast: a bare `AUDIOFOCUS_GAIN_TRANSIENT` (excluding `_MAY_DUCK`) or any missing receiver anchor throws with an explanatory error instead of warning and shipping unpatched audio.
+- Verified idempotency by running `node scripts/patch-expo-audio.js` twice: first run applied the updated receiver file, second reported "already present".
+
+### UI / accessibility fixes
+
+- `src/components/ui/screen.tsx`: added `keyboardShouldPersistTaps="handled"`. With the RN default, the first tap on a search result only dismissed the keyboard, so playing a song took two taps.
+- `src/components/app-tabs.web.tsx`: the tab bar border used `Colors.light.outline` unconditionally, which showed a pale border in dark mode. It now uses the active theme's outline.
+- `src/components/ui/mini-player.tsx`: a playback error was only visible inside Now Playing. The mini-player now shows "Could not play this track" in the danger colour and is accessible in its idle state.
+- `src/features/playback/components/now-playing.tsx`: the seek bar is `adjustable` but exposed no actions; screen-reader users can now step forward/back 10 seconds, with an `accessibilityValue` describing the position.
+- `src/components/ui/artwork-placeholder.tsx`: the label sat on a non-accessible `View`, so it was ignored; the placeholder is now exposed as an image.
+- `src/components/startup-animation.tsx`: the 2-second hold `setTimeout` is stored in a ref and cleared on unmount.
+
+### Repository hygiene
+
+- Removed the tracked `.expo-export-check/` web export (8 files, ~1.3 MB, including a 1.16 MB bundle) and added it to `.gitignore`.
+- Deleted unused starter components (`hint-row`, `web-badge`, `external-link`, `animated-icon*`, `ui/collapsible`) and unused starter assets (`assets/expo.icon/`, Expo/React logos, badges, glow, tutorial, splash-icon, adaptive background/monochrome, duplicate `icon.png`). All were verified unreferenced.
+
+### Documentation corrections
+
+- `docs/ROADMAP.md`: removed the accidental duplicate Phase 5 section and recorded that sustained screen-off playback is verified while the remaining Phase 5 tests are open.
+- `README.md`: background playback is no longer described as unverified; the duplicated/misleading limitation bullets were replaced; added the postinstall/prebuild patch explanation and the `plugins/`/`scripts/` layout.
+- `docs/ARCHITECTURE.md` and `docs/DECISIONS.md` D-003/D-011 no longer claim expo-audio handles headphone disconnect itself.
+- Added `docs/DECISIONS.md` D-012 for the source-patch strategy and its trade-offs.
+
+### Verification
+
+- `npm run lint` ✅
+- `npx tsc --noEmit` ✅
+- `node scripts/patch-expo-audio.js` twice ✅ (applied, then already present)
+- Patch-unit check ✅: `patchSource` on the installed file is idempotent, and a synthetic bare `AUDIOFOCUS_GAIN_TRANSIENT` throws instead of passing through
+- `npx expo export --platform android --output-dir dist` ✅ (1 Android bundle, 1301 modules; confirms the deleted starter assets are unreferenced)
+- `git diff --check` ✅ (only the repository's pre-existing LF→CRLF warnings)
+
+### Deliberately not changed
+
+- Large lists still use `ScrollView` instead of a virtualized list, and the mini-player still scrolls with content. Both need a layout refactor and are better judged on a device; planned for Phase 9.
+- Album-id ↔ `getAlbumsAsync` title matching and the two audio patches remain device-unverified.
+- No test runner exists yet; the pure helpers are the intended first target.
+
+
 ## Exact next step
 
 0. App icon + launch animation (owner-confirmed 2026-10-26): the splash animation works. At the next device session, confirm the Android launcher icon is the SoundShelf artwork (not the Expo starter icon). On Android 13+, confirm themed icons fall back gracefully. Already committed.
 
-1. **Rebuild the native project** with `npx expo prebuild --clean --platform android` to apply the `with-audio-focus-and-noisy-fix` patches to `AudioModule.kt`, then build and install on device (`npx expo run:android --device`).
+1. **Rebuild and install**: `npx expo prebuild --clean --platform android` is still required after `app.json`/icon changes, then `npx expo run:android --device`. The expo-audio patches are now applied by `postinstall` and re-applied idempotently by prebuild; before building, confirm `node_modules/expo-audio/android/src/main/java/expo/modules/audio/AudioModule.kt` contains `AudioManager.AUDIOFOCUS_GAIN` in both `DO_NOT_MIX` branches and a `noisyAudioReceiver` registration, and that `NoisyAudioReceiver.kt` sits beside it.
 
 2. **Finish Phase 5 device verification** and record results in `docs/PROGRESS.md`:
    - **Test B:** Notification/lock-screen play/pause/next/previous round-trip → mini-player and Now Playing update.

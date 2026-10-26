@@ -13,9 +13,9 @@ The project is in active development. Its current local-library work is an early
 - A Songs/Albums library view and local, in-memory search by song title or filename. Albums use Android's per-file album id (the storage folder); tracks with no album id appear under "Unknown album".
 - Clear empty, permission-denied (with an app-settings path when Android stops prompting), scan-error, and skipped-file states.
 - **Foreground playback** with a queue, play/pause, next/previous, seek, shuffle, repeat (off/all/one), and automatic track-end advance. A mini-player sits on every tab and opens a full-screen Now Playing view.
-- **Background-playback configuration**: the audio session keeps playing when the app is backgrounded, and the current track is surfaced through lock-screen and notification media controls. This is implemented but still needs physical-device verification.
+- **Background playback**: the audio session keeps playing when the app is backgrounded, and the current track is surfaced through lock-screen and notification media controls. Sustained playback through screen lock and an active media session was verified on a physical device on 2026-10-13; the notification transport controls, audio-focus interruption, and headphone/Bluetooth disconnect still need device confirmation.
 
-Library metadata is intentionally conservative: artist, genre, and embedded artwork are not shown yet. Album names reflect Android's reported folder names rather than parsed audio tags. A scan is not yet saved across app restarts, and the playback position is not yet restored after a restart.
+Library metadata is intentionally conservative: artist, genre, and embedded artwork are not shown yet. Album names reflect Android's reported folder names rather than parsed audio tags. Nothing is stored in a database yet: a killed process rescans automatically when audio permission is already granted, but the playback position is not restored after a restart.
 
 ## Planned scope
 
@@ -53,6 +53,8 @@ npx expo run:android --device
 
 `expo-audio` is a native module, so playback requires a fresh development build (rebuilt after this change); an older build without it cannot play audio. Background playback and the lock-screen/notification controls also require a rebuilt development build, because they change native configuration through the `expo-audio` config plugin. On Android 13+, grant the notification permission when prompted at first play to see the media notification in the shade.
 
+`npm install` also runs `scripts/patch-expo-audio.js`. It applies two local fixes to the installed `expo-audio` Android source (audio-focus type and headphone-disconnect handling); the same module runs again from the config plugin during prebuild. If an expo-audio update changes the source shape, install/prebuild fails with an explanatory error instead of building with the bugs — see [D-012](docs/DECISIONS.md).
+
 Expo uses Continuous Native Generation for this repository. The `android/` directory is generated and git-ignored; do not commit or manually edit it. After any `app.json` or config-plugin change you must run `npx expo prebuild --clean --platform android` (or delete `android/`) before `npx expo run:android` — otherwise the existing `android/` folder is reused and the new native config never reaches the installed app. This is the usual reason a config change appears correct (e.g., in `npx expo config --type introspect`) yet has no effect on the device.
 
 Once installed, open SoundShelf, select **Scan device music**, grant audio permission, then review the Library and Search tabs. Tap a song to play it; the mini-player opens the Now Playing screen, where you can seek, skip, shuffle, and change repeat. Test both a device containing audio files and the no-audio / permission-denied cases.
@@ -88,6 +90,8 @@ src/features/playback/ queue, shuffle/repeat helpers, player provider, and Now P
 src/hooks/             reusable React hooks
 src/constants/         theme tokens and shared values
 docs/                  roadmap, architecture, decisions, and handoff notes
+plugins/               local config plugins and the expo-audio source patches
+scripts/               install-time patch hook and project tooling
 .github/workflows/     APK release automation
 ```
 
@@ -103,9 +107,8 @@ Routes belong in `src/app/`; feature logic and reusable code belong outside it.
 
 ## Current limitations
 
-- Background playback is configured and coded but **not yet device-verified**; playlists, favourites, analytics, and Replay Stories are not implemented.
-- Playback does not survive a restart: scanned tracks are held only in memory, and there is no restore-checkpoint yet. Lock-screen/notification controls are added and wait on a physical-device check; the remaining Phase 5 task is persisting/restoring a playback checkpoint.
-- Scanned tracks are held only in memory and are lost after restarting the app; playback does not survive a restart.
+- Phase 5 is not finished: the notification/lock-screen transport controls, audio-focus interruption, and headphone/Bluetooth disconnect behavior still need physical-device verification, and no playback checkpoint is persisted yet.
+- Scanned tracks live only in memory. A launch with audio permission already granted rescans automatically, but there is no database-backed library, playlist, history, or playback state yet.
 - Artist, embedded artwork, and corrupt-file behavior require physical-device validation.
-- Album grouping and names are implemented from Android's media store but are not yet recorded as device-verified.
-- The local-media flow requires a development-build test before it can be considered verified.
+- Album grouping and names come from Android's media store but are not yet recorded as device-verified.
+- Large libraries are rendered in `ScrollView` lists rather than virtualized lists, so very large collections may stutter (planned for the polish phase).

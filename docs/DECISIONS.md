@@ -18,7 +18,7 @@ Use the existing Expo Router setup and keep native projects generated. Route fil
 
 **Status:** implemented for foreground playback (2026-10-12); background behavior pending Phase 5
 
-Use SDK 57 `expo-audio` as the playback engine. It covers player/playlist APIs, queue/loop behavior, global audio/interruption configuration, headphone/Bluetooth disconnect behavior, and Android lock-screen/notification background playback via its config plugin. It avoids adding a third-party native dependency.
+Use SDK 57 `expo-audio` as the playback engine. It covers player/playlist APIs, queue/loop behavior, global audio/interruption configuration, and Android lock-screen/notification background playback via its config plugin. Its Android audio-focus request and missing headphone-disconnect broadcast required local source patches (D-012). It avoids adding a third-party native dependency.
 
 The competing `react-native-track-player` has strong music-player capabilities, but its current V5 is commercially licensed for commercial use and imposes New Architecture requirements. Do not add it unless a later phase documents a missing required capability and the project license is approved. If evaluated, it requires a custom development build/native integration and its exact supported Expo SDK/React Native combination must be verified then.
 
@@ -89,9 +89,19 @@ Background playback uses the `expo-audio` config plugin: `enableBackgroundPlayba
 
 Notifications on Android 13+ need `POST_NOTIFICATIONS` declared and granted at runtime. The `expo-audio` plugin only adds that permission for background *recording*, so the app adds it through `app.json` `android.permissions`. The provider requests it once per session at the first user-initiated play via `requestNotificationPermissionsAsync()` (Android only, non-blocking); if denied, playback continues and only the notification/lock-screen surface is affected.
 
-The audio session is set to `shouldPlayInBackground: true` (plus the existing `doNotMix` focus and `playsInSilentMode: true`). The provider activates lock-screen controls on every track change with `setActiveForLockScreen(true, { title })` and seek-forward/backward actions; `doNotMix` is required for the controls to associate with the player. Only honest metadata is shown: the track title, since `expo-media-library` exposes no artist/album/artwork (D-009). Headphone/Bluetooth disconnect stops audio automatically at the OS level (documented expo-audio behavior) and needs device verification only.
+The audio session is set to `shouldPlayInBackground: true` (plus the existing `doNotMix` focus and `playsInSilentMode: true`). The provider activates lock-screen controls on every track change with `setActiveForLockScreen(true, { title })` and seek-forward/backward actions; `doNotMix` is required for the controls to associate with the player. Only honest metadata is shown: the track title, since `expo-media-library` exposes no artist/album/artwork (D-009). Headphone/Bluetooth disconnect handling is not provided by expo-audio 57.0.5; it is injected by the local source patch documented in D-012 and still needs device verification.
 
 The remaining Phase 5 task — persisting and restoring a playback checkpoint — is deferred to the next increment: it will use `expo-sqlite`'s key/value API (per D-005) with a snapshot policy and a validate-before-restore step, and adding that native module should be combined with the Phase 6 database work so both arrive in one development build.
+
+## D-012: Patch expo-audio Android source through shared prebuild + postinstall logic
+
+**Status:** implemented; device validation pending (2026-10-26)
+
+Two expo-audio 57.0.5 Android defects cannot be configured from JS: `requestAudioFocus()` uses `AUDIOFOCUS_GAIN_TRANSIENT` for `doNotMix` (a music player holding focus needs `AUDIOFOCUS_GAIN`), and `AudioModule` never registers an `ACTION_AUDIO_BECOMING_NOISY` receiver (so unplugging headphones routes audio to the speaker). Both are patched in the library source by `plugins/expo-audio-patch.js`: the focus constants are replaced and a `NoisyAudioReceiver` is declared, registered in `OnCreate`, and unregistered in `OnDestroy`.
+
+The patch target is `node_modules/expo-audio/android`, because Expo autolinking compiles that directory directly and the generated `android/` project contains no copy of `AudioModule.kt`. The same module is invoked from two places — the `with-audio-focus-and-noisy-fix` config plugin during prebuild and `scripts/patch-expo-audio.js` from the `postinstall` script — so both a clean install and a regenerated native project run patched code. Every anchor is verified before writing; if an expo-audio update changes the source shape the install/prebuild fails with an explanatory error rather than silently shipping the unfixed behavior.
+
+Trade-offs accepted: this mutates `node_modules`, so it must re-apply after dependency changes (the postinstall hook does that automatically); the patches are local rather than an upstream fork, and should be removed once expo-audio fixes the bugs. Do not replace this with hand-editing `android/`, which Continuous Native Generation deletes.
 
 ## Open questions requiring owner input or device evidence
 
