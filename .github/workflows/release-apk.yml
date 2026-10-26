@@ -39,6 +39,14 @@ jobs:
         working-directory: android
         run: ./gradlew --no-daemon :app:assembleRelease
 
+      - name: Verify expo-audio patch is compiled
+        run: |
+          apk=android/app/build/outputs/apk/release/app-release.apk
+          if ! unzip -p "$apk" 'classes*.dex' | grep -aq 'NoisyAudioReceiver'; then
+            echo 'NoisyAudioReceiver is missing: expo-audio was not compiled from patched source.' >&2
+            exit 1
+          fi
+
       - name: Stage release asset
         run: |
           mkdir -p artifacts

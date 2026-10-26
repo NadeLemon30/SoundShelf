@@ -314,6 +314,7 @@ The first clean release build **succeeded but did not contain the receiver**: `c
 - Fixed by adding `expo.autolinking.android.buildFromSource: ["expo-audio"]` to `package.json`, the supported autolinking switch (`buildFromSourceRegex` in the Expo Gradle settings plugin then forces the source project).
 - **Verified by a second release build (3m 31s):** the Gradle log contains `:expo-audio:compileReleaseKotlin`, `:expo-audio:compileReleaseJavaWithJavac` and `:expo-audio:bundleLibCompileToJarRelease`, and `classes4.dex` in `app-release.apk` contains both `expo.modules.audio` and `NoisyAudioReceiver`. This is the evidence that the patched source is actually in the packaged APK.
 - `AGENTS.md` now warns that SDK 57 may link Expo modules as AARs and that patch presence must be checked in the Gradle log/dex, not the source tree.
+- The tag-driven release workflow now extracts `classes*.dex` from the built APK and fails if `NoisyAudioReceiver` is missing, so a green release cannot silently ship the unpatched AAR again.
 
 ### UI / accessibility fixes
 
