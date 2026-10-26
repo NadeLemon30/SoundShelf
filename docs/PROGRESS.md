@@ -300,12 +300,20 @@ App icon and launch animation (2026-10-13):
 
 ### Build-critical: the audio patch never ran on a clean prebuild
 
-The committed `with-audio-focus-and-noisy-fix` plugin searched `android/app/src/main/java/**/AudioModule.kt`. That file is never there: Expo autolinking compiles `node_modules/expo-audio/android` in place, which was confirmed against the generated `android/` tree. A clean `expo prebuild` (and therefore the GitHub release workflow) would have thrown "Could not find AudioModule.kt" — or, with an older tolerant path, silently built without either fix.
+The committed `with-audio-focus-and-noisy-fix` plugin searched `android/app/src/main/java/**/AudioModule.kt`. That file is never there. The initial assumption that Expo autolinking compiles `node_modules/expo-audio/android` in place was also wrong: SDK 57 links the package's prebuilt AAR by default (see below). A clean `expo prebuild` (and therefore the GitHub release workflow) would have thrown "Could not find AudioModule.kt" — or, with an older tolerant path, silently built without either fix.
 
 - Extracted the patch logic into `plugins/expo-audio-patch.js`; `with-audio-focus-and-noisy-fix.js` is now a thin `withDangerousMod` wrapper around it.
 - Added `scripts/patch-expo-audio.js` and a `postinstall` script so `npm install`/`npm ci` patches the installed library even when prebuild is not re-run. The patch is idempotent.
 - Anchor handling is now fail-fast: a bare `AUDIOFOCUS_GAIN_TRANSIENT` (excluding `_MAY_DUCK`) or any missing receiver anchor throws with an explanatory error instead of warning and shipping unpatched audio.
 - Verified idempotency by running `node scripts/patch-expo-audio.js` twice: first run applied the updated receiver file, second reported "already present".
+
+### Prebuilt-AAR discovery (same pass)
+
+The first clean release build **succeeded but did not contain the receiver**: `classes4.dex` had `AudioModule`/`expo.modules.audio` but no `NoisyAudioReceiver`, and the Gradle log had no `:expo-audio:` tasks at all. Root cause: SDK 57 ships expo-audio as a prebuilt AAR under `node_modules/expo-audio/local-maven-repo`, and autolinking links that artifact by default — so the patched Kotlin source was never compiled. Reading the source file is not evidence that the patch is in the app.
+
+- Fixed by adding `expo.autolinking.android.buildFromSource: ["expo-audio"]` to `package.json`, the supported autolinking switch (`buildFromSourceRegex` in the Expo Gradle settings plugin then forces the source project).
+- **Verified by a second release build (3m 31s):** the Gradle log contains `:expo-audio:compileReleaseKotlin`, `:expo-audio:compileReleaseJavaWithJavac` and `:expo-audio:bundleLibCompileToJarRelease`, and `classes4.dex` in `app-release.apk` contains both `expo.modules.audio` and `NoisyAudioReceiver`. This is the evidence that the patched source is actually in the packaged APK.
+- `AGENTS.md` now warns that SDK 57 may link Expo modules as AARs and that patch presence must be checked in the Gradle log/dex, not the source tree.
 
 ### UI / accessibility fixes
 
@@ -335,6 +343,10 @@ The committed `with-audio-focus-and-noisy-fix` plugin searched `android/app/src/
 - `node scripts/patch-expo-audio.js` twice ✅ (applied, then already present)
 - Patch-unit check ✅: `patchSource` on the installed file is idempotent, and a synthetic bare `AUDIOFOCUS_GAIN_TRANSIENT` throws instead of passing through
 - `npx expo export --platform android --output-dir dist` ✅ (1 Android bundle, 1301 modules; confirms the deleted starter assets are unreferenced)
+- `npx expo prebuild --clean --platform android --no-install` ✅ (regenerated `android/`; the plugin re-ran and reported the patch already present)
+- First local release build (default prebuilt AAR) ✅ 44m 36s; `android/app/build/outputs/apk/release/app-release.apk` 102.6 MB — dex check found `AudioModule` but **not** `NoisyAudioReceiver`
+- Second local release build after `buildFromSource` ✅ 3m 31s; `:expo-audio:compileReleaseKotlin` executed, and `classes4.dex` now contains `NoisyAudioReceiver`
+- `git push origin main` ✅ (5 commits pushed, `e92fd56..fd42d51`)
 - `git diff --check` ✅ (only the repository's pre-existing LF→CRLF warnings)
 
 ### Deliberately not changed
@@ -348,7 +360,7 @@ The committed `with-audio-focus-and-noisy-fix` plugin searched `android/app/src/
 
 0. App icon + launch animation (owner-confirmed 2026-10-26): the splash animation works. At the next device session, confirm the Android launcher icon is the SoundShelf artwork (not the Expo starter icon). On Android 13+, confirm themed icons fall back gracefully. Already committed.
 
-1. **Rebuild and install**: `npx expo prebuild --clean --platform android` is still required after `app.json`/icon changes, then `npx expo run:android --device`. The expo-audio patches are now applied by `postinstall` and re-applied idempotently by prebuild; before building, confirm `node_modules/expo-audio/android/src/main/java/expo/modules/audio/AudioModule.kt` contains `AudioManager.AUDIOFOCUS_GAIN` in both `DO_NOT_MIX` branches and a `noisyAudioReceiver` registration, and that `NoisyAudioReceiver.kt` sits beside it.
+1. **Rebuild and install**: `npx expo prebuild --clean --platform android` is still required after `app.json`/icon changes, then `npx expo run:android --device`. The expo-audio patches are applied by `postinstall` and re-applied idempotently by prebuild, and `package.json` forces source compilation. Do not trust the source tree as proof: confirm the Gradle log contains `:expo-audio:compileReleaseKotlin` and that `classes*.dex` in the installed APK contains `NoisyAudioReceiver` (the local release build was verified this way on 2026-10-26). Use that build for Test D.
 
 2. **Finish Phase 5 device verification** and record results in `docs/PROGRESS.md`:
    - **Test B:** Notification/lock-screen play/pause/next/previous round-trip → mini-player and Now Playing update.
@@ -358,6 +370,6 @@ The committed `with-audio-focus-and-noisy-fix` plugin searched `android/app/src/
    - **Test G:** Launcher icon shows SoundShelf artwork (not Expo icon).
    - **Test H:** Android 13+ themed icon falls back gracefully.
 
-3. **Push + tag** (`v*`) to trigger a GitHub release APK with all Phase 5 fixes included.
+3. **Tag a pushed commit** (`v*`) to trigger a GitHub release APK with all Phase 5 fixes included. The plugin, UI/a11y, hygiene and doc fixes are already pushed; tagging is the only remaining release step.
 
 4. After all device tests are recorded, get **owner approval** before starting Phase 6 (personal library / `expo-sqlite` database foundation + playback checkpoint). The remaining Phase 5 implementation item — persisting/restoring a playback checkpoint — is planned with `expo-sqlite`'s key/value API (D-005/D-011), combined with the Phase 6 database foundation so both native modules arrive in one build.

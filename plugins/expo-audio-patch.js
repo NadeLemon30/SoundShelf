@@ -13,10 +13,14 @@
  * AUDIO_BECOMING_NOISY broadcast (wired unplug / Bluetooth disconnect), so
  * audio continues through the phone speaker after the headphones go away.
  *
- * Both fixes target the Kotlin source in `node_modules/expo-audio/android`,
- * which is what Expo autolinking compiles. The generated `android/` project
- * does not contain a copy of `AudioModule.kt`, so patching there would be a
- * no-op. The patch is applied by the config plugin during prebuild and by the
+ * Both fixes target the Kotlin source in `node_modules/expo-audio/android`.
+ * SDK 57 ships this module as a prebuilt AAR and autolinking uses the AAR by
+ * default, so `package.json` must list `expo-audio` under
+ * `expo.autolinking.android.buildFromSource`; otherwise the patched source is
+ * never compiled into the app. With that setting the generated project includes
+ * `:expo-audio` as a source project, and our edits take effect.
+ *
+ * The patch is applied by the config plugin during prebuild and by the
  * `postinstall` script, so `npm ci` cannot silently drop it.
  *
  * Every anchor is checked before anything is written. If expo-audio changes
@@ -53,7 +57,8 @@ function findFileRecursive(dir, filename) {
 /**
  * Locate `AudioModule.kt`.
  *
- * Primary: the expo-audio package source that Gradle compiles.
+ * Primary: the expo-audio package source, compiled when the package is listed
+ * in `expo.autolinking.android.buildFromSource` (see package.json).
  * Fallback: a generated native tree, for local experiments that copy sources.
  */
 function resolveAudioModulePath(projectRoot) {
