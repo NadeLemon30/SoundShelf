@@ -9,6 +9,7 @@ import { playbackPercent } from '@/features/playback/format';
 import { usePlayback } from '@/features/playback/playback-provider';
 import { ArtworkPlaceholder } from './artwork-placeholder';
 import { ThemedText } from '../themed-text';
+import { AppIcon } from './app-icon';
 
 export function MiniPlayer() {
   const theme = useTheme();
@@ -50,7 +51,7 @@ export function MiniPlayer() {
           hitSlop={14}
           onPress={togglePlayPause}
           style={({ pressed }) => [styles.control, pressed && styles.pressed]}>
-          <ThemedText style={styles.controlGlyph}>{status.playing ? '❚❚' : '▶'}</ThemedText>
+          <AppIcon name={status.playing ? 'pause' : 'play'} size={20} color="#FFFFFF" />
         </Pressable>
         <Pressable
           accessibilityLabel="Next track"
@@ -58,7 +59,7 @@ export function MiniPlayer() {
           hitSlop={14}
           onPress={next}
           style={({ pressed }) => [styles.control, pressed && styles.pressed]}>
-          <ThemedText style={styles.controlGlyph}>⏭</ThemedText>
+          <AppIcon name="next" size={22} color="#FFFFFF" />
         </Pressable>
       </View>
 
@@ -93,7 +94,6 @@ const styles = StyleSheet.create({
   trackTitle: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
   trackSub: { fontSize: 12, color: '#B3B3B3' },
   control: { padding: Spacing.one },
-  controlGlyph: { fontSize: 20, color: '#FFFFFF', fontWeight: '700' },
   progressTrack: { height: 2, width: '100%' },
   progressFill: { height: '100%' },
   pressed: { opacity: 0.65 },

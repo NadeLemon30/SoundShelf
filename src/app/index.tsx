@@ -3,6 +3,7 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { AppIcon, type AppIconName } from '@/components/ui/app-icon';
 import { AppGradient } from '@/components/ui/app-gradient';
 import { Spacing, BottomTabInset, MaxContentWidth, MiniPlayerInset } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -18,11 +19,11 @@ function greeting(): string {
   return 'Good evening';
 }
 
-type QuickLink = { label: string; href: '/library' | '/search' | '/personal-library' };
+type QuickLink = { label: string; href: '/library' | '/search' | '/personal-library'; icon: AppIconName };
 const QUICK_LINKS: QuickLink[] = [
-  { label: '📚  Library', href: '/library' },
-  { label: '♥  My music', href: '/personal-library' },
-  { label: '🔍  Search', href: '/search' },
+  { label: 'Library', href: '/library', icon: 'library' },
+  { label: 'My music', href: '/personal-library', icon: 'favorite' },
+  { label: 'Search', href: '/search', icon: 'search' },
 ];
 
 export default function HomeScreen() {
@@ -57,7 +58,7 @@ export default function HomeScreen() {
       case 'scanCard':
         return (
           <View style={[styles.scanCard, { backgroundColor: theme.surfaceRaised }]}>
-            <ThemedText style={styles.scanIcon}>🎵</ThemedText>
+            <AppIcon name="music" size={32} color={theme.accent} />
             <ThemedText style={styles.scanTitle}>Find your music</ThemedText>
             <ThemedText style={styles.scanSub}>
               Scan the audio files already saved on your device.
@@ -90,6 +91,7 @@ export default function HomeScreen() {
                     { backgroundColor: theme.surfaceRaised },
                     pressed && styles.pressed,
                   ]}>
+                  <AppIcon name={link.icon} size={16} color="#FFFFFF" />
                   <ThemedText style={styles.quickChipText}>{link.label}</ThemedText>
                 </Pressable>
               </Link>
@@ -113,9 +115,10 @@ export default function HomeScreen() {
         return (
           <Link href="/library" asChild>
             <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedText style={styles.seeAll}>
-                See all {tracks.length} songs →
-              </ThemedText>
+              <View style={styles.seeAllRow}>
+                <ThemedText style={styles.seeAll}>See all {tracks.length} songs</ThemedText>
+                <AppIcon name="chevronRight" size={16} color="#B3B3B3" />
+              </View>
             </Pressable>
           </Link>
         );
@@ -153,7 +156,6 @@ const styles = StyleSheet.create({
   greeting: { fontSize: 30, fontWeight: '700', color: '#FFFFFF' },
   // Scan card
   scanCard: { borderRadius: 12, padding: Spacing.four, gap: Spacing.two },
-  scanIcon: { fontSize: 32 },
   scanTitle: { fontSize: 20, fontWeight: '700', color: '#FFFFFF' },
   scanSub: { fontSize: 14, color: '#B3B3B3', lineHeight: 20 },
   greenBtn: {
@@ -167,6 +169,9 @@ const styles = StyleSheet.create({
   // Quick links
   quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   quickChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.one,
     paddingVertical: Spacing.two,
     paddingHorizontal: Spacing.three,
     borderRadius: 24,
@@ -181,5 +186,6 @@ const styles = StyleSheet.create({
     marginBottom: -Spacing.two,
   },
   seeAll: { fontSize: 13, color: '#B3B3B3', paddingVertical: Spacing.one },
+  seeAllRow: { flexDirection: 'row', alignItems: 'center' },
   pressed: { opacity: 0.7 },
 });

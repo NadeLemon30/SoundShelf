@@ -3,6 +3,7 @@ import { FlatList, Linking, Pressable, ScrollView, StyleSheet, View } from 'reac
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { AppIcon } from '@/components/ui/app-icon';
 import { AppGradient } from '@/components/ui/app-gradient';
 import { EmptyState } from '@/components/ui/empty-state';
 import { BottomTabInset, MaxContentWidth, MiniPlayerInset, Spacing } from '@/constants/theme';
@@ -104,7 +105,7 @@ export default function LibraryScreen() {
           onPress={rescan}
           hitSlop={12}
           style={({ pressed }) => pressed && styles.pressed}>
-          <ThemedText style={[styles.rescanIcon, { color: theme.textMuted }]}>⟳</ThemedText>
+          <AppIcon name="refresh" size={22} color={theme.textMuted} />
         </Pressable>
       </View>
 
@@ -119,7 +120,10 @@ export default function LibraryScreen() {
             accessibilityRole="button"
             onPress={() => setSelectedAlbumId(null)}
             style={[styles.filterPill, { backgroundColor: '#FFFFFF' }]}>
-            <ThemedText style={[styles.filterPillText, { color: '#000000' }]}>← {selectedAlbum.title}</ThemedText>
+            <View style={styles.backPillContent}>
+              <AppIcon name="back" size={16} color="#000000" />
+              <ThemedText style={[styles.filterPillText, { color: '#000000' }]}>{selectedAlbum.title}</ThemedText>
+            </View>
           </Pressable>
         ) : (
           FILTERS.map(({ key, label }) => {
@@ -184,7 +188,7 @@ export default function LibraryScreen() {
           ListEmptyComponent={
             <EmptyState
               title={isAlbumOverview ? 'No albums' : selectedAlbum ? 'Album empty' : 'No favorites yet'}
-              description={isAlbumOverview ? 'No album folders found.' : selectedAlbum ? 'Rescan if tracks changed.' : 'Tap ♡ beside a song to save it here.'}
+              description={isAlbumOverview ? 'No album folders found.' : selectedAlbum ? 'Rescan if tracks changed.' : 'Tap the favorite icon beside a song to save it here.'}
             />
           }
           ListFooterComponent={
@@ -222,10 +226,10 @@ const styles = StyleSheet.create({
   // Title row
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   screenTitle: { fontSize: 24, fontWeight: '700', color: '#FFFFFF' },
-  rescanIcon: { fontSize: 22 },
   // Filter pills
   filterRow: { flexDirection: 'row', gap: Spacing.two, paddingRight: Spacing.three },
   filterPill: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: 20 },
+  backPillContent: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   filterPillText: { fontSize: 13, fontWeight: '600' },
   // Count
   listMetaText: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, color: '#B3B3B3', marginTop: Spacing.one },

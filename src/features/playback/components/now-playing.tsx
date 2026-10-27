@@ -5,6 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { ArtworkPlaceholder } from '@/components/ui/artwork-placeholder';
+import { AppIcon } from '@/components/ui/app-icon';
 import { Spacing } from '@/constants/theme';
 import { usePersonalLibrary } from '@/features/personal-library/personal-library-provider';
 import { useTheme } from '@/hooks/use-theme';
@@ -55,7 +56,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
                 hitSlop={14}
                 onPress={onClose}
                 style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText style={styles.chevronDown} themeColor="textMuted">⌄</ThemedText>
+                <AppIcon name="chevronDown" size={28} color={theme.textMuted} />
               </Pressable>
               <View style={styles.headerCenter}>
                 <ThemedText style={styles.headerContext} themeColor="textMuted">PLAYING FROM LIBRARY</ThemedText>
@@ -67,7 +68,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
               </View>
               {/* Visual affordance reserved for a future context menu. */}
               <View accessible={false} style={styles.headerSideBtn}>
-                <ThemedText style={[styles.threeDot, { color: '#B3B3B3' }]}>⋮</ThemedText>
+                <AppIcon name="more" size={22} color="#B3B3B3" />
               </View>
             </View>
 
@@ -97,9 +98,11 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
                   if (currentTrack) void toggleFavorite(currentTrack);
                 }}
                 style={({ pressed }) => pressed && styles.pressed}>
-                <ThemedText style={[styles.heartIcon, { color: currentTrack && isFavorite(currentTrack.id) ? theme.accent : theme.textMuted }]}>
-                  {currentTrack && isFavorite(currentTrack.id) ? '♥' : '♡'}
-                </ThemedText>
+                <AppIcon
+                  name={currentTrack && isFavorite(currentTrack.id) ? 'favorite' : 'favoriteOutline'}
+                  size={26}
+                  color={currentTrack && isFavorite(currentTrack.id) ? theme.accent : theme.textMuted}
+                />
               </Pressable>
             </View>
 
@@ -148,7 +151,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
                 accessibilityRole="button"
                 onPress={toggleShuffle}
                 style={({ pressed }) => [styles.sideBtn, pressed && styles.pressed]}>
-                <ThemedText style={[styles.sideGlyph, { color: shuffle ? theme.accent : theme.textMuted }]}>⇄</ThemedText>
+                <AppIcon name="shuffle" size={26} color={shuffle ? theme.accent : theme.textMuted} />
                 {shuffle && <View style={[styles.activeDot, { backgroundColor: theme.accent }]} />}
               </Pressable>
 
@@ -158,7 +161,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
                 accessibilityRole="button"
                 onPress={previous}
                 style={({ pressed }) => [styles.sideBtn, pressed && styles.pressed]}>
-                <ThemedText style={[styles.sideGlyph, { color: '#FFFFFF' }]}>⏮</ThemedText>
+                <AppIcon name="previous" size={26} color="#FFFFFF" />
               </Pressable>
 
               {/* Play/Pause — large circular button */}
@@ -167,7 +170,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
                 accessibilityRole="button"
                 onPress={togglePlayPause}
                 style={({ pressed }) => [styles.playBtn, { backgroundColor: '#FFFFFF' }, pressed && styles.pressed]}>
-                <ThemedText style={styles.playGlyph}>{status.playing ? '❚❚' : '▶'}</ThemedText>
+                <AppIcon name={status.playing ? 'pause' : 'play'} size={26} color="#000000" />
               </Pressable>
 
               {/* Next */}
@@ -176,7 +179,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
                 accessibilityRole="button"
                 onPress={next}
                 style={({ pressed }) => [styles.sideBtn, pressed && styles.pressed]}>
-                <ThemedText style={[styles.sideGlyph, { color: '#FFFFFF' }]}>⏭</ThemedText>
+                <AppIcon name="next" size={26} color="#FFFFFF" />
               </Pressable>
 
               {/* Repeat */}
@@ -185,9 +188,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
                 accessibilityRole="button"
                 onPress={cycleRepeat}
                 style={({ pressed }) => [styles.sideBtn, pressed && styles.pressed]}>
-                <ThemedText style={[styles.sideGlyph, { color: repeat === 'off' ? theme.textMuted : theme.accent }]}>
-                  {repeat === 'one' ? '🔂' : '🔁'}
-                </ThemedText>
+                <AppIcon name={repeat === 'one' ? 'repeatOne' : 'repeat'} size={26} color={repeat === 'off' ? theme.textMuted : theme.accent} />
                 {repeat !== 'off' && <View style={[styles.activeDot, { backgroundColor: theme.accent }]} />}
               </Pressable>
             </View>
@@ -208,12 +209,11 @@ const styles = StyleSheet.create({
   handle: { width: 36, height: 4, borderRadius: 2 },
   // Header row
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  chevronDown: { fontSize: 28, lineHeight: 32, fontWeight: '700', width: 40 },
+  chevronDown: { width: 40 },
   headerCenter: { flex: 1, alignItems: 'center', gap: 2 },
   headerContext: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5 },
   headerQueue: { fontSize: 11 },
   headerSideBtn: { width: 40, alignItems: 'flex-end' },
-  threeDot: { fontSize: 22, lineHeight: 26 },
   // Artwork
   artworkWrap: { alignItems: 'center' },
   artworkRadius: { borderRadius: 8 },
@@ -222,7 +222,6 @@ const styles = StyleSheet.create({
   trackInfo: { flex: 1, gap: 4 },
   trackTitle: { fontSize: 22, fontWeight: '700', color: '#FFFFFF' },
   trackSub: { fontSize: 14, color: '#B3B3B3' },
-  heartIcon: { fontSize: 26 },
   // Seek bar
   seekSection: { gap: 8 },
   seekTrack: { height: 4, borderRadius: 2, overflow: 'visible', justifyContent: 'center' },
@@ -232,9 +231,7 @@ const styles = StyleSheet.create({
   // Transport controls
   controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
   sideBtn: { width: 48, alignItems: 'center', gap: 4 },
-  sideGlyph: { fontSize: 26 },
   activeDot: { width: 4, height: 4, borderRadius: 2 },
   playBtn: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center' },
-  playGlyph: { fontSize: 26, fontWeight: '700', color: '#000000' },
   pressed: { opacity: 0.65 },
 });

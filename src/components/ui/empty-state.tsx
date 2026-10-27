@@ -8,7 +8,7 @@ type EmptyStateProps = { title: string; description: string };
 export function EmptyState({ title, description }: EmptyStateProps) {
   return (
     <View accessibilityRole="summary" style={styles.container}>
-      <ArtworkPlaceholder size={80} label="♪" />
+      <ArtworkPlaceholder size={80} />
       <ThemedText style={styles.title}>{title}</ThemedText>
       <ThemedText themeColor="textMuted" style={styles.description}>{description}</ThemedText>
     </View>

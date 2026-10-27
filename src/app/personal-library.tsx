@@ -117,7 +117,7 @@ export default function PersonalLibraryScreen() {
               accessibilityLabel={`Open playlist ${playlist.name}`}
               onPress={() => setSelectedPlaylistId(playlist.id)}
               style={({ pressed }) => [styles.playlistOpenArea, pressed && styles.pressed]}>
-              <ArtworkPlaceholder size={52} label="♫" style={styles.playlistArtwork} />
+            <ArtworkPlaceholder size={52} icon="album" style={styles.playlistArtwork} />
               <View style={styles.playlistInfo}>
                 <ThemedText style={styles.playlistName}>{playlist.name}</ThemedText>
                 <ThemedText style={styles.playlistCount} themeColor="textMuted">

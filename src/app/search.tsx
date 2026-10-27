@@ -3,6 +3,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMemo, useState } from 'react';
 
 import { ThemedText } from '@/components/themed-text';
+import { AppIcon } from '@/components/ui/app-icon';
 import { AppGradient } from '@/components/ui/app-gradient';
 import { EmptyState } from '@/components/ui/empty-state';
 import { BottomTabInset, MaxContentWidth, MiniPlayerInset, Spacing } from '@/constants/theme';
@@ -58,7 +59,7 @@ export default function SearchScreen() {
             <ThemedText style={styles.screenTitle}>Search</ThemedText>
             {hasLibrary && (
               <View style={[styles.inputWrap, { backgroundColor: theme.surfaceRaised }]}>
-                <ThemedText style={styles.searchIcon} themeColor="textMuted">🔍</ThemedText>
+                <AppIcon name="search" size={18} color={theme.textMuted} />
                 <TextInput
                   accessibilityLabel="Search local songs"
                   autoCapitalize="none"
@@ -148,7 +149,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: Spacing.three,
     gap: Spacing.two,
   },
-  searchIcon: { fontSize: 16 },
   input: { flex: 1, minHeight: 48, fontSize: 15 },
   resultLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, color: '#B3B3B3' },
 });

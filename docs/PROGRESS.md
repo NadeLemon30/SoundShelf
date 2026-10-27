@@ -466,6 +466,26 @@ Not yet device-verified. No new native modules were added, so the existing dev b
 - Static verification: `npm.cmd run lint` and `npx.cmd tsc --noEmit` passed with no diagnostics; `git diff --check` passed with only the repository's existing LF-to-CRLF notices. No device was attached, so verify that the player sits above—not on top of—the tab bar, remains visible across tab switches, and opens Now Playing correctly.
 - Affected files: `src/app/_layout.tsx`, `src/components/ui/mini-player.tsx`, `src/constants/theme.ts`, `src/components/ui/screen.tsx`, `src/app/index.tsx`, `src/app/library.tsx`, `src/app/search.tsx`, `src/app/personal-library.tsx`, and `docs/PROGRESS.md`.
 
+## Fix (2026-10-27) — mini-player/tab-bar overlap
+
+- Raised the root-level mini-player overlay by `Spacing.three` (16 dp) above `BottomTabInset`. This accounts for the extra visible height of Android's native tab treatment and keeps the mini-player clear of the navigation controls.
+- Static verification: `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check` passed; only the repository's existing LF-to-CRLF notice appeared. On device, confirm the added gap clears the tab bar while leaving the player comfortably reachable.
+- Affected files: `src/app/_layout.tsx`, `docs/PROGRESS.md`.
+
+## Update (2026-10-27) — native icons replace UI emoji and glyphs
+
+- Added the shared `AppIcon` component backed by SDK 57's installed `expo-symbols` package. It maps SF Symbols on iOS to Material Symbols on Android and web, so UI controls use native iconography rather than emoji or text glyphs.
+- Replaced the music, search, library, favorite, transport, shuffle/repeat, refresh, back, chevron, and more-option glyphs across the active screens and shared player components. Text descriptions now refer to the favorite icon rather than embedding a heart character. Existing button accessibility labels remain the accessible names for their icon controls.
+- Static verification: `npm.cmd run lint` and `npx.cmd tsc --noEmit` passed with no diagnostics. A source scan found no remaining UI emoji/glyphs in `src/`; the sole matched arrow is a code comment in `media-library-service.ts`.
+- Affected files: `src/components/ui/app-icon.tsx`, `src/components/ui/artwork-placeholder.tsx`, `src/components/ui/empty-state.tsx`, `src/components/ui/mini-player.tsx`, `src/features/library/components/library-rows.tsx`, `src/features/playback/components/now-playing.tsx`, `src/app/index.tsx`, `src/app/library.tsx`, `src/app/search.tsx`, `src/app/personal-library.tsx`, and `docs/PROGRESS.md`.
+
+## Update (2026-10-28) — new launcher icon artwork
+
+- Adopted the owner-supplied `assets/icon.png` green music-note artwork as the source for the app's launcher and splash branding. The original source is 511×537 with transparent corners, so square native derivatives were generated without changing the source: `assets/images/icon.png` and `assets/images/icon-ios.png` are 1024×1024 opaque icons, and `assets/images/android-icon-foreground.png` is a 512×512 transparent adaptive-icon foreground.
+- Updated `app.json` to use the new square base icon, the regenerated adaptive foreground and iOS icon, and the supplied source image for the splash. Updated `src/components/startup-animation.tsx` to use `assets/icon.png`, replacing the now-removed SoundShelf image reference.
+- Static verification: `npx.cmd expo config --type public` resolves all icon and splash paths; `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check` passed (only existing LF-to-CRLF notices appeared). Because app configuration and native icon assets changed, run `npx expo prebuild --clean --platform android` before `npx expo run:android --device`, then confirm the launcher icon after uninstalling/reinstalling the app. Splash appearance should be judged using a preview or production APK, not Expo Go or a development build.
+- Affected files: `assets/icon.png`, `assets/images/icon.png`, `assets/images/icon-ios.png`, `assets/images/android-icon-foreground.png`, `app.json`, `src/components/startup-animation.tsx`, and `docs/PROGRESS.md`.
+
 ---
 
 ## Update (2026-10-27) — Spotify-style UI revamp

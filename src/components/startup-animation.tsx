@@ -87,7 +87,7 @@ export function StartupAnimation() {
         <Image
           accessibilityIgnoresInvertColors
           contentFit="contain"
-          source={require('@/assets/SoundShelf.png')}
+          source={require('@/assets/icon.png')}
           style={styles.logo}
         />
       </Animated.View>

@@ -1,6 +1,7 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { ArtworkPlaceholder } from '@/components/ui/artwork-placeholder';
+import { AppIcon } from '@/components/ui/app-icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import type { LibraryAlbum, LibraryTrack } from '../types';
@@ -21,7 +22,7 @@ export function LibraryTrackRow({ track, onPress, isCurrent = false, isFavorite 
       <ArtworkPlaceholder size={48} />
       {isCurrent && (
         <View style={[styles.playingOverlay, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
-          <ThemedText style={[styles.playingGlyph, { color: theme.accent }]}>▶</ThemedText>
+          <AppIcon name="play" size={16} color={theme.accent} />
         </View>
       )}
     </View>
@@ -41,9 +42,7 @@ export function LibraryTrackRow({ track, onPress, isCurrent = false, isFavorite 
       onPress={onToggleFavorite}
       hitSlop={12}
       style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
-      <ThemedText style={[styles.heartIcon, { color: isFavorite ? theme.accent : theme.textMuted }]}>
-        {isFavorite ? '♥' : '♡'}
-      </ThemedText>
+      <AppIcon name={isFavorite ? 'favorite' : 'favoriteOutline'} size={20} color={isFavorite ? theme.accent : theme.textMuted} />
     </Pressable>
   ) : null;
 
@@ -68,7 +67,7 @@ export function LibraryTrackRow({ track, onPress, isCurrent = false, isFavorite 
       {favoriteBtn}
       {/* Visual affordance reserved for a future context menu. */}
       <View accessible={false} style={styles.iconBtn}>
-        <ThemedText style={[styles.moreIcon, { color: theme.textMuted }]}>⋮</ThemedText>
+        <AppIcon name="more" size={22} color={theme.textMuted} />
       </View>
     </View>
   );
@@ -83,14 +82,14 @@ export function LibraryAlbumRow({ album, onPress }: { album: LibraryAlbum; onPre
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-      <ArtworkPlaceholder size={56} label="♫" />
+      <ArtworkPlaceholder size={56} icon="album" />
       <View style={styles.details}>
         <ThemedText numberOfLines={1} style={styles.albumTitle}>{album.title}</ThemedText>
         <ThemedText numberOfLines={1} themeColor="textMuted" style={styles.trackSub}>
           Album · {count} song{count === 1 ? '' : 's'}
         </ThemedText>
       </View>
-      <ThemedText style={{ color: theme.textMuted, fontSize: 20 }}>›</ThemedText>
+      <AppIcon name="chevronRight" size={22} color={theme.textMuted} />
     </Pressable>
   );
 }
@@ -107,13 +106,10 @@ const styles = StyleSheet.create({
   pressable: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   artworkWrap: { position: 'relative' },
   playingOverlay: { ...StyleSheet.absoluteFill, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
-  playingGlyph: { fontSize: 14, fontWeight: '700' },
   details: { flex: 1, gap: 3 },
   trackTitle: { fontSize: 15, fontWeight: '500', color: '#FFFFFF' },
   trackSub: { fontSize: 13, color: '#B3B3B3' },
   albumTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
   iconBtn: { padding: Spacing.one },
-  heartIcon: { fontSize: 20 },
-  moreIcon: { fontSize: 20, lineHeight: 24 },
   pressed: { opacity: 0.65 },
 });
