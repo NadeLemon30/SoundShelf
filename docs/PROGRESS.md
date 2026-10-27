@@ -482,6 +482,12 @@ Not yet device-verified. No new native modules were added, so the existing dev b
 - The exit now has a gentler logo lift before its final expansion, delayed sound-ring pulses, a longer diagonal sweep, and an extra equalizer beat. All animated properties remain native-driver opacity/transforms; the overlay remains non-interactive and self-unmounts when complete.
 - This is a JavaScript-only change. `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check` passed (the latter reported only the repository's existing LF-to-CRLF notices). On a release APK, assess whether the slightly longer brand moment still feels responsive; Expo Go and development builds do not faithfully show the native-splash portion.
 
+## Update (2026-10-28) — seek-bar position and current splash asset
+
+- Moved the Now Playing seek section 25 dp upward through its layout margin, bringing its track and timestamps closer to the song details without overlap.
+- The React splash overlay now uses React Native's static `Image` loader with a direct `../../assets/icon.png` module reference, rather than `expo-image`. The native `expo-splash-screen` configuration already points to the same `./assets/icon.png` file. This removes a separate runtime image-cache path and makes the intended asset explicit in both startup layers.
+- `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check` passed (the last command reported only the repository's existing LF-to-CRLF notices). Native splash assets are compiled into the Android app, so confirm this on a regenerated, reinstalled release/preview APK.
+
 ## Update (2026-10-27) — native icons replace UI emoji and glyphs
 
 - Added the shared `AppIcon` component backed by SDK 57's installed `expo-symbols` package. It maps SF Symbols on iOS to Material Symbols on Android and web, so UI controls use native iconography rather than emoji or text glyphs.

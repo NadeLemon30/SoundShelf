@@ -1,7 +1,6 @@
-import { Image } from 'expo-image';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, StyleSheet } from 'react-native';
+import { Animated, Easing, Image, StyleSheet } from 'react-native';
 
 /**
  * Keep these in sync with the `expo-splash-screen` plugin in `app.json` so the native splash
@@ -11,6 +10,7 @@ const BACKGROUND = '#185048';
 const LOGO_SIZE = 160;
 const ICON_HOLD_MS = 2_450;
 const GRAPHIC_EXIT_DURATION_MS = 1_400;
+const SPLASH_ICON = require('../../assets/icon.png');
 
 /**
  * Module-level animation driver. `StartupAnimation` renders at most once per app lifetime
@@ -88,8 +88,8 @@ export function StartupAnimation() {
       <Animated.View style={{ opacity: logoOpacity, transform: [{ scale: logoScale }] }}>
         <Image
           accessibilityIgnoresInvertColors
-          contentFit="contain"
-          source={require('@/assets/icon.png')}
+          resizeMode="contain"
+          source={SPLASH_ICON}
           style={styles.logo}
         />
       </Animated.View>
