@@ -2,6 +2,8 @@
 
 ## Current state
 
+- **Current phase (2026-10-27 correction):** 6 — Personal library. The owner confirmed Phase 5 was done and authorized Phase 6. The individual final Phase 5 device-test observations were not captured in this handoff. Phase 6 now has its SQLite foundation, favorites, playlists, recently played tracks, and the deferred playback checkpoint; a native/device verification pass is still required.
+
 - **Current phase:** 5 — Background playback. The owner reported a Phase 4 device test on 2026-10-13 and approved moving to Phase 5. **Background playback is now device-verified and working** (2026-10-13): the true root cause of "audio stops on Home/lock" was a backgrounding crash, fixed by the config plugin below. Remaining Phase 5 item: playback-checkpoint persistence (still deferred to combine with the Phase 6 database foundation).
 - **Repository baseline:** `d0f2289` (`Initial commit`); latest checkpoint `d6d81c5` (Phase 5 background-crash fix + auto-scan). Release `v0.3.5` (`be26715`, 2026-10-26) includes the launcher/splash work, the bug-fix/hygiene pass, and the expo-audio source-build fix recorded below. Recent committed work: album browsing, permission denial, empty-library, and Phase 4 foreground playback increments on 2026-10-12; the Phase 5 background-playback increments are described below.
 - **Framework:** Expo SDK 57 (`expo ~57.0.27`), React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57.
@@ -368,6 +370,21 @@ The first clean release build **succeeded but did not contain the receiver**: `c
 - **Still required:** a new native build and physical-device test. `v0.3.5` predates this change and cannot validate it. Test while SoundShelf plays, start playback in another full media app, and repeat across a track change/buffering transition. SoundShelf must pause promptly, then resume only after Android returns audio focus.
 
 ## Exact next step
+
+## Update (2026-10-27) — Phase 6 SQLite foundation and personal-library UI
+
+- Installed SDK 57-compatible `expo-sqlite` (`~57.0.4`) through `npx expo install`; Expo added its config plugin to `app.json`. The native project was regenerated with `npx expo prebuild --clean --platform android --no-install` after that config change.
+- `src/features/personal-library/database.ts` creates schema version 1 with WAL and foreign keys. It has playlists and ordered playlist items (with cascade deletion), favorites, recently played, and a singleton playback checkpoint. Each saved track keeps a metadata/URI snapshot so a missing or rescanned library entry fails locally rather than corrupting personal data.
+- `repository.ts` uses bound parameters for all values and supplies durable operations for playlist creation/deletion/add/remove, favorites, recents, and checkpoints. The provider exposes those operations and refreshes state after writes.
+- `personal-library-provider.tsx` is inside `SQLiteProvider` and outside the player. `playback-provider.tsx` records selected tracks as recently played, saves a checkpoint on app background/unmount, and restores a saved track/queue/position **paused** after the library scan supplies fresh MediaStore URIs. It never autoplays at launch.
+- `library.tsx` now has a Favorites view and accessible heart controls. New `personal-library.tsx`, linked from Home as **My music**, creates/deletes playlists, adds favorites to playlists, removes playlist entries, shows recents, and plays stored entries. The UI keeps all state local to the device.
+- Static verification passed: `npm.cmd run lint`, `npx.cmd tsc --noEmit`, `npx.cmd expo export --platform android --output-dir .expo-export-check`, `npx.cmd expo config --type introspect`, `npx.cmd expo prebuild --clean --platform android --no-install`, and `git diff --check`. No physical device was attached, so database persistence, checkpoint restore, and playlist controls remain device-unverified.
+
+### Phase 6 next step (current)
+
+Build a fresh Android development build, because `expo-sqlite` is a native module and `app.json` changed: `npx expo run:android --device` using the regenerated `android/` project. On device, scan music; favorite a song; create a playlist and add/remove it; force-close/reopen; then confirm favorites/playlists/recent entries persist. Play a song, seek, background/kill/reopen, and confirm the player restores the correct song and position **paused**. Record results here. After this verification, complete remaining Phase 6 UX/reliability work (playlist ordering and stale-track handling) before requesting approval for Phase 7.
+
+> The older Phase 5 instructions below are superseded and retained only as historical context.
 
 **First:** build a new development or release APK with this uncommitted focus patch (`npx expo prebuild --clean --platform android`, then `npx expo run:android --device` or a release build). Do not use `v0.3.5` for the audio-focus test.
 

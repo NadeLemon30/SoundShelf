@@ -1,8 +1,10 @@
 import { type AudioPlayer, requestNotificationPermissionsAsync, setAudioModeAsync, useAudioPlayer } from 'expo-audio';
 import { createContext, type PropsWithChildren, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
-import { Platform } from 'react-native';
+import { AppState, Platform } from 'react-native';
 
+import { useLibrary } from '@/features/library/library-provider';
 import type { LibraryTrack } from '@/features/library/types';
+import { usePersonalLibrary } from '@/features/personal-library/personal-library-provider';
 
 import { naturalOrder, positionInOrder, shuffledOrder } from './playlist';
 import { nextRepeatMode, type RepeatMode } from './types';
@@ -38,6 +40,8 @@ const END_OF_TRACK_TOLERANCE = 0.25;
 
 export function PlaybackProvider({ children }: PropsWithChildren) {
   const player = useAudioPlayer(null);
+  const { status: libraryStatus, tracks } = useLibrary();
+  const { ready: personalLibraryReady, loadCheckpoint, recordPlay, saveCheckpoint } = usePersonalLibrary();
   const [queue, setQueue] = useState<LibraryTrack[]>([]);
   const [order, setOrder] = useState<number[]>([]);
   const [index, setIndex] = useState(0);
@@ -51,6 +55,10 @@ export function PlaybackProvider({ children }: PropsWithChildren) {
   const pendingPlayRef = useRef(false);
   /** Android's notification permission is requested once per session, at the first user play. */
   const notificationRequestedRef = useRef(false);
+  /** A checkpoint must restore paused; never surprise the user with audio on launch. */
+  const restorePausedRef = useRef(false);
+  const restorePositionRef = useRef<number | null>(null);
+  const checkpointRestoredRef = useRef(false);
 
   const currentTrack = order.length > 0 && index >= 0 && index < order.length ? queue[order[index]] ?? null : null;
 
@@ -68,7 +76,8 @@ export function PlaybackProvider({ children }: PropsWithChildren) {
       return;
     }
     finishHandledRef.current = false;
-    pendingPlayRef.current = true;
+    pendingPlayRef.current = !restorePausedRef.current;
+    restorePausedRef.current = false;
     player.replace({ uri: currentTrack.uri });
     // Activate media controls (notification drawer / lock screen) for the current track.
     // On Android this also keeps the foreground service alive for sustained background playback.
@@ -78,6 +87,30 @@ export function PlaybackProvider({ children }: PropsWithChildren) {
       { showSeekBackward: true, showSeekForward: true },
     );
   }, [currentTrack, player]);
+
+  // Restore the last selected track and position only after the current local-library scan
+  // has supplied fresh URIs. The restored player deliberately remains paused.
+  useEffect(() => {
+    if (checkpointRestoredRef.current || !personalLibraryReady || libraryStatus !== 'ready' || tracks.length === 0) return;
+    checkpointRestoredRef.current = true;
+    loadCheckpoint().then((checkpoint) => {
+      if (!checkpoint) return;
+      const available = new Map(tracks.map((track) => [track.id, track]));
+      const restoredQueue = checkpoint.queue.map((track) => available.get(track.id) ?? track).filter((track) => Boolean(track.uri));
+      const selected = available.get(checkpoint.track.id) ?? checkpoint.track;
+      const selectedIndex = restoredQueue.findIndex((track) => track.id === selected.id);
+      if (!selected.uri || selectedIndex < 0) return;
+      restorePausedRef.current = true;
+      restorePositionRef.current = checkpoint.positionSeconds;
+      setQueue(restoredQueue);
+      setOrder(naturalOrder(restoredQueue.length));
+      setIndex(selectedIndex);
+      setRepeat(checkpoint.repeat);
+      setShuffle(checkpoint.shuffle);
+    }).catch(() => {
+      // A damaged checkpoint is non-fatal; the normal empty player remains available.
+    });
+  }, [libraryStatus, loadCheckpoint, personalLibraryReady, tracks]);
 
   const advanceForFinish = useCallback(() => {
     if (index < order.length - 1) {
@@ -110,6 +143,10 @@ export function PlaybackProvider({ children }: PropsWithChildren) {
       if (pendingPlayRef.current && status.isLoaded) {
         pendingPlayRef.current = false;
         player.play();
+      }
+      if (restorePositionRef.current !== null && status.isLoaded) {
+        player.seekTo(restorePositionRef.current);
+        restorePositionRef.current = null;
       }
       if (status.didJustFinish) {
         if (repeat === 'one') {
@@ -148,6 +185,7 @@ export function PlaybackProvider({ children }: PropsWithChildren) {
       setQueue(list);
       setOrder(nextOrder);
       setIndex(shuffle ? 0 : safeStart);
+      void recordPlay(track);
 
       // Re-selecting the current track is not a state change, so restart it directly.
       if (isSameTrack) {
@@ -156,7 +194,7 @@ export function PlaybackProvider({ children }: PropsWithChildren) {
         player.play();
       }
     },
-    [currentTrack?.id, player, shuffle],
+    [currentTrack?.id, player, recordPlay, shuffle],
   );
 
   const togglePlayPause = useCallback(() => {
@@ -239,6 +277,22 @@ export function PlaybackProvider({ children }: PropsWithChildren) {
     setOrder(nextOrder);
     setIndex(enabled ? 0 : positionInOrder(nextOrder, currentQueueIndex));
   }, [index, order, queue.length, shuffle]);
+
+  const persistCheckpoint = useCallback(() => {
+    if (!currentTrack || order.length === 0) return;
+    const orderedQueue = order.map((queueIndex) => queue[queueIndex]).filter((track): track is LibraryTrack => Boolean(track));
+    if (orderedQueue.length === 0) return;
+    void saveCheckpoint({ track: currentTrack, queue: orderedQueue, index, repeat, shuffle, positionSeconds: Math.max(0, player.currentTime) });
+  }, [currentTrack, index, order, player.currentTime, queue, repeat, saveCheckpoint, shuffle]);
+
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', (nextState) => {
+      if (nextState !== 'active') persistCheckpoint();
+    });
+    return () => subscription.remove();
+  }, [persistCheckpoint]);
+
+  useEffect(() => () => persistCheckpoint(), [persistCheckpoint]);
 
   const value = useMemo(
     () => ({

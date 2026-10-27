@@ -9,14 +9,16 @@ import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { LibraryAlbumRow, LibraryTrackRow } from '@/features/library/components/library-rows';
 import { useLibrary } from '@/features/library/library-provider';
+import { usePersonalLibrary } from '@/features/personal-library/personal-library-provider';
 import { usePlayback } from '@/features/playback/playback-provider';
 
-type LibraryView = 'songs' | 'albums';
+type LibraryView = 'songs' | 'albums' | 'favorites';
 
 export default function LibraryScreen() {
   const theme = useTheme();
   const { status, tracks, albums, skippedAssetCount, errorMessage, needsRescan, permissionBlocked, scan } = useLibrary();
   const { currentTrack, playTrack } = usePlayback();
+  const { favorites, isFavorite, toggleFavorite } = usePersonalLibrary();
   const [view, setView] = useState<LibraryView>('songs');
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
   const isBusy = status === 'scanning';
@@ -25,7 +27,7 @@ export default function LibraryScreen() {
   const isScannedEmpty = status === 'ready' && tracks.length === 0;
   const selectedAlbum = albums.find((album) => album.id === selectedAlbumId) ?? null;
   const currentTrackId = currentTrack?.id ?? null;
-  const listTracks = selectedAlbum ? selectedAlbum.tracks : view === 'songs' ? tracks : [];
+  const listTracks = selectedAlbum ? selectedAlbum.tracks : view === 'songs' ? tracks : view === 'favorites' ? favorites : [];
 
   const rescan = () => {
     setSelectedAlbumId(null);
@@ -45,23 +47,24 @@ export default function LibraryScreen() {
       </View>
       {status === 'ready' && tracks.length > 0 ? <View style={styles.content}>
         <View style={[styles.segmented, { backgroundColor: theme.surfaceRaised }]}>
-          {(['songs', 'albums'] as const).map((option) => <Pressable
+          {(['songs', 'albums', 'favorites'] as const).map((option) => <Pressable
             accessibilityRole="button"
             accessibilityState={{ selected: view === option }}
             key={option}
             onPress={() => selectView(option)}
             style={[styles.segment, view === option && { backgroundColor: theme.surface }]}>
-            <ThemedText themeColor={view === option ? 'text' : 'textMuted'} type="smallBold">{option === 'songs' ? 'Songs' : 'Albums'}</ThemedText>
+            <ThemedText themeColor={view === option ? 'text' : 'textMuted'} type="smallBold">{option === 'songs' ? 'Songs' : option === 'albums' ? 'Albums' : 'Favorites'}</ThemedText>
           </Pressable>)}
         </View>
         {needsRescan ? <View accessibilityRole="alert" style={[styles.rescanNotice, { backgroundColor: theme.accentMuted }]}><ThemedText type="smallBold">Your device music changed</ThemedText><ThemedText themeColor="textMuted" type="small">Rescan to update this list.</ThemedText></View> : null}
         <View style={styles.list}>
           <View style={styles.listHeader}>
-            <ThemedText numberOfLines={1} style={styles.listLabel} type="smallBold" themeColor="textMuted">{selectedAlbum ? selectedAlbum.title.toLocaleUpperCase() : view === 'songs' ? `${tracks.length} SONG${tracks.length === 1 ? '' : 'S'}` : `${albums.length} ALBUM${albums.length === 1 ? '' : 'S'}`}</ThemedText>
+            <ThemedText numberOfLines={1} style={styles.listLabel} type="smallBold" themeColor="textMuted">{selectedAlbum ? selectedAlbum.title.toLocaleUpperCase() : view === 'songs' ? `${tracks.length} SONG${tracks.length === 1 ? '' : 'S'}` : view === 'albums' ? `${albums.length} ALBUM${albums.length === 1 ? '' : 'S'}` : `${favorites.length} FAVORITE${favorites.length === 1 ? '' : 'S'}`}</ThemedText>
             {selectedAlbum ? <Pressable accessibilityRole="button" onPress={() => setSelectedAlbumId(null)}><ThemedText type="smallBold" themeColor="accent">All albums</ThemedText></Pressable> : <Pressable accessibilityRole="button" onPress={rescan}><ThemedText type="smallBold" themeColor="accent">Rescan</ThemedText></Pressable>}
           </View>
-          {listTracks.map((track) => <LibraryTrackRow key={track.id} track={track} isCurrent={track.id === currentTrackId} onPress={() => playTrack(track, listTracks)} />)}
+          {listTracks.map((track) => <LibraryTrackRow key={track.id} track={track} isCurrent={track.id === currentTrackId} isFavorite={isFavorite(track.id)} onToggleFavorite={() => { void toggleFavorite(track); }} onPress={() => playTrack(track, listTracks)} />)}
           {!selectedAlbum && view === 'albums' ? albums.map((album) => <LibraryAlbumRow album={album} key={album.id} onPress={() => setSelectedAlbumId(album.id)} />) : null}
+          {!selectedAlbum && view === 'favorites' && favorites.length === 0 ? <EmptyState title="No favorites yet" description="Use the heart beside any song to keep it here." /> : null}
         </View>
         {skippedAssetCount > 0 ? <ThemedText themeColor="textMuted" type="small">{skippedAssetCount} audio item{skippedAssetCount === 1 ? '' : 's'} could not be opened and {skippedAssetCount === 1 ? 'was' : 'were'} left out.</ThemedText> : null}
       </View> : <View style={styles.emptyWrap}>

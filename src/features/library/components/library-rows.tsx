@@ -12,9 +12,11 @@ type LibraryTrackRowProps = {
   onPress?: () => void;
   /** Highlights the row that the player is currently on. */
   isCurrent?: boolean;
+  isFavorite?: boolean;
+  onToggleFavorite?: () => void;
 };
 
-export function LibraryTrackRow({ track, onPress, isCurrent = false }: LibraryTrackRowProps) {
+export function LibraryTrackRow({ track, onPress, isCurrent = false, isFavorite = false, onToggleFavorite }: LibraryTrackRowProps) {
   const theme = useTheme();
   const body = (
     <>
@@ -29,11 +31,11 @@ export function LibraryTrackRow({ track, onPress, isCurrent = false }: LibraryTr
     </>
   );
 
-  if (!onPress) {
+  if (!onPress && !onToggleFavorite) {
     return <View style={[styles.row, { borderColor: theme.outline }]}>{body}</View>;
   }
 
-  return (
+  const playControl = (
     <Pressable
       accessibilityLabel={`Play ${track.title}`}
       accessibilityRole="button"
@@ -42,6 +44,13 @@ export function LibraryTrackRow({ track, onPress, isCurrent = false }: LibraryTr
       {body}
     </Pressable>
   );
+  if (!onToggleFavorite) return playControl;
+  return <View style={[styles.row, { borderColor: theme.outline }]}>
+    <View style={styles.playArea}>{playControl}</View>
+    <Pressable accessibilityRole="button" accessibilityLabel={`${isFavorite ? 'Remove' : 'Add'} ${track.title} ${isFavorite ? 'from' : 'to'} favorites`} onPress={onToggleFavorite} hitSlop={10} style={({ pressed }) => [styles.favoriteButton, pressed && styles.pressed]}>
+      <ThemedText themeColor="accent" type="subtitle">{isFavorite ? '♥' : '♡'}</ThemedText>
+    </Pressable>
+  </View>;
 }
 
 export function LibraryAlbumRow({ album, onPress }: { album: LibraryAlbum; onPress: () => void }) {
@@ -66,6 +75,8 @@ export function LibraryAlbumRow({ album, onPress }: { album: LibraryAlbum; onPre
 
 const styles = StyleSheet.create({
   row: { alignItems: 'center', flexDirection: 'row', gap: Spacing.two, paddingVertical: 10, borderBottomWidth: StyleSheet.hairlineWidth },
+  playArea: { flex: 1 },
+  favoriteButton: { padding: Spacing.one },
   mark: { borderRadius: 10, height: 40, width: 40, alignItems: 'center', justifyContent: 'center' },
   markGlyph: { fontSize: 15, fontWeight: '700' },
   details: { flex: 1, gap: 1 },

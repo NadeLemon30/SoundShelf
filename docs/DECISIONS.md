@@ -32,6 +32,8 @@ Unresolved: confirm on representative physical Android devices whether Expo’s 
 
 ## D-005: One SQLite-backed local store
 
+**Implementation update (2026-10-27):** the Phase 6 foundation uses `expo-sqlite` schema version 1 with WAL and foreign keys. It stores playlists and ordered items, favorites, recently played, and one playback checkpoint. Rows include a local-track snapshot so stale device media can be handled honestly. A checkpoint is restored only after a scan supplies current local tracks, and it always restores paused. Listening-history/analytics tables remain Phase 7 work.
+
 **Status:** accepted for planned implementation (2026-10-11)
 
 Use `expo-sqlite` with schema migrations for playlists, favorites, recent tracks, history, checkpoints, settings, and statistics queries. SQLite models relationships and time-range aggregation naturally and persists across restarts. Keep raw audio and artwork outside the database. Use its key/value capability for small settings if needed rather than adding AsyncStorage.

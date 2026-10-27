@@ -27,6 +27,9 @@ export default function HomeScreen() {
         <Link href="/library" asChild>
           <Pressable accessibilityRole="button"><ThemedText themeColor="accent" type="smallBold">View library</ThemedText></Pressable>
         </Link>
+        <Link href="/personal-library" asChild>
+          <Pressable accessibilityRole="button"><ThemedText themeColor="accent" type="smallBold">My music</ThemedText></Pressable>
+        </Link>
       </View>
       <View style={styles.section}>
         <ThemedText type="smallBold" themeColor="textMuted">UP NEXT</ThemedText>

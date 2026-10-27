@@ -1,10 +1,13 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { SQLiteProvider } from 'expo-sqlite';
 import { StyleSheet, View, useColorScheme } from 'react-native';
 
 import AppTabs from '@/components/app-tabs';
 import { StartupAnimation } from '@/components/startup-animation';
 import { LibraryProvider } from '@/features/library/library-provider';
+import { migrateDatabase, DATABASE_NAME } from '@/features/personal-library/database';
+import { PersonalLibraryProvider } from '@/features/personal-library/personal-library-provider';
 import { PlaybackProvider } from '@/features/playback/playback-provider';
 
 // Hold the native splash screen until <StartupAnimation> has painted its matching first frame.
@@ -14,14 +17,18 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   return (
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <LibraryProvider>
-        <PlaybackProvider>
-          <View style={styles.root}>
-            <AppTabs />
-            <StartupAnimation />
-          </View>
-        </PlaybackProvider>
-      </LibraryProvider>
+      <SQLiteProvider databaseName={DATABASE_NAME} onInit={migrateDatabase}>
+        <LibraryProvider>
+          <PersonalLibraryProvider>
+            <PlaybackProvider>
+              <View style={styles.root}>
+                <AppTabs />
+                <StartupAnimation />
+              </View>
+            </PlaybackProvider>
+          </PersonalLibraryProvider>
+        </LibraryProvider>
+      </SQLiteProvider>
     </ThemeProvider>
   );
 }

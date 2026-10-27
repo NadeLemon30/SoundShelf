@@ -44,6 +44,8 @@ Phase advancement requires user approval. Completion criteria mean evidence exis
 
 ## 6. Personal library
 
+**Status update (2026-10-27):** current phase. SQLite schema/repositories and initial favorites, playlists, recents, and checkpoint UI are implemented; physical-device verification and playlist ordering remain open — see `PROGRESS.md`.
+
 **Objective:** make personal organization durable and local.
 
 **Tasks:** add database migrations and repositories for playlists, playlist items, favorites, and recently played tracks; support playlist ordering and deletion safely.
