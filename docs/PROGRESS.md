@@ -384,6 +384,14 @@ The first clean release build **succeeded but did not contain the receiver**: `c
 
 Build a fresh Android development build, because `expo-sqlite` is a native module and `app.json` changed: `npx expo run:android --device` using the regenerated `android/` project. On device, scan music; favorite a song; create a playlist and add/remove it; force-close/reopen; then confirm favorites/playlists/recent entries persist. Play a song, seek, background/kill/reopen, and confirm the player restores the correct song and position **paused**. Record results here. After this verification, complete remaining Phase 6 UX/reliability work (playlist ordering and stale-track handling) before requesting approval for Phase 7.
 
+## Update (2026-10-27) — Phase 6 checkpoint verification preparation
+
+- Re-ran the required static checks against the committed Phase 6 implementation. `npm.cmd run lint` initially failed because `personal-library-provider.tsx` imported its repository twice, retained an unused import, and initialized its async state directly from an effect. The provider now uses one repository import and an `initialize` callback; the effect only starts that asynchronous initialization. This preserves the same readiness behavior while satisfying the React lint rule.
+- Expo Router's ignored local typed-route cache was stale and initially omitted the existing `/personal-library` route, so `npx.cmd tsc --noEmit` reported only that false route-type error. Regenerating the cache from the SDK 57 Router scanner added the route; the final verification is `npm.cmd run lint` passed with no diagnostics, `npx.cmd tsc --noEmit` passed, and `git diff --check` passed (aside from the repository's existing LF-to-CRLF warning).
+- The local Android SDK is installed, but `adb devices` returned no connected devices. No Android build or device interaction was attempted, so SQLite persistence, playlist controls, recent-play tracking, and paused checkpoint restoration remain **device-unverified**.
+- Affected file: `src/features/personal-library/personal-library-provider.tsx`.
+- Exact next step remains the device test above. Connect and authorize an Android device, then run `npx expo run:android --device` from this regenerated native project. Test favorites, playlist add/remove, recent entries, and checkpoint restore across a force-close/reopen. Also check missing/rescanned tracks display a local failure rather than crashing.
+
 > The older Phase 5 instructions below are superseded and retained only as historical context.
 
 **First:** build a new development or release APK with this uncommitted focus patch (`npx expo prebuild --clean --platform android`, then `npx expo run:android --device` or a release build). Do not use `v0.3.5` for the audio-focus test.
