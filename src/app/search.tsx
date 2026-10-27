@@ -1,15 +1,17 @@
-import { TextInput, StyleSheet, View } from 'react-native';
+import { FlatList, TextInput, StyleSheet, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useMemo, useState } from 'react';
 
 import { ThemedText } from '@/components/themed-text';
+import { AppGradient } from '@/components/ui/app-gradient';
 import { EmptyState } from '@/components/ui/empty-state';
 import { MiniPlayer } from '@/components/ui/mini-player';
-import { Screen } from '@/components/ui/screen';
-import { Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { LibraryTrackRow } from '@/features/library/components/library-rows';
 import { useLibrary } from '@/features/library/library-provider';
 import { usePlayback } from '@/features/playback/playback-provider';
+import type { LibraryTrack } from '@/features/library/types';
 
 export default function SearchScreen() {
   const theme = useTheme();
@@ -17,23 +19,142 @@ export default function SearchScreen() {
   const { currentTrack, playTrack } = usePlayback();
   const [query, setQuery] = useState('');
   const currentTrackId = currentTrack?.id ?? null;
+
   const results = useMemo(() => {
     const normalized = query.trim().toLocaleLowerCase();
-    return normalized ? tracks.filter((track) => `${track.title} ${track.filename}`.toLocaleLowerCase().includes(normalized)) : [];
+    return normalized
+      ? tracks.filter((t) => `${t.title} ${t.filename}`.toLocaleLowerCase().includes(normalized))
+      : [];
   }, [query, tracks]);
+
+  const hasLibrary = status === 'ready' && tracks.length > 0;
+
+  type Item =
+    | { type: 'header' }
+    | { type: 'noLibrary' }
+    | { type: 'emptyQuery' }
+    | { type: 'noResults' }
+    | { type: 'resultLabel' }
+    | { type: 'track'; data: LibraryTrack }
+    | { type: 'footer' };
+
+  const listData: Item[] = [
+    { type: 'header' },
+    ...(!hasLibrary
+      ? [{ type: 'noLibrary' } as Item]
+      : !query
+      ? [{ type: 'emptyQuery' } as Item]
+      : results.length === 0
+      ? [{ type: 'noResults' } as Item]
+      : [
+          { type: 'resultLabel' } as Item,
+          ...results.map((data): Item => ({ type: 'track', data })),
+        ]),
+    { type: 'footer' },
+  ];
+
+  const renderItem = ({ item }: { item: Item }) => {
+    switch (item.type) {
+      case 'header':
+        return (
+          <View style={styles.headerSection}>
+            <ThemedText style={styles.screenTitle}>Search</ThemedText>
+            {hasLibrary && (
+              <View style={[styles.inputWrap, { backgroundColor: theme.surfaceRaised }]}>
+                <ThemedText style={styles.searchIcon} themeColor="textMuted">🔍</ThemedText>
+                <TextInput
+                  accessibilityLabel="Search local songs"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  onChangeText={setQuery}
+                  placeholder="What do you want to listen to?"
+                  placeholderTextColor={theme.textMuted}
+                  returnKeyType="search"
+                  style={[styles.input, { color: theme.text }]}
+                  value={query}
+                />
+              </View>
+            )}
+          </View>
+        );
+
+      case 'noLibrary':
+        return (
+          <EmptyState
+            title={status === 'ready' ? 'No music found' : 'Scan to search'}
+            description={
+              status === 'ready'
+                ? 'Add music to your device then scan.'
+                : 'Scan your library from the Home or Library tab.'
+            }
+          />
+        );
+
+      case 'emptyQuery':
+        return <EmptyState title="Search your songs" description="Type a song name or filename." />;
+
+      case 'noResults':
+        return <EmptyState title="No results" description={`No songs match "${query}"`} />;
+
+      case 'resultLabel':
+        return (
+          <ThemedText style={styles.resultLabel}>
+            {results.length} RESULT{results.length === 1 ? '' : 'S'}
+          </ThemedText>
+        );
+
+      case 'track':
+        return (
+          <LibraryTrackRow
+            track={item.data}
+            isCurrent={item.data.id === currentTrackId}
+            onPress={() => playTrack(item.data, results)}
+          />
+        );
+
+      case 'footer':
+        return <View style={styles.footer}><MiniPlayer /></View>;
+    }
+  };
+
   return (
-    <Screen>
-      <View style={styles.header}>
-        <ThemedText type="title" style={styles.title}>Search</ThemedText>
-        <ThemedText themeColor="textMuted">Find music in your on-device library.</ThemedText>
-      </View>
-      {status === 'ready' && tracks.length > 0 ? <View style={styles.results}>
-        <TextInput accessibilityLabel="Search local songs" autoCapitalize="none" autoCorrect={false} onChangeText={setQuery} placeholder="Search songs" placeholderTextColor={theme.textMuted} style={[styles.input, { backgroundColor: theme.surfaceRaised, color: theme.text }]} value={query} />
-        {query ? results.length ? results.map((track) => <LibraryTrackRow key={track.id} track={track} isCurrent={track.id === currentTrackId} onPress={() => playTrack(track, results)} />) : <EmptyState title="No matching songs" description="Try a different song or filename." /> : <EmptyState title="Search your songs" description="Type a song name or filename to search your scanned library." />}
-      </View> : <EmptyState title={status === 'ready' ? 'No music found' : 'Scan music to search it'} description={status === 'ready' ? 'The scan found no audio on this device, so there is nothing to search yet. Add music, then scan from the Library tab.' : 'Your local songs become searchable after you scan the device library from Home or Library.'} />}
-      <MiniPlayer />
-    </Screen>
+    <AppGradient>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <FlatList
+          data={listData}
+          keyExtractor={(item, i) => `${item.type}-${i}`}
+          renderItem={renderItem}
+          contentContainerStyle={styles.listContent}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        />
+      </SafeAreaView>
+    </AppGradient>
   );
 }
 
-const styles = StyleSheet.create({ header: { gap: Spacing.one, paddingTop: Spacing.two }, title: { fontSize: 38, lineHeight: 44 }, results: { gap: Spacing.two }, input: { minHeight: 48, paddingHorizontal: Spacing.three, borderRadius: 14, fontSize: 16 }, result: { gap: 1, paddingVertical: 12, borderBottomWidth: StyleSheet.hairlineWidth } });
+const styles = StyleSheet.create({
+  safeArea: { flex: 1 },
+  listContent: {
+    width: '100%',
+    maxWidth: MaxContentWidth,
+    alignSelf: 'center',
+    paddingHorizontal: Spacing.three,
+    paddingTop: Spacing.two,
+    paddingBottom: BottomTabInset + Spacing.six,
+    gap: Spacing.three,
+  },
+  headerSection: { gap: Spacing.three },
+  screenTitle: { fontSize: 24, fontWeight: '700', color: '#FFFFFF' },
+  inputWrap: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderRadius: 8,
+    paddingHorizontal: Spacing.three,
+    gap: Spacing.two,
+  },
+  searchIcon: { fontSize: 16 },
+  input: { flex: 1, minHeight: 48, fontSize: 15 },
+  resultLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, color: '#B3B3B3' },
+  footer: { paddingTop: Spacing.two },
+});

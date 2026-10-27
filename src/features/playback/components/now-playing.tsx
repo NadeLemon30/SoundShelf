@@ -4,21 +4,21 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { AppGradient } from '@/components/ui/app-gradient';
 import { ArtworkPlaceholder } from '@/components/ui/artwork-placeholder';
-import { AccentText, Spacing } from '@/constants/theme';
+import { Spacing } from '@/constants/theme';
+import { usePersonalLibrary } from '@/features/personal-library/personal-library-provider';
 import { useTheme } from '@/hooks/use-theme';
-
 import { formatPlaybackTime, playbackPercent } from '../format';
 import { usePlayback } from '../playback-provider';
 
 type NowPlayingProps = { visible: boolean; onClose: () => void };
 
-const REPEAT_LABEL: Record<string, string> = { off: 'Off', all: 'All', one: 'One' };
+const REPEAT_LABEL: Record<string, string> = { off: 'Repeat', all: 'Repeat all', one: 'Repeat one' };
 
 export function NowPlaying({ visible, onClose }: NowPlayingProps) {
   const theme = useTheme();
   const { player, currentTrack, queue, index, repeat, shuffle, errorMessage, togglePlayPause, next, previous, seekTo, cycleRepeat, toggleShuffle } = usePlayback();
+  const { isFavorite, toggleFavorite } = usePersonalLibrary();
   const status = useAudioPlayerStatus(player);
   const [barWidth, setBarWidth] = useState(0);
 
@@ -27,134 +27,214 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
   const percent = playbackPercent(status.currentTime, duration);
 
   const seekFromTap = (locationX: number) => {
-    if (!canSeek || barWidth <= 0) {
-      return;
-    }
-    const ratio = Math.min(1, Math.max(0, locationX / barWidth));
-    seekTo(ratio * duration);
+    if (!canSeek || barWidth <= 0) return;
+    seekTo(Math.min(1, Math.max(0, locationX / barWidth)) * duration);
   };
 
-  /** Screen-reader seek: Android exposes no drag gesture, so step forwards/backwards. */
   const seekBy = (deltaSeconds: number) => {
-    if (!canSeek) {
-      return;
-    }
+    if (!canSeek) return;
     seekTo(Math.min(duration, Math.max(0, status.currentTime + deltaSeconds)));
   };
 
   return (
     <Modal animationType="slide" onRequestClose={onClose} statusBarTranslucent transparent visible={visible}>
-      <AppGradient>
-      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Pressable accessibilityLabel="Close now playing" accessibilityRole="button" hitSlop={10} onPress={onClose} style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedText style={styles.close} themeColor="textMuted">⌄</ThemedText>
-            </Pressable>
-            <ThemedText themeColor="textMuted" type="smallBold">NOW PLAYING</ThemedText>
-            <View style={styles.headerSpacer} />
-          </View>
+      <View style={[styles.fullScreen, { backgroundColor: '#121212' }]}>
+        <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
+          <View style={styles.content}>
 
-          <View style={styles.artworkWrap}>
-            <ArtworkPlaceholder size={220} />
-          </View>
-
-          <View style={styles.details}>
-            <ThemedText numberOfLines={2} style={styles.title} type="subtitle">{currentTrack?.title ?? 'Nothing playing'}</ThemedText>
-            <ThemedText numberOfLines={1} themeColor="textMuted">{currentTrack?.filename ?? 'Choose a song from your library.'}</ThemedText>
-          </View>
-
-          <View style={styles.progressSection}>
-            <Pressable
-              accessibilityActions={[
-                { name: 'increment', label: 'Forward 10 seconds' },
-                { name: 'decrement', label: 'Back 10 seconds' },
-              ]}
-              accessibilityLabel={`Seek, ${formatPlaybackTime(status.currentTime)} of ${canSeek ? formatPlaybackTime(duration) : 'an unknown duration'}`}
-              accessibilityRole="adjustable"
-              accessibilityValue={{
-                min: 0,
-                max: canSeek ? Math.round(duration) : 0,
-                now: Math.round(status.currentTime),
-                text: `${formatPlaybackTime(status.currentTime)} of ${canSeek ? formatPlaybackTime(duration) : 'an unknown duration'}`,
-              }}
-              disabled={!canSeek}
-              onAccessibilityAction={(event) => seekBy(event.nativeEvent.actionName === 'increment' ? 10 : -10)}
-              onLayout={(event) => setBarWidth(event.nativeEvent.layout.width)}
-              onPress={(event) => seekFromTap(event.nativeEvent.locationX)}
-              style={[styles.progressTrack, { backgroundColor: theme.surfaceRaised }]}>
-              <View style={[styles.progressFill, { backgroundColor: theme.accent, width: `${percent}%` }]} />
-            </Pressable>
-            <View style={styles.timeRow}>
-              <ThemedText themeColor="textMuted" type="small">{formatPlaybackTime(status.currentTime)}</ThemedText>
-              <ThemedText themeColor="textMuted" type="small">{canSeek ? formatPlaybackTime(duration) : '--:--'}</ThemedText>
+            {/* Drag handle */}
+            <View style={styles.handleWrap}>
+              <View style={[styles.handle, { backgroundColor: '#535353' }]} />
             </View>
+
+            {/* Header */}
+            <View style={styles.header}>
+              <Pressable
+                accessibilityLabel="Close now playing"
+                accessibilityRole="button"
+                hitSlop={14}
+                onPress={onClose}
+                style={({ pressed }) => pressed && styles.pressed}>
+                <ThemedText style={styles.chevronDown} themeColor="textMuted">⌄</ThemedText>
+              </Pressable>
+              <View style={styles.headerCenter}>
+                <ThemedText style={styles.headerContext} themeColor="textMuted">PLAYING FROM LIBRARY</ThemedText>
+                {queue.length > 0 && (
+                  <ThemedText style={styles.headerQueue} themeColor="textMuted">
+                    {Math.min(index + 1, queue.length)} / {queue.length}
+                  </ThemedText>
+                )}
+              </View>
+              {/* Visual affordance reserved for a future context menu. */}
+              <View accessible={false} style={styles.headerSideBtn}>
+                <ThemedText style={[styles.threeDot, { color: '#B3B3B3' }]}>⋮</ThemedText>
+              </View>
+            </View>
+
+            {/* Artwork — large */}
+            <View style={styles.artworkWrap}>
+              <ArtworkPlaceholder size={300} style={styles.artworkRadius} />
+            </View>
+
+            {/* Track info + heart */}
+            <View style={styles.trackRow}>
+              <View style={styles.trackInfo}>
+                <ThemedText numberOfLines={1} style={styles.trackTitle}>
+                  {currentTrack?.title ?? 'Nothing playing'}
+                </ThemedText>
+                <ThemedText numberOfLines={1} style={styles.trackSub}>
+                  {currentTrack?.filename ?? 'Choose a song from your library'}
+                </ThemedText>
+              </View>
+              {/* Favorite the active track. */}
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={currentTrack && isFavorite(currentTrack.id) ? 'Remove from favorites' : 'Add to favorites'}
+                accessibilityState={{ selected: !!currentTrack && isFavorite(currentTrack.id) }}
+                hitSlop={12}
+                disabled={!currentTrack}
+                onPress={() => {
+                  if (currentTrack) void toggleFavorite(currentTrack);
+                }}
+                style={({ pressed }) => pressed && styles.pressed}>
+                <ThemedText style={[styles.heartIcon, { color: currentTrack && isFavorite(currentTrack.id) ? theme.accent : theme.textMuted }]}>
+                  {currentTrack && isFavorite(currentTrack.id) ? '♥' : '♡'}
+                </ThemedText>
+              </Pressable>
+            </View>
+
+            {/* Error */}
+            {errorMessage ? (
+              <ThemedText style={{ color: theme.danger, textAlign: 'center' }} type="small">
+                {`Could not play: ${errorMessage}`}
+              </ThemedText>
+            ) : null}
+
+            {/* Seek bar */}
+            <View style={styles.seekSection}>
+              <Pressable
+                accessibilityActions={[
+                  { name: 'increment', label: 'Forward 10 seconds' },
+                  { name: 'decrement', label: 'Back 10 seconds' },
+                ]}
+                accessibilityLabel={`Seek, ${formatPlaybackTime(status.currentTime)} of ${canSeek ? formatPlaybackTime(duration) : 'unknown'}`}
+                accessibilityRole="adjustable"
+                accessibilityValue={{
+                  min: 0,
+                  max: canSeek ? Math.round(duration) : 0,
+                  now: Math.round(status.currentTime),
+                  text: `${formatPlaybackTime(status.currentTime)} of ${canSeek ? formatPlaybackTime(duration) : 'unknown'}`,
+                }}
+                disabled={!canSeek}
+                onAccessibilityAction={(e) => seekBy(e.nativeEvent.actionName === 'increment' ? 10 : -10)}
+                onLayout={(e) => setBarWidth(e.nativeEvent.layout.width)}
+                onPress={(e) => seekFromTap(e.nativeEvent.locationX)}
+                style={[styles.seekTrack, { backgroundColor: '#404040' }]}>
+                <View style={[styles.seekFill, { backgroundColor: theme.accent, width: `${percent}%` }]} />
+                {/* Thumb */}
+                <View style={[styles.seekThumb, { backgroundColor: '#FFFFFF', left: `${percent}%` }]} />
+              </Pressable>
+              <View style={styles.timeRow}>
+                <ThemedText themeColor="textMuted" type="small">{formatPlaybackTime(status.currentTime)}</ThemedText>
+                <ThemedText themeColor="textMuted" type="small">{canSeek ? formatPlaybackTime(duration) : '--:--'}</ThemedText>
+              </View>
+            </View>
+
+            {/* Transport controls */}
+            <View style={styles.controls}>
+              {/* Shuffle */}
+              <Pressable
+                accessibilityLabel={`Shuffle ${shuffle ? 'on' : 'off'}`}
+                accessibilityRole="button"
+                onPress={toggleShuffle}
+                style={({ pressed }) => [styles.sideBtn, pressed && styles.pressed]}>
+                <ThemedText style={[styles.sideGlyph, { color: shuffle ? theme.accent : theme.textMuted }]}>⇄</ThemedText>
+                {shuffle && <View style={[styles.activeDot, { backgroundColor: theme.accent }]} />}
+              </Pressable>
+
+              {/* Previous */}
+              <Pressable
+                accessibilityLabel="Previous track"
+                accessibilityRole="button"
+                onPress={previous}
+                style={({ pressed }) => [styles.sideBtn, pressed && styles.pressed]}>
+                <ThemedText style={[styles.sideGlyph, { color: '#FFFFFF' }]}>⏮</ThemedText>
+              </Pressable>
+
+              {/* Play/Pause — large circular button */}
+              <Pressable
+                accessibilityLabel={status.playing ? 'Pause' : 'Play'}
+                accessibilityRole="button"
+                onPress={togglePlayPause}
+                style={({ pressed }) => [styles.playBtn, { backgroundColor: '#FFFFFF' }, pressed && styles.pressed]}>
+                <ThemedText style={styles.playGlyph}>{status.playing ? '❚❚' : '▶'}</ThemedText>
+              </Pressable>
+
+              {/* Next */}
+              <Pressable
+                accessibilityLabel="Next track"
+                accessibilityRole="button"
+                onPress={next}
+                style={({ pressed }) => [styles.sideBtn, pressed && styles.pressed]}>
+                <ThemedText style={[styles.sideGlyph, { color: '#FFFFFF' }]}>⏭</ThemedText>
+              </Pressable>
+
+              {/* Repeat */}
+              <Pressable
+                accessibilityLabel={`Repeat: ${REPEAT_LABEL[repeat] ?? repeat}`}
+                accessibilityRole="button"
+                onPress={cycleRepeat}
+                style={({ pressed }) => [styles.sideBtn, pressed && styles.pressed]}>
+                <ThemedText style={[styles.sideGlyph, { color: repeat === 'off' ? theme.textMuted : theme.accent }]}>
+                  {repeat === 'one' ? '🔂' : '🔁'}
+                </ThemedText>
+                {repeat !== 'off' && <View style={[styles.activeDot, { backgroundColor: theme.accent }]} />}
+              </Pressable>
+            </View>
+
           </View>
-
-          {errorMessage ? <ThemedText style={{ color: theme.danger }} type="small">{`This track could not be played: ${errorMessage}`}</ThemedText> : null}
-
-          <View style={styles.controls}>
-            <Pressable accessibilityLabel="Previous track" accessibilityRole="button" onPress={previous} style={({ pressed }) => [styles.sideControl, pressed && styles.pressed]}>
-              <ThemedText style={styles.sideGlyph} themeColor="text">⏮</ThemedText>
-            </Pressable>
-            <Pressable
-              accessibilityLabel={status.playing ? 'Pause' : 'Play'}
-              accessibilityRole="button"
-              onPress={togglePlayPause}
-              style={({ pressed }) => [styles.primaryControl, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
-              <ThemedText style={styles.primaryGlyph}>{status.playing ? '❚❚' : '▶'}</ThemedText>
-            </Pressable>
-            <Pressable accessibilityLabel="Next track" accessibilityRole="button" onPress={next} style={({ pressed }) => [styles.sideControl, pressed && styles.pressed]}>
-              <ThemedText style={styles.sideGlyph} themeColor="text">⏭</ThemedText>
-            </Pressable>
-          </View>
-
-          <View style={styles.modes}>
-            <Pressable
-              accessibilityLabel={`Shuffle ${shuffle ? 'on' : 'off'}`}
-              accessibilityRole="button"
-              accessibilityState={{ selected: shuffle }}
-              onPress={toggleShuffle}
-              style={({ pressed }) => [styles.modeButton, { backgroundColor: shuffle ? theme.accentMuted : theme.surfaceRaised }, pressed && styles.pressed]}>
-              <ThemedText type="smallBold" themeColor={shuffle ? 'accent' : 'textMuted'}>{shuffle ? 'Shuffle on' : 'Shuffle off'}</ThemedText>
-            </Pressable>
-            <Pressable
-              accessibilityLabel={`Repeat ${REPEAT_LABEL[repeat] ?? repeat}`}
-              accessibilityRole="button"
-              onPress={cycleRepeat}
-              style={({ pressed }) => [styles.modeButton, { backgroundColor: repeat === 'off' ? theme.surfaceRaised : theme.accentMuted }, pressed && styles.pressed]}>
-              <ThemedText type="smallBold" themeColor={repeat === 'off' ? 'textMuted' : 'accent'}>{`Repeat: ${REPEAT_LABEL[repeat] ?? repeat}`}</ThemedText>
-            </Pressable>
-          </View>
-
-          {queue.length > 0 ? <ThemedText themeColor="textMuted" style={styles.queueNote} type="small">{`Track ${Math.min(index + 1, queue.length)} of ${queue.length}`}</ThemedText> : null}
-        </View>
-      </SafeAreaView>
-      </AppGradient>
+        </SafeAreaView>
+      </View>
     </Modal>
   );
 }
 
 const styles = StyleSheet.create({
+  fullScreen: { flex: 1 },
   safeArea: { flex: 1 },
-  content: { flex: 1, width: '100%', maxWidth: 560, alignSelf: 'center', padding: Spacing.four, gap: Spacing.four },
+  content: { flex: 1, paddingHorizontal: Spacing.four, gap: Spacing.three },
+  // Handle bar at top
+  handleWrap: { alignItems: 'center', paddingTop: Spacing.one },
+  handle: { width: 36, height: 4, borderRadius: 2 },
+  // Header row
   header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  close: { fontSize: 30, lineHeight: 32, fontWeight: '700', width: 40 },
-  headerSpacer: { width: 40 },
-  artworkWrap: { alignItems: 'center', paddingVertical: Spacing.three },
-  details: { alignItems: 'center', gap: Spacing.half },
-  title: { textAlign: 'center', fontSize: 28, lineHeight: 34 },
-  progressSection: { gap: Spacing.one },
-  progressTrack: { height: 8, borderRadius: 4, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 4 },
+  chevronDown: { fontSize: 28, lineHeight: 32, fontWeight: '700', width: 40 },
+  headerCenter: { flex: 1, alignItems: 'center', gap: 2 },
+  headerContext: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5 },
+  headerQueue: { fontSize: 11 },
+  headerSideBtn: { width: 40, alignItems: 'flex-end' },
+  threeDot: { fontSize: 22, lineHeight: 26 },
+  // Artwork
+  artworkWrap: { alignItems: 'center' },
+  artworkRadius: { borderRadius: 8 },
+  // Track info row (title + heart)
+  trackRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  trackInfo: { flex: 1, gap: 4 },
+  trackTitle: { fontSize: 22, fontWeight: '700', color: '#FFFFFF' },
+  trackSub: { fontSize: 14, color: '#B3B3B3' },
+  heartIcon: { fontSize: 26 },
+  // Seek bar
+  seekSection: { gap: 8 },
+  seekTrack: { height: 4, borderRadius: 2, overflow: 'visible', justifyContent: 'center' },
+  seekFill: { height: '100%', borderRadius: 2 },
+  seekThumb: { position: 'absolute', width: 14, height: 14, borderRadius: 7, marginLeft: -7, top: -5 },
   timeRow: { flexDirection: 'row', justifyContent: 'space-between' },
-  controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.four },
-  sideControl: { padding: Spacing.two },
-  sideGlyph: { fontSize: 28, lineHeight: 32 },
-  primaryControl: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
-  primaryGlyph: { color: AccentText, fontSize: 26, fontWeight: '700' },
-  modes: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.two },
-  modeButton: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 12 },
-  queueNote: { textAlign: 'center' },
-  pressed: { opacity: 0.72 },
+  // Transport controls
+  controls: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  sideBtn: { width: 48, alignItems: 'center', gap: 4 },
+  sideGlyph: { fontSize: 26 },
+  activeDot: { width: 4, height: 4, borderRadius: 2 },
+  playBtn: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center' },
+  playGlyph: { fontSize: 26, fontWeight: '700', color: '#000000' },
+  pressed: { opacity: 0.65 },
 });

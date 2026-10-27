@@ -4,11 +4,9 @@ import { Pressable, StyleSheet, View } from 'react-native';
 
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-
 import { NowPlaying } from '@/features/playback/components/now-playing';
 import { playbackPercent } from '@/features/playback/format';
 import { usePlayback } from '@/features/playback/playback-provider';
-
 import { ArtworkPlaceholder } from './artwork-placeholder';
 import { ThemedText } from '../themed-text';
 
@@ -17,62 +15,101 @@ export function MiniPlayer() {
   const { player, currentTrack, hasTrack, errorMessage, togglePlayPause, next } = usePlayback();
   const status = useAudioPlayerStatus(player);
   const [nowPlayingOpen, setNowPlayingOpen] = useState(false);
+  const percent = playbackPercent(status.currentTime, status.duration);
 
   if (!hasTrack || !currentTrack) {
     return (
-      <View accessible accessibilityLabel="Nothing playing. Start a song from your library." style={[styles.container, { backgroundColor: theme.surface, borderColor: theme.outline }]}>
-        <ArtworkPlaceholder size={40} />
-        <View style={styles.copy}>
-          <ThemedText numberOfLines={1} type="smallBold">Nothing playing</ThemedText>
-          <ThemedText numberOfLines={1} themeColor="textMuted" type="small">Tap a song to start playback</ThemedText>
+      <View style={[styles.card, { backgroundColor: '#1E1E1E' }]}>
+        {/* Idle state */}
+        <View style={styles.inner}>
+          <ArtworkPlaceholder size={44} style={styles.artwork} />
+          <View style={styles.copy}>
+            <ThemedText numberOfLines={1} style={styles.trackTitle}>Nothing playing</ThemedText>
+            <ThemedText numberOfLines={1} style={styles.trackSub}>Tap a song to start</ThemedText>
+          </View>
+        </View>
+        {/* Progress bar at bottom */}
+        <View style={[styles.progressTrack, { backgroundColor: '#333333' }]}>
+          <View style={[styles.progressFill, { backgroundColor: theme.accent, width: '0%' }]} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={[styles.container, { backgroundColor: theme.surface, borderColor: theme.outline }]}>
-      <Pressable
-        accessibilityLabel={`Open now playing for ${currentTrack.title}`}
-        accessibilityRole="button"
-        onPress={() => setNowPlayingOpen(true)}
-        style={({ pressed }) => [styles.openArea, pressed && styles.pressed]}>
-        <ArtworkPlaceholder size={40} />
-        <View style={styles.copy}>
-          <ThemedText numberOfLines={1} type="smallBold">{currentTrack.title}</ThemedText>
-          {errorMessage ? (
-            <ThemedText numberOfLines={1} style={{ color: theme.danger }} type="small">Could not play this track</ThemedText>
-          ) : (
-            <ThemedText numberOfLines={1} themeColor="textMuted" type="small">{currentTrack.filename}</ThemedText>
-          )}
-        </View>
-      </Pressable>
-      <Pressable
-        accessibilityLabel={status.playing ? 'Pause' : 'Play'}
-        accessibilityRole="button"
-        hitSlop={8}
-        onPress={togglePlayPause}
-        style={({ pressed }) => [styles.control, pressed && styles.pressed]}>
-        <ThemedText style={[styles.controlGlyph, { color: theme.accent }]}>{status.playing ? '❚❚' : '▶'}</ThemedText>
-      </Pressable>
-      <Pressable accessibilityLabel="Next track" accessibilityRole="button" hitSlop={8} onPress={next} style={({ pressed }) => [styles.control, pressed && styles.pressed]}>
-        <ThemedText style={[styles.controlGlyph, { color: theme.accent }]}>▶▶</ThemedText>
-      </Pressable>
-      <View style={[styles.progressTrack, { backgroundColor: theme.outline }]}>
-        <View style={[styles.progressFill, { backgroundColor: theme.accent, width: `${playbackPercent(status.currentTime, status.duration)}%` }]} />
+    <View style={[styles.card, { backgroundColor: '#1E1E1E' }]}>
+      <View style={styles.inner}>
+        {/* Tap artwork/title area to open Now Playing */}
+        <Pressable
+          accessibilityLabel={`Open now playing for ${currentTrack.title}`}
+          accessibilityRole="button"
+          onPress={() => setNowPlayingOpen(true)}
+          style={({ pressed }) => [styles.openArea, pressed && styles.pressed]}>
+          <ArtworkPlaceholder size={44} style={styles.artwork} />
+          <View style={styles.copy}>
+            <ThemedText numberOfLines={1} style={styles.trackTitle}>{currentTrack.title}</ThemedText>
+            {errorMessage ? (
+              <ThemedText numberOfLines={1} style={[styles.trackSub, { color: theme.danger }]}>
+                Could not play
+              </ThemedText>
+            ) : (
+              <ThemedText numberOfLines={1} style={styles.trackSub}>{currentTrack.filename}</ThemedText>
+            )}
+          </View>
+        </Pressable>
+
+        {/* Controls */}
+        <Pressable
+          accessibilityLabel={status.playing ? 'Pause' : 'Play'}
+          accessibilityRole="button"
+          hitSlop={14}
+          onPress={togglePlayPause}
+          style={({ pressed }) => [styles.control, pressed && styles.pressed]}>
+          <ThemedText style={styles.controlGlyph}>{status.playing ? '❚❚' : '▶'}</ThemedText>
+        </Pressable>
+        <Pressable
+          accessibilityLabel="Next track"
+          accessibilityRole="button"
+          hitSlop={14}
+          onPress={next}
+          style={({ pressed }) => [styles.control, pressed && styles.pressed]}>
+          <ThemedText style={styles.controlGlyph}>⏭</ThemedText>
+        </Pressable>
       </View>
+
+      {/* Thin progress bar at the bottom of the card */}
+      <View style={[styles.progressTrack, { backgroundColor: '#333333' }]}>
+        <View style={[styles.progressFill, { backgroundColor: theme.accent, width: `${percent}%` }]} />
+      </View>
+
       <NowPlaying onClose={() => setNowPlayingOpen(false)} visible={nowPlayingOpen} />
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flexDirection: 'row', alignItems: 'center', padding: Spacing.two, borderRadius: 18, borderWidth: 1, gap: Spacing.two, overflow: 'hidden' },
+  card: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    marginHorizontal: Spacing.two,
+    // Subtle elevation on Android
+    elevation: 8,
+  },
+  inner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: Spacing.two,
+    paddingVertical: Spacing.two,
+    gap: Spacing.two,
+  },
+  artwork: { borderRadius: 6 },
   openArea: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
-  copy: { flex: 1, gap: 1 },
-  control: { paddingHorizontal: Spacing.one },
-  controlGlyph: { fontSize: 16, fontWeight: '700' },
-  progressTrack: { position: 'absolute', left: 0, right: 0, bottom: 0, height: 2 },
+  copy: { flex: 1, gap: 2 },
+  trackTitle: { fontSize: 14, fontWeight: '600', color: '#FFFFFF' },
+  trackSub: { fontSize: 12, color: '#B3B3B3' },
+  control: { padding: Spacing.one },
+  controlGlyph: { fontSize: 20, color: '#FFFFFF', fontWeight: '700' },
+  progressTrack: { height: 2, width: '100%' },
   progressFill: { height: '100%' },
-  pressed: { opacity: 0.72 },
+  pressed: { opacity: 0.65 },
 });

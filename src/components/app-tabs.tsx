@@ -1,16 +1,14 @@
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
-import { useColorScheme } from 'react-native';
 
 import { Colors } from '@/constants/theme';
 
 export default function AppTabs() {
-  const scheme = useColorScheme();
-  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const colors = Colors.dark; // always dark like Spotify
 
   return (
     <NativeTabs
-      backgroundColor={colors.surface}
-      indicatorColor={colors.accentMuted}
+      backgroundColor="#000000"
+      indicatorColor={colors.accent}
       iconColor={{ default: colors.textMuted, selected: colors.accent }}
       labelStyle={{ selected: { color: colors.accent } }}>
       <NativeTabs.Trigger name="index">

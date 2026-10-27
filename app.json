@@ -4,7 +4,7 @@
     "slug": "SoundShelf",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/SoundShelf.png",
+    "icon": "./assets/SoundShelf icon 3.png",
     "scheme": "soundshelf",
     "userInterfaceStyle": "automatic",
     "ios": {
@@ -41,7 +41,7 @@
         "expo-splash-screen",
         {
           "backgroundColor": "#185048",
-          "image": "./assets/SoundShelf.png",
+          "image": "./assets/SoundShelf icon 3.png",
           "imageWidth": 160
         }
       ],

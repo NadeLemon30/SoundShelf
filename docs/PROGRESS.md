@@ -426,3 +426,71 @@ Build a fresh Android development build, because `expo-sqlite` is a native modul
 3. **Release note:** `v0.3.5` was published on 2026-10-26 from commit `be26715`; it is debug-signed and not Play Store ready. Use this APK for the tests above, then reserve the next tag for the build that also includes the Phase 6 database foundation.
 
 4. After all device tests are recorded, get **owner approval** before starting Phase 6 (personal library / `expo-sqlite` database foundation + playback checkpoint). The remaining Phase 5 implementation item — persisting/restoring a playback checkpoint — is planned with `expo-sqlite`'s key/value API (D-005/D-011), combined with the Phase 6 database foundation so both native modules arrive in one build.
+
+## Update (2026-10-27) — Full Spotify-style UI revamp (second pass)
+
+Owner requested a comprehensive UI overhaul to look like Spotify. All screens and shared components were revised in a single pass.
+
+### Changes
+
+- **`src/components/ui/artwork-placeholder.tsx`**: Slightly rounder corners (`10%` of size), subtle inner highlight layer via `rgba(255,255,255,0.04)`.
+- **`src/components/ui/empty-state.tsx`**: Larger 80px placeholder, bolder 20px title, cleaner layout.
+- **`src/features/library/components/library-rows.tsx`**: Track rows min-height 64px; 48px artwork; title 15px/500-weight; filename subtitle 13px muted; heart favorite button; **three-dot `⋮` button** (placeholder for future context menu); album rows use `Album · N songs` subtitle and 56px artwork.
+- **`src/components/ui/mini-player.tsx`**: `borderRadius: 12` floating card with `elevation: 8`; green 2px progress bar at the **bottom** of the card; artwork on left; title + subtitle in center; play/pause + next controls on right; `NowPlaying` modal launched from artwork/title area.
+- **`src/features/playback/components/now-playing.tsx`**: Full redesign — drag handle pill at top; `PLAYING FROM LIBRARY` / queue count header; three-dot placeholder; 300px artwork with `borderRadius: 8`; track info row with heart button; 4px seek bar + 14px thumb; transport row with shuffle/previous/play/next/repeat with active dot indicators; `68px` circular white play button.
+- **`src/app/index.tsx`**: Converted to `FlatList` for consistent virtualization. `fontSize: 30` bold greeting; quick-access pill chips with emoji (📚 Library, ♥ My music, 🔍 Search) in rounded `borderRadius: 24` pills; `YOUR SONGS` section.
+- **`src/app/library.tsx`**: Title row with `⟳` rescan icon button. Spotify-style **filter pills** (horizontally scrollable `ScrollView`) — active pill in Spotify green with black text, inactive in `#282828`. Count label below pills. Empty state uses centered layout with full `flex: 1` container.
+- **`src/app/search.tsx`**: Converted to `FlatList`. Search bar in `#282828` rounded rect. Results shown with `N RESULTS` all-caps label.
+- **`src/app/personal-library.tsx`**: Converted to `FlatList` with typed item discriminated union. Playlist cards now feature 52px square artwork + name + count in a rounded `#282828` surface. Create-playlist row with `borderRadius: 10`. `returnKeyType="done"` on text inputs.
+
+### Static verification
+
+- `npm run lint` ✅
+- `npx tsc --noEmit` ✅ (fixed `StyleSheet.absoluteFill` usage in `artwork-placeholder.tsx`)
+
+### Device verification status
+
+Not yet device-verified. No new native modules were added, so the existing dev build or a metro reload may be sufficient for JS-only changes.
+
+## Verification update (2026-10-27) — current UI worktree
+
+- Reviewed the combined staged and unstaged UI worktree. Corrected three interaction defects found during review: the Now Playing heart now toggles the real local favorite, visual-only three-dot affordances are not exposed as inert accessibility buttons, and playlist open/delete actions are sibling controls rather than nested press targets.
+- Static verification on the final source: `npm.cmd run lint` passed with no diagnostics; `npx.cmd tsc --noEmit` passed with no errors; `git diff --check` passed (only the repository's existing LF-to-CRLF notices appeared); and `npx.cmd expo config --type public` resolved the Expo configuration successfully.
+- `app.json` and the new `assets/SoundShelf icon 3.png` change the base icon and splash source. A fresh Android native regeneration is required before evaluating those changes: run `npx expo prebuild --clean --platform android`, then `npx expo run:android --device`. Verify the launcher icon, splash image, all revised screens, the Now Playing favorite toggle, playlist open/delete controls, and list scrolling. No Android device was available for this session.
+- Affected verification/fix files: `src/app/personal-library.tsx`, `src/features/library/components/library-rows.tsx`, `src/features/playback/components/now-playing.tsx`, and `docs/PROGRESS.md`.
+
+---
+
+## Update (2026-10-27) — Spotify-style UI revamp
+
+Replaced the teal gradient design language with a Spotify-inspired dark design across all UI files.
+
+### Changes
+
+- **`src/constants/theme.ts`**: Both `light` and `dark` palettes replaced with Spotify colors (`#121212` bg, `#1E1E1E` surface, `#282828` surfaceRaised, `#1DB954` accent, `#FFFFFF` text, `#B3B3B3` muted). `BackgroundGradient` set to flat `['#121212', '#121212']`; `AccentText` set to `#000000`.
+- **`src/components/ui/app-gradient.tsx`**: Now uses `BackgroundGradient` (flat black — no visual gradient). Signature and imports unchanged.
+- **`src/components/ui/artwork-placeholder.tsx`**: Square `borderRadius: 4` (Spotify sharp-ish corners), dark gray `surfaceRaised` background, muted music note.
+- **`src/components/ui/empty-state.tsx`**: Uses updated `ArtworkPlaceholder`; smaller title/description sizes matching Spotify style.
+- **`src/components/ui/screen.tsx`**: No changes to structure; inherits the flat-black gradient.
+- **`src/components/app-tabs.tsx`**: Tab bar is `#000000`; active icon/label color is Spotify green (`#1DB954`); removed `useColorScheme` — always dark like Spotify.
+- **`src/features/library/components/library-rows.tsx`**: Track rows 56px-ish tall, square 48px artwork, no border lines, heart icon favorite toggle, playing track shown in green.
+- **`src/components/ui/mini-player.tsx`**: Dark `#282828` bar, thin green progress line at top, square artwork, play/pause + next controls, no border ring.
+- **`src/features/playback/components/now-playing.tsx`**: Full black screen, large 280px square artwork, green seek bar with white thumb dot, white circular play button, flat glyph prev/next/shuffle/repeat. Removed unused `AccentText` import.
+- **`src/app/index.tsx`**: Spotify-style greeting (`Good morning/afternoon/evening`), dark scan card, quick-link chips, all-caps muted "YOUR SONGS" section header, recent tracks.
+- **`src/app/library.tsx`**: Dark pill segmented control (Songs / Albums / Favorites), all-caps muted section meta, Rescan/back links in green, flat row list.
+- **`src/app/search.tsx`**: Dark `#282828` pill search input, magnifier prefix, all-caps muted result count header.
+- **`src/app/personal-library.tsx`**: Dark create-playlist row, all-caps section labels, green "Create" pill button, playlist/track rows on dark surfaces.
+
+### Static verification
+
+- `npx tsc --noEmit` ✅ (0 errors; fixed `StyleSheet.absoluteFillObject` → `StyleSheet.absoluteFill` during the check)
+- `npm run lint` ✅ (0 errors, 0 warnings; removed unused `AccentText` import from `now-playing.tsx`)
+
+### Device verification status
+
+Not yet verified on hardware. Requires a new development build because themes/assets changed (though no new native modules were added). To test:
+- All screens are pure dark `#121212` with no gradient tinting.
+- Tab bar is pure black with green active icons/labels.
+- Track rows have no separator lines — only spacing.
+- Mini player shows green progress bar at top.
+- Now Playing shows large centered artwork, green seek bar, white circular play button.
