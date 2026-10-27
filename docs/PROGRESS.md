@@ -459,6 +459,13 @@ Not yet device-verified. No new native modules were added, so the existing dev b
 - `app.json` and the new `assets/SoundShelf icon 3.png` change the base icon and splash source. A fresh Android native regeneration is required before evaluating those changes: run `npx expo prebuild --clean --platform android`, then `npx expo run:android --device`. Verify the launcher icon, splash image, all revised screens, the Now Playing favorite toggle, playlist open/delete controls, and list scrolling. No Android device was available for this session.
 - Affected verification/fix files: `src/app/personal-library.tsx`, `src/features/library/components/library-rows.tsx`, `src/features/playback/components/now-playing.tsx`, and `docs/PROGRESS.md`.
 
+## Update (2026-10-27) — persistent mini-player across tabs
+
+- Moved the single `MiniPlayer` instance from individual screen footers to the root layout, where it overlays the tab content directly above the native tab bar. It now persists while switching Home, Library, Search, and My music, and is absent until a track has been selected.
+- Added `MiniPlayerInset` to the shared layout constants and applied it to standard screens and every current tab list so the last content remains reachable above the overlay. Removed the duplicate screen-level mini-player instances to prevent competing Now Playing modals and duplicate controls.
+- Static verification: `npm.cmd run lint` and `npx.cmd tsc --noEmit` passed with no diagnostics; `git diff --check` passed with only the repository's existing LF-to-CRLF notices. No device was attached, so verify that the player sits above—not on top of—the tab bar, remains visible across tab switches, and opens Now Playing correctly.
+- Affected files: `src/app/_layout.tsx`, `src/components/ui/mini-player.tsx`, `src/constants/theme.ts`, `src/components/ui/screen.tsx`, `src/app/index.tsx`, `src/app/library.tsx`, `src/app/search.tsx`, `src/app/personal-library.tsx`, and `docs/PROGRESS.md`.
+
 ---
 
 ## Update (2026-10-27) — Spotify-style UI revamp

@@ -5,8 +5,7 @@ import { useMemo, useState } from 'react';
 import { ThemedText } from '@/components/themed-text';
 import { AppGradient } from '@/components/ui/app-gradient';
 import { EmptyState } from '@/components/ui/empty-state';
-import { MiniPlayer } from '@/components/ui/mini-player';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, MiniPlayerInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { LibraryTrackRow } from '@/features/library/components/library-rows';
 import { useLibrary } from '@/features/library/library-provider';
@@ -35,8 +34,7 @@ export default function SearchScreen() {
     | { type: 'emptyQuery' }
     | { type: 'noResults' }
     | { type: 'resultLabel' }
-    | { type: 'track'; data: LibraryTrack }
-    | { type: 'footer' };
+    | { type: 'track'; data: LibraryTrack };
 
   const listData: Item[] = [
     { type: 'header' },
@@ -50,7 +48,6 @@ export default function SearchScreen() {
           { type: 'resultLabel' } as Item,
           ...results.map((data): Item => ({ type: 'track', data })),
         ]),
-    { type: 'footer' },
   ];
 
   const renderItem = ({ item }: { item: Item }) => {
@@ -112,8 +109,6 @@ export default function SearchScreen() {
           />
         );
 
-      case 'footer':
-        return <View style={styles.footer}><MiniPlayer /></View>;
     }
   };
 
@@ -141,7 +136,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: Spacing.three,
     paddingTop: Spacing.two,
-    paddingBottom: BottomTabInset + Spacing.six,
+    paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.three,
     gap: Spacing.three,
   },
   headerSection: { gap: Spacing.three },
@@ -156,5 +151,4 @@ const styles = StyleSheet.create({
   searchIcon: { fontSize: 16 },
   input: { flex: 1, minHeight: 48, fontSize: 15 },
   resultLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, color: '#B3B3B3' },
-  footer: { paddingTop: Spacing.two },
 });

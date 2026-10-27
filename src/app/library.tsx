@@ -5,8 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { ThemedText } from '@/components/themed-text';
 import { AppGradient } from '@/components/ui/app-gradient';
 import { EmptyState } from '@/components/ui/empty-state';
-import { MiniPlayer } from '@/components/ui/mini-player';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, MiniPlayerInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { LibraryAlbumRow, LibraryTrackRow } from '@/features/library/components/library-rows';
 import { useLibrary } from '@/features/library/library-provider';
@@ -80,7 +79,6 @@ export default function LibraryScreen() {
                 </ThemedText>
               </Pressable>
             </View>
-            <View style={styles.emptyFooter}><MiniPlayer /></View>
           </View>
         </SafeAreaView>
       </AppGradient>
@@ -196,7 +194,6 @@ export default function LibraryScreen() {
                   {skippedAssetCount} file{skippedAssetCount === 1 ? '' : 's'} could not be opened and {skippedAssetCount === 1 ? 'was' : 'were'} skipped.
                 </ThemedText>
               ) : null}
-              <MiniPlayer />
             </View>
           }
           contentContainerStyle={styles.listContent}
@@ -219,7 +216,7 @@ const styles = StyleSheet.create({
     maxWidth: MaxContentWidth,
     alignSelf: 'center',
     padding: Spacing.three,
-    paddingBottom: BottomTabInset + Spacing.six,
+    paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.three,
   },
   listHeaderContent: { gap: Spacing.two, paddingBottom: Spacing.two },
   // Title row
@@ -238,7 +235,6 @@ const styles = StyleSheet.create({
   // Empty page layout
   emptyPage: { flex: 1, padding: Spacing.three, gap: Spacing.three },
   emptyContent: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.three },
-  emptyFooter: { paddingBottom: Spacing.two },
   greenBtn: { paddingVertical: 12, paddingHorizontal: Spacing.four, borderRadius: 24 },
   greenBtnText: { fontWeight: '700', fontSize: 14, color: '#000000' },
   footer: { gap: Spacing.two, paddingTop: Spacing.four },

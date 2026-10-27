@@ -6,8 +6,7 @@ import { ThemedText } from '@/components/themed-text';
 import { AppGradient } from '@/components/ui/app-gradient';
 import { ArtworkPlaceholder } from '@/components/ui/artwork-placeholder';
 import { EmptyState } from '@/components/ui/empty-state';
-import { MiniPlayer } from '@/components/ui/mini-player';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { BottomTabInset, MaxContentWidth, MiniPlayerInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { LibraryTrackRow } from '@/features/library/components/library-rows';
 import { usePersonalLibrary } from '@/features/personal-library/personal-library-provider';
@@ -26,8 +25,7 @@ type Item =
   | { type: 'noTracks'; isPlaylist: boolean }
   | { type: 'recentHeader' }
   | { type: 'recentTrack'; data: LibraryTrack }
-  | { type: 'noRecent' }
-  | { type: 'footer' };
+  | { type: 'noRecent' };
 
 export default function PersonalLibraryScreen() {
   const theme = useTheme();
@@ -68,7 +66,6 @@ export default function PersonalLibraryScreen() {
     ...(recentlyPlayed.length === 0
       ? [{ type: 'noRecent' } as Item]
       : recentlyPlayed.slice(0, 5).map((data): Item => ({ type: 'recentTrack', data }))),
-    { type: 'footer' },
   ];
 
   const renderItem = ({ item }: { item: Item }) => {
@@ -225,8 +222,6 @@ export default function PersonalLibraryScreen() {
           </ThemedText>
         );
 
-      case 'footer':
-        return <View style={styles.footer}><MiniPlayer /></View>;
     }
   };
 
@@ -254,7 +249,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: Spacing.three,
     paddingTop: Spacing.two,
-    paddingBottom: BottomTabInset + Spacing.six,
+    paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.three,
     gap: Spacing.three,
   },
   screenTitle: { fontSize: 24, fontWeight: '700', color: '#FFFFFF' },
@@ -295,6 +290,5 @@ const styles = StyleSheet.create({
   listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   removeBtn: { fontSize: 13, paddingLeft: 60, paddingBottom: Spacing.one },
   addRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, paddingLeft: 60, paddingBottom: Spacing.one },
-  footer: { paddingTop: Spacing.two },
   pressed: { opacity: 0.7 },
 });

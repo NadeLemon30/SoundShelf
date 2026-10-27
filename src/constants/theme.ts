@@ -44,4 +44,6 @@ export const Fonts = Platform.select({
 
 export const Spacing = { half: 2, one: 4, two: 8, three: 16, four: 24, five: 32, six: 48 } as const;
 export const BottomTabInset = Platform.select({ ios: 50, android: 80 }) ?? 0;
+// Space reserved above the tab bar for the persistent mini-player when a track is selected.
+export const MiniPlayerInset = 72;
 export const MaxContentWidth = 760;

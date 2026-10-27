@@ -18,22 +18,7 @@ export function MiniPlayer() {
   const percent = playbackPercent(status.currentTime, status.duration);
 
   if (!hasTrack || !currentTrack) {
-    return (
-      <View style={[styles.card, { backgroundColor: '#1E1E1E' }]}>
-        {/* Idle state */}
-        <View style={styles.inner}>
-          <ArtworkPlaceholder size={44} style={styles.artwork} />
-          <View style={styles.copy}>
-            <ThemedText numberOfLines={1} style={styles.trackTitle}>Nothing playing</ThemedText>
-            <ThemedText numberOfLines={1} style={styles.trackSub}>Tap a song to start</ThemedText>
-          </View>
-        </View>
-        {/* Progress bar at bottom */}
-        <View style={[styles.progressTrack, { backgroundColor: '#333333' }]}>
-          <View style={[styles.progressFill, { backgroundColor: theme.accent, width: '0%' }]} />
-        </View>
-      </View>
-    );
+    return null;
   }
 
   return (

@@ -4,8 +4,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { AppGradient } from '@/components/ui/app-gradient';
-import { MiniPlayer } from '@/components/ui/mini-player';
-import { Spacing, BottomTabInset, MaxContentWidth } from '@/constants/theme';
+import { Spacing, BottomTabInset, MaxContentWidth, MiniPlayerInset } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibrary } from '@/features/library/library-provider';
 import { usePlayback } from '@/features/playback/playback-provider';
@@ -39,8 +38,7 @@ export default function HomeScreen() {
     | { type: 'quickLinks' }
     | { type: 'sectionLabel' }
     | { type: 'track'; data: LibraryTrack }
-    | { type: 'seeAll' }
-    | { type: 'footer' };
+    | { type: 'seeAll' };
 
   const listData: Item[] = [
     { type: 'greeting' },
@@ -49,7 +47,6 @@ export default function HomeScreen() {
     ...(recentTracks.length > 0 ? [{ type: 'sectionLabel' } as Item] : []),
     ...recentTracks.map((data): Item => ({ type: 'track', data })),
     ...(tracks.length > 6 ? [{ type: 'seeAll' } as Item] : []),
-    { type: 'footer' },
   ];
 
   const renderItem = ({ item }: { item: Item }) => {
@@ -123,12 +120,6 @@ export default function HomeScreen() {
           </Link>
         );
 
-      case 'footer':
-        return (
-          <View style={styles.footer}>
-            <MiniPlayer />
-          </View>
-        );
     }
   };
 
@@ -156,7 +147,7 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     paddingHorizontal: Spacing.three,
     paddingTop: Spacing.two,
-    paddingBottom: BottomTabInset + Spacing.six,
+    paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.three,
     gap: Spacing.three,
   },
   greeting: { fontSize: 30, fontWeight: '700', color: '#FFFFFF' },
@@ -190,6 +181,5 @@ const styles = StyleSheet.create({
     marginBottom: -Spacing.two,
   },
   seeAll: { fontSize: 13, color: '#B3B3B3', paddingVertical: Spacing.one },
-  footer: { paddingTop: Spacing.two },
   pressed: { opacity: 0.7 },
 });

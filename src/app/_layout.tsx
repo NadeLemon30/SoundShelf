@@ -5,6 +5,8 @@ import { StyleSheet, View, useColorScheme } from 'react-native';
 
 import AppTabs from '@/components/app-tabs';
 import { StartupAnimation } from '@/components/startup-animation';
+import { MiniPlayer } from '@/components/ui/mini-player';
+import { BottomTabInset } from '@/constants/theme';
 import { LibraryProvider } from '@/features/library/library-provider';
 import { migrateDatabase, DATABASE_NAME } from '@/features/personal-library/database';
 import { PersonalLibraryProvider } from '@/features/personal-library/personal-library-provider';
@@ -23,6 +25,9 @@ export default function RootLayout() {
             <PlaybackProvider>
               <View style={styles.root}>
                 <AppTabs />
+                <View pointerEvents="box-none" style={styles.miniPlayerOverlay}>
+                  <MiniPlayer />
+                </View>
                 <StartupAnimation />
               </View>
             </PlaybackProvider>
@@ -35,4 +40,12 @@ export default function RootLayout() {
 
 const styles = StyleSheet.create({
   root: { flex: 1 },
+  miniPlayerOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: BottomTabInset,
+    zIndex: 10,
+    elevation: 10,
+  },
 });
