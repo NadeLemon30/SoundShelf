@@ -3,18 +3,19 @@ import { ScrollView, StyleSheet, type ScrollViewProps } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+import { AppGradient } from './app-gradient';
 
 type ScreenProps = PropsWithChildren<ScrollViewProps>;
 
 export function Screen({ children, contentContainerStyle, ...props }: ScreenProps) {
-  const theme = useTheme();
   return (
-    <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
-      <ScrollView {...props} contentContainerStyle={[styles.content, { paddingBottom: BottomTabInset + Spacing.six }, contentContainerStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-        {children}
-      </ScrollView>
-    </SafeAreaView>
+    <AppGradient>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <ScrollView {...props} contentContainerStyle={[styles.content, { paddingBottom: BottomTabInset + Spacing.six }, contentContainerStyle]} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+          {children}
+        </ScrollView>
+      </SafeAreaView>
+    </AppGradient>
   );
 }
 

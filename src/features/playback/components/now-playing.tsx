@@ -4,8 +4,9 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { AppGradient } from '@/components/ui/app-gradient';
 import { ArtworkPlaceholder } from '@/components/ui/artwork-placeholder';
-import { Spacing } from '@/constants/theme';
+import { AccentText, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 
 import { formatPlaybackTime, playbackPercent } from '../format';
@@ -43,7 +44,8 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
 
   return (
     <Modal animationType="slide" onRequestClose={onClose} statusBarTranslucent transparent visible={visible}>
-      <SafeAreaView edges={['top', 'bottom']} style={[styles.safeArea, { backgroundColor: theme.background }]}>
+      <AppGradient>
+      <SafeAreaView edges={['top', 'bottom']} style={styles.safeArea}>
         <View style={styles.content}>
           <View style={styles.header}>
             <Pressable accessibilityLabel="Close now playing" accessibilityRole="button" hitSlop={10} onPress={onClose} style={({ pressed }) => pressed && styles.pressed}>
@@ -128,6 +130,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
           {queue.length > 0 ? <ThemedText themeColor="textMuted" style={styles.queueNote} type="small">{`Track ${Math.min(index + 1, queue.length)} of ${queue.length}`}</ThemedText> : null}
         </View>
       </SafeAreaView>
+      </AppGradient>
     </Modal>
   );
 }
@@ -149,7 +152,7 @@ const styles = StyleSheet.create({
   sideControl: { padding: Spacing.two },
   sideGlyph: { fontSize: 28, lineHeight: 32 },
   primaryControl: { width: 72, height: 72, borderRadius: 36, alignItems: 'center', justifyContent: 'center' },
-  primaryGlyph: { color: '#FFFFFF', fontSize: 26, fontWeight: '700' },
+  primaryGlyph: { color: AccentText, fontSize: 26, fontWeight: '700' },
   modes: { flexDirection: 'row', justifyContent: 'center', gap: Spacing.two },
   modeButton: { paddingVertical: Spacing.two, paddingHorizontal: Spacing.three, borderRadius: 12 },
   queueNote: { textAlign: 'center' },

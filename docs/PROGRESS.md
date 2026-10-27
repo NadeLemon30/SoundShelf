@@ -399,6 +399,14 @@ Build a fresh Android development build, because `expo-sqlite` is a native modul
 - Static verification: `npm.cmd run lint` passed with no diagnostics; `npx.cmd tsc --noEmit` passed; `git diff --check` passed (only existing LF-to-CRLF warnings). No device is attached, so large-library fling responsiveness and behavior after switching views remain device-unverified.
 - Affected file: `src/app/library.tsx`. Exact next step: on a device with a large local library, rapidly scroll Songs, Favorites, and Albums; change views while scrolled; open/close an album; and verify no blank/stale rows, touch failures, or mini-player overlap. Retain the Phase 6 database/checkpoint device tests as the primary completion gate.
 
+## Update (2026-10-27) — teal gradient theme and navigation icons
+
+- Owner explicitly requested a gradient visual refresh using `#005F73` (deep teal) and `#00E68A` (mint). Added SDK 57-compatible `expo-linear-gradient` (`~57.0.2`) with `npx expo install` and introduced one shared `AppGradient` backdrop for standard screens, the virtualized library, and Now Playing. Content surfaces remain opaque teal for readable text; controls on the bright mint accent use deep-teal text.
+- Updated the shared light/dark tokens and native tab bar to the new palette. The Android-first native tabs now use platform symbols instead of the duplicated raster home/explore assets: Home, music library, Search, and Favorites. iOS receives matching SF Symbols.
+- Static verification: `npm.cmd run lint` passed with no diagnostics; `npx.cmd tsc --noEmit` passed; `git diff --check` passed (only existing LF-to-CRLF warnings). The Android Metro export bundled successfully (1,337 modules); the CLI wrapper did not return its final summary, so this is bundle evidence rather than a full command-result assertion.
+- Affected files: `package.json`, `package-lock.json`, `src/constants/theme.ts`, `src/components/ui/app-gradient.tsx`, `src/components/ui/screen.tsx`, `src/components/app-tabs.tsx`, `src/app/index.tsx`, `src/app/library.tsx`, `src/app/personal-library.tsx`, and `src/features/playback/components/now-playing.tsx`.
+- The new gradient dependency is native: build a fresh Android development build (`npx expo run:android --device`) before device testing. Confirm the gradient is smooth/readable, all text and mint buttons retain contrast, and every tab icon is visible and correctly selected on Android. This does not replace the outstanding Phase 6 device tests.
+
 > The older Phase 5 instructions below are superseded and retained only as historical context.
 
 **First:** build a new development or release APK with this uncommitted focus patch (`npx expo prebuild --clean --platform android`, then `npx expo run:android --device` or a release build). Do not use `v0.3.5` for the audio-focus test.

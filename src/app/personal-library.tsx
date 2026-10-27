@@ -5,7 +5,7 @@ import { ThemedText } from '@/components/themed-text';
 import { EmptyState } from '@/components/ui/empty-state';
 import { MiniPlayer } from '@/components/ui/mini-player';
 import { Screen } from '@/components/ui/screen';
-import { Spacing } from '@/constants/theme';
+import { AccentText, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { LibraryTrackRow } from '@/features/library/components/library-rows';
 import { usePersonalLibrary } from '@/features/personal-library/personal-library-provider';
@@ -26,4 +26,4 @@ export default function PersonalLibraryScreen() {
     <View style={styles.section}><ThemedText type="smallBold" themeColor="textMuted">RECENTLY PLAYED</ThemedText>{recentlyPlayed.length ? recentlyPlayed.slice(0, 5).map((track) => <LibraryTrackRow key={track.id} track={track} isCurrent={currentTrack?.id === track.id} onPress={() => playTrack(track, recentlyPlayed)} />) : <ThemedText type="small" themeColor="textMuted">Songs you play will appear here.</ThemedText>}</View><MiniPlayer />
   </Screen>;
 }
-const styles = StyleSheet.create({ header: { gap: Spacing.one, paddingTop: Spacing.two }, title: { fontSize: 38, lineHeight: 44 }, createCard: { flexDirection: 'row', gap: Spacing.two, padding: Spacing.two, borderRadius: 14 }, input: { flex: 1, minHeight: 44, paddingHorizontal: Spacing.two, borderWidth: StyleSheet.hairlineWidth, borderRadius: 10 }, createButton: { justifyContent: 'center', paddingHorizontal: Spacing.three, borderRadius: 10 }, createLabel: { color: '#FFFFFF', fontWeight: '700' }, section: { gap: Spacing.one }, playlistRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.one }, playlistName: { flex: 1, gap: 2 }, listHeader: { flexDirection: 'row', justifyContent: 'space-between' }, addRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, paddingVertical: Spacing.one } });
+const styles = StyleSheet.create({ header: { gap: Spacing.one, paddingTop: Spacing.two }, title: { fontSize: 38, lineHeight: 44 }, createCard: { flexDirection: 'row', gap: Spacing.two, padding: Spacing.two, borderRadius: 14 }, input: { flex: 1, minHeight: 44, paddingHorizontal: Spacing.two, borderWidth: StyleSheet.hairlineWidth, borderRadius: 10 }, createButton: { justifyContent: 'center', paddingHorizontal: Spacing.three, borderRadius: 10 }, createLabel: { color: AccentText, fontWeight: '700' }, section: { gap: Spacing.one }, playlistRow: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.one }, playlistName: { flex: 1, gap: 2 }, listHeader: { flexDirection: 'row', justifyContent: 'space-between' }, addRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, paddingVertical: Spacing.one } });

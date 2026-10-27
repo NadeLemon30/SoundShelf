@@ -4,7 +4,7 @@ import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { MiniPlayer } from '@/components/ui/mini-player';
 import { Screen } from '@/components/ui/screen';
-import { Spacing } from '@/constants/theme';
+import { AccentText, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibrary } from '@/features/library/library-provider';
 
@@ -46,7 +46,7 @@ const styles = StyleSheet.create({
   heroCard: { gap: Spacing.three, padding: Spacing.four, borderRadius: 24 },
   heroTitle: { fontSize: 27, lineHeight: 33 },
   primaryButton: { alignSelf: 'flex-start', paddingVertical: 12, paddingHorizontal: Spacing.three, borderRadius: 14 },
-  primaryButtonText: { color: '#FFFFFF', fontWeight: '700' },
+  primaryButtonText: { color: AccentText, fontWeight: '700' },
   section: { gap: Spacing.two },
   pressed: { opacity: 0.78 },
 });

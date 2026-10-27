@@ -3,10 +3,11 @@ import { FlatList, Linking, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
+import { AppGradient } from '@/components/ui/app-gradient';
 import { EmptyState } from '@/components/ui/empty-state';
 import { MiniPlayer } from '@/components/ui/mini-player';
 import { Screen } from '@/components/ui/screen';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
+import { AccentText, BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { LibraryAlbumRow, LibraryTrackRow } from '@/features/library/components/library-rows';
 import { useLibrary } from '@/features/library/library-provider';
@@ -60,8 +61,9 @@ export default function LibraryScreen() {
 
   const listLabel = selectedAlbum ? selectedAlbum.title.toLocaleUpperCase() : view === 'songs' ? `${tracks.length} SONG${tracks.length === 1 ? '' : 'S'}` : view === 'albums' ? `${albums.length} ALBUM${albums.length === 1 ? '' : 'S'}` : `${favorites.length} FAVORITE${favorites.length === 1 ? '' : 'S'}`;
 
-  return <SafeAreaView style={[styles.safeArea, { backgroundColor: theme.background }]} edges={['top', 'left', 'right']}>
-    <FlatList
+  return <AppGradient>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+      <FlatList
       data={data}
       keyExtractor={(item) => `${isAlbumOverview ? 'album' : 'track'}-${item.id}`}
       renderItem={({ item }) => isAlbumOverview ? <LibraryAlbumRow album={item as LibraryAlbum} onPress={() => setSelectedAlbumId((item as LibraryAlbum).id)} /> : <LibraryTrackRow track={item as LibraryTrack} isCurrent={item.id === currentTrackId} isFavorite={isFavorite(item.id)} onToggleFavorite={() => { void toggleFavorite(item as LibraryTrack); }} onPress={() => playTrack(item as LibraryTrack, listTracks)} />}
@@ -87,9 +89,10 @@ export default function LibraryScreen() {
       initialNumToRender={12}
       maxToRenderPerBatch={12}
       windowSize={7}
-      removeClippedSubviews
-    />
-  </SafeAreaView>;
+        removeClippedSubviews
+      />
+    </SafeAreaView>
+  </AppGradient>;
 }
 
 const styles = StyleSheet.create({
@@ -102,7 +105,7 @@ const styles = StyleSheet.create({
   segment: { flex: 1, alignItems: 'center', paddingVertical: Spacing.two, borderRadius: 10 },
   emptyWrap: { alignItems: 'center' },
   scanButton: { borderRadius: 14, paddingHorizontal: Spacing.three, paddingVertical: 12 },
-  scanLabel: { color: '#FFFFFF', fontWeight: '700' },
+  scanLabel: { color: AccentText, fontWeight: '700' },
   pressed: { opacity: 0.78 },
   listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: Spacing.two, paddingTop: Spacing.two, paddingBottom: Spacing.one },
   listLabel: { flex: 1 },
