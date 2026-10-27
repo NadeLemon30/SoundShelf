@@ -12,6 +12,8 @@ import { migrateDatabase, DATABASE_NAME } from '@/features/personal-library/data
 import { PersonalLibraryProvider } from '@/features/personal-library/personal-library-provider';
 import { PlaybackProvider } from '@/features/playback/playback-provider';
 
+const MINI_PLAYER_LIFT = 25;
+
 // Hold the native splash screen until <StartupAnimation> has painted its matching first frame.
 SplashScreen.preventAutoHideAsync();
 
@@ -45,7 +47,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     // Native tabs can extend slightly above their reported Android inset.
-    bottom: BottomTabInset + Spacing.four,
+    bottom: BottomTabInset + Spacing.four + MINI_PLAYER_LIFT,
     zIndex: 10,
     elevation: 10,
   },

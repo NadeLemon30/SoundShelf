@@ -482,9 +482,9 @@ Not yet device-verified. No new native modules were added, so the existing dev b
 - The exit now has a gentler logo lift before its final expansion, delayed sound-ring pulses, a longer diagonal sweep, and an extra equalizer beat. All animated properties remain native-driver opacity/transforms; the overlay remains non-interactive and self-unmounts when complete.
 - This is a JavaScript-only change. `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check` passed (the latter reported only the repository's existing LF-to-CRLF notices). On a release APK, assess whether the slightly longer brand moment still feels responsive; Expo Go and development builds do not faithfully show the native-splash portion.
 
-## Update (2026-10-28) — seek-bar position and current splash asset
+## Update (2026-10-28) — mini-player position and current splash asset
 
-- Moved the Now Playing seek section 25 dp upward through its layout margin, bringing its track and timestamps closer to the song details without overlap.
+- Reverted the temporary 25 dp seek-section offset in the Now Playing screen. The persistent mini-player bar is instead raised by 25 dp above its previous position in the root layout, keeping the full-screen Now Playing layout unchanged.
 - The React splash overlay now uses React Native's static `Image` loader with a direct `../../assets/icon.png` module reference, rather than `expo-image`. The native `expo-splash-screen` configuration already points to the same `./assets/icon.png` file. This removes a separate runtime image-cache path and makes the intended asset explicit in both startup layers.
 - `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check` passed (the last command reported only the repository's existing LF-to-CRLF notices). Native splash assets are compiled into the Android app, so confirm this on a regenerated, reinstalled release/preview APK.
 

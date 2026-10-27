@@ -223,7 +223,7 @@ const styles = StyleSheet.create({
   trackTitle: { fontSize: 22, fontWeight: '700', color: '#FFFFFF' },
   trackSub: { fontSize: 14, color: '#B3B3B3' },
   // Seek bar
-  seekSection: { gap: 8, marginTop: -25 },
+  seekSection: { gap: 8 },
   seekTrack: { height: 4, borderRadius: 2, overflow: 'visible', justifyContent: 'center' },
   seekFill: { height: '100%', borderRadius: 2 },
   seekThumb: { position: 'absolute', width: 14, height: 14, borderRadius: 7, marginLeft: -7, top: -5 },
