@@ -1,5 +1,5 @@
 /**
- * Source patches for two expo-audio 57.0.5 Android bugs.
+ * Source patches for three expo-audio 57.0.5 Android bugs.
  *
  * --- Bug 1: wrong audio-focus grant type ---
  * expo-audio requests AUDIOFOCUS_GAIN_TRANSIENT for the doNotMix interruption
@@ -13,7 +13,17 @@
  * AUDIO_BECOMING_NOISY broadcast (wired unplug / Bluetooth disconnect), so
  * audio continues through the phone speaker after the headphones go away.
  *
- * Both fixes target the Kotlin source in `node_modules/expo-audio/android`.
+ * --- Bug 3: focus dropped during buffering/transitions, and playback without focus ---
+ * expo-audio releases focus on every `onIsPlayingChanged(false)`, which also
+ * fires while buffering and between tracks. Nothing re-requests focus when
+ * playback resumes on its own, so another app can take focus while SoundShelf
+ * is still playing and SoundShelf never receives AUDIOFOCUS_LOSS. Playback also
+ * starts even when the focus request was delayed or failed, leaving it with no
+ * focus listener at all. The patch holds permanent focus across non-idle
+ * playback, re-requests it when playback starts, waits for delayed focus, and
+ * refuses to start playback when focus is denied.
+ *
+ * All fixes target the Kotlin source in `node_modules/expo-audio/android`.
  * SDK 57 ships this module as a prebuilt AAR and autolinking uses the AAR by
  * default, so `package.json` must list `expo-audio` under
  * `expo.autolinking.android.buildFromSource`; otherwise the patched source is
@@ -234,11 +244,303 @@ function applyNoisyReceiverPatch(source) {
 }
 
 // ---------------------------------------------------------------------------
+// Bug 3: hold focus while playback is ongoing; don't play without focus
+//
+// Anchors verified against expo-audio 57.0.5 (after Bug 1 is applied).
+// ---------------------------------------------------------------------------
+
+const FOCUS_HOLD_MARKER = 'private enum class AudioFocusResult';
+
+const FOCUS_REQUEST_FUNCTION = `  private enum class AudioFocusResult { GRANTED, DELAYED, FAILED, NOT_REQUESTED }
+
+  private fun requestAudioFocus(): AudioFocusResult {
+    if (focusAcquired) {
+      return AudioFocusResult.GRANTED
+    }
+    if (!audioEnabled) {
+      return AudioFocusResult.FAILED
+    }
+    if (interruptionMode == InterruptionMode.MIX_WITH_OTHERS) {
+      return AudioFocusResult.NOT_REQUESTED
+    }
+
+    val result = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val requestType = interruptionMode?.let {
+        if (it == InterruptionMode.DO_NOT_MIX) {
+          AudioManager.AUDIOFOCUS_GAIN
+        } else {
+          AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+        }
+      } ?: AudioManager.AUDIOFOCUS_GAIN
+      focusGainRequested = requestType
+      audioFocusRequest = AudioFocusRequest.Builder(requestType).run {
+        setAudioAttributes(
+          AudioAttributes.Builder()
+            .setUsage(AudioAttributes.USAGE_MEDIA)
+            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+            .build()
+        )
+        setAcceptsDelayedFocusGain(true)
+        setOnAudioFocusChangeListener(audioFocusChangeListener)
+        build()
+      }
+      audioFocusRequest?.let {
+        audioManager.requestAudioFocus(it)
+      } ?: AudioManager.AUDIOFOCUS_REQUEST_FAILED
+    } else {
+      @Suppress("DEPRECATION")
+      val requestType = if (interruptionMode == InterruptionMode.DO_NOT_MIX) {
+        AudioManager.AUDIOFOCUS_GAIN
+      } else {
+        AudioManager.AUDIOFOCUS_GAIN_TRANSIENT_MAY_DUCK
+      }
+      focusGainRequested = requestType
+      @Suppress("DEPRECATION")
+      audioManager.requestAudioFocus(audioFocusChangeListener, AudioManager.STREAM_MUSIC, requestType)
+    }
+
+    Log.d(TAG, "Audio focus result=$result, requested=$focusGainRequested")
+    return when (result) {
+      AudioManager.AUDIOFOCUS_REQUEST_GRANTED -> {
+        focusAcquired = true
+        AudioFocusResult.GRANTED
+      }
+      AudioManager.AUDIOFOCUS_REQUEST_DELAYED -> {
+        focusAcquired = false
+        AudioFocusResult.DELAYED
+      }
+      else -> {
+        Log.e(TAG, "Audio focus request failed with: $result")
+        focusAcquired = false
+        AudioFocusResult.FAILED
+      }
+    }
+  }`;
+
+const RELEASE_FOCUS_FUNCTION = `  private fun releaseAudioFocus() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      audioFocusRequest?.let {
+        audioManager.abandonAudioFocusRequest(it)
+      }
+      audioFocusRequest = null
+    } else {
+      @Suppress("DEPRECATION")
+      audioManager.abandonAudioFocus(audioFocusChangeListener)
+    }
+    Log.d(TAG, "Audio focus released")
+    focusAcquired = false
+  }`;
+
+const FOCUS_HELPERS = `
+
+  private fun Playable.hasActivePlaybackIntent(): Boolean {
+    return player.playWhenReady &&
+      player.playerError == null &&
+      (player.playbackState == Player.STATE_BUFFERING || player.playbackState == Player.STATE_READY)
+  }
+
+  private fun releaseAudioFocusIfUnused() {
+    if (!focusAcquired) {
+      return
+    }
+
+    val focusIsStillNeeded = allPlayables.any { playable ->
+      playable.isPlaying ||
+        (focusGainRequested == AudioManager.AUDIOFOCUS_GAIN && playable.hasActivePlaybackIntent())
+    }
+    if (!focusIsStillNeeded) {
+      releaseAudioFocus()
+    }
+  }
+
+  private fun releaseFocusIfNoPlayables() {
+    if (allPlayables.none()) {
+      releaseAudioFocus()
+    }
+  }`;
+
+function replaceOnce(source, from, to, label) {
+  const count = source.split(from).length - 1;
+  if (count !== 1) {
+    throw new Error(
+      `${LOG_PREFIX} Could not patch ${label}: expected 1 anchor, found ${count}. ` +
+        'expo-audio probably changed its source layout. Review ' +
+        'plugins/expo-audio-patch.js and update the anchors before building.'
+    );
+  }
+  return source.replace(from, to);
+}
+
+function applyAudioFocusHoldPatch(source) {
+  if (source.includes(FOCUS_HOLD_MARKER)) {
+    return source;
+  }
+
+  const requestPattern = /  private fun requestAudioFocus\(\) \{[\s\S]*?\n  \}\n/;
+  const releasePattern = /  private fun releaseAudioFocus\(\) \{[\s\S]*?\n  \}\n/;
+  if (!requestPattern.test(source) || !releasePattern.test(source)) {
+    throw new Error(
+      `${LOG_PREFIX} Could not patch audio-focus lifetime: requestAudioFocus() or ` +
+        'releaseAudioFocus() no longer matches. Review plugins/expo-audio-patch.js.'
+    );
+  }
+
+  let patched = source.replace(requestPattern, `${FOCUS_REQUEST_FUNCTION}\n`);
+  patched = patched.replace(releasePattern, `${RELEASE_FOCUS_FUNCTION}\n`);
+
+  patched = replaceOnce(
+    patched,
+    '  private var focusAcquired = false',
+    '  private var focusAcquired = false\n  private var focusGainRequested = AudioManager.AUDIOFOCUS_GAIN',
+    'the focusGainRequested field'
+  );
+
+  patched = replaceOnce(
+    patched,
+    '  private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->\n' +
+      '    appContext.mainQueue.launch {\n' +
+      '      when (focusChange) {',
+    '  private val audioFocusChangeListener = AudioManager.OnAudioFocusChangeListener { focusChange ->\n' +
+      '    appContext.mainQueue.launch {\n' +
+      '      Log.d(TAG, "Audio focus changed: $focusChange")\n' +
+      '      when (focusChange) {',
+    'the focus-change log'
+  );
+
+  patched = replaceOnce(
+    patched,
+    '        AudioManager.AUDIOFOCUS_LOSS -> {\n' +
+      '          focusAcquired = false\n' +
+      '          allPlayables.forEach { it.pause() }\n' +
+      '        }',
+    '        AudioManager.AUDIOFOCUS_LOSS -> {\n' +
+      '          releaseAudioFocus()\n' +
+      '          allPlayables.forEach { it.pause() }\n' +
+      '        }',
+    'the permanent focus-loss branch'
+  );
+
+  patched = replaceOnce(
+    patched,
+    '  private fun shouldReleaseFocus(): Boolean {\n' +
+      '    return allPlayables.none { it.isPlaying }\n' +
+      '  }',
+    '  private fun shouldReleaseFocus(): Boolean {\n' +
+      '    return allPlayables.none { it.isPlaying }\n' +
+      '  }' +
+      FOCUS_HELPERS,
+    'the focus helper functions'
+  );
+
+  for (const playable of ['player', 'playlist']) {
+    patched = replaceOnce(
+      patched,
+      `          ${playable}.onPlaybackStateChange = { isPlaying ->\n` +
+        '            if (!isPlaying && shouldReleaseFocus()) {\n' +
+        '              releaseAudioFocus()\n' +
+        '            }\n' +
+        '          }',
+      `          ${playable}.onPlaybackStateChange = { isPlaying ->\n` +
+        '            if (isPlaying) {\n' +
+        '              if (!focusAcquired) {\n' +
+        '                when (requestAudioFocus()) {\n' +
+        '                  AudioFocusResult.DELAYED -> {\n' +
+        `                    ${playable}.isPaused = true\n` +
+        `                    ${playable}.ref.pause()\n` +
+        '                  }\n' +
+        `                  AudioFocusResult.FAILED -> ${playable}.ref.pause()\n` +
+        '                  else -> Unit\n' +
+        '                }\n' +
+        '              }\n' +
+        '            } else {\n' +
+        '              releaseAudioFocusIfUnused()\n' +
+        '            }\n' +
+        '          }',
+      `the ${playable} playback-state focus handler`
+    );
+
+    patched = replaceOnce(
+      patched,
+      '        runOnMain {\n' +
+        '          if (!focusAcquired) {\n' +
+        '            requestAudioFocus()\n' +
+        '          }\n' +
+        `          ${playable}.ref.play()\n` +
+        '        }',
+      '        runOnMain {\n' +
+        '          when (requestAudioFocus()) {\n' +
+        `            AudioFocusResult.DELAYED -> ${playable}.isPaused = true\n` +
+        '            AudioFocusResult.FAILED -> Unit\n' +
+        `            else -> ${playable}.ref.play()\n` +
+        '          }\n' +
+        '        }',
+      `the ${playable} play() focus gate`
+    );
+  }
+
+  patched = replaceOnce(
+    patched,
+    '                if (!focusAcquired) {\n' +
+      '                  requestAudioFocus()\n' +
+      '                }\n' +
+      '                player.ref.play()',
+    '                when (requestAudioFocus()) {\n' +
+      '                  AudioFocusResult.DELAYED -> player.isPaused = true\n' +
+      '                  AudioFocusResult.FAILED -> Unit\n' +
+      '                  else -> player.ref.play()\n' +
+      '                }',
+    'the replace() focus gate'
+  );
+
+  patched = replaceOnce(
+    patched,
+    '        if (allPlayables.any { it.isPaused }) {\n' +
+      '          requestAudioFocus()\n' +
+      '        }\n' +
+      '\n' +
+      '        allPlayables.forEach { playable ->\n' +
+      '          if (playable.isPaused) {\n' +
+      '            playable.isPaused = false\n' +
+      '            playable.play()\n' +
+      '          }\n' +
+      '        }',
+    '        if (allPlayables.any { it.isPaused }) {\n' +
+      '          when (requestAudioFocus()) {\n' +
+      '            AudioFocusResult.DELAYED, AudioFocusResult.FAILED -> Unit\n' +
+      '            else -> allPlayables.forEach { playable ->\n' +
+      '              if (playable.isPaused) {\n' +
+      '                playable.isPaused = false\n' +
+      '                playable.play()\n' +
+      '              }\n' +
+      '            }\n' +
+      '          }\n' +
+      '        }',
+    'the foreground resume focus gate'
+  );
+
+  patched = replaceOnce(
+    patched,
+    '        players.remove(player.id)',
+    '        players.remove(player.id)\n        releaseFocusIfNoPlayables()',
+    'the player remove() focus cleanup'
+  );
+
+  patched = replaceOnce(
+    patched,
+    '        playlists.remove(playlist.id)',
+    '        playlists.remove(playlist.id)\n        releaseFocusIfNoPlayables()',
+    'the playlist destroy() focus cleanup'
+  );
+
+  return patched;
+}
+
+// ---------------------------------------------------------------------------
 // Entry point
 // ---------------------------------------------------------------------------
 
 function patchSource(source) {
-  return applyNoisyReceiverPatch(applyAudioFocusFix(source));
+  return applyAudioFocusHoldPatch(applyNoisyReceiverPatch(applyAudioFocusFix(source)));
 }
 
 /**
@@ -278,6 +580,7 @@ function applyPatches(projectRoot) {
 
 module.exports = {
   applyAudioFocusFix,
+  applyAudioFocusHoldPatch,
   applyNoisyReceiverPatch,
   applyPatches,
   resolveAudioModulePath,

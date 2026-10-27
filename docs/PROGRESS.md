@@ -359,7 +359,17 @@ The first clean release build **succeeded but did not contain the receiver**: `c
 - No test runner exists yet; the pure helpers are the intended first target.
 
 
+## Update (2026-10-27) â€” audio focus is lost across Expo Audio transitions
+
+- Owner report: SoundShelf continued playing when another media app began playback. This is a Phase 5 audio-focus interruption failure.
+- Likely root cause: SDK 57 `expo-audio` can release its audio-focus request while buffering or transitioning between tracks, then resume playback without reacquiring it. Android consequently has no live focus listener to receive `AUDIOFOCUS_LOSS` when the other app takes focus.
+- Extended the existing uncommitted `plugins/expo-audio-patch.js` source patch to retain permanent `AUDIOFOCUS_GAIN` for active/buffering music, reacquire focus before play/resume/replace operations, honour delayed focus, and refuse playback after a denied request. The existing permanent and transient focus-loss pause behavior is retained.
+- Verification: `patchSource` is idempotent against the installed `AudioModule.kt`; `npx tsc --noEmit` passed; a clean `npx expo prebuild --clean --platform android --no-install` succeeded; and `:expo-audio:compileDebugKotlin` succeeded (21m 19s). Kotlin daemon startup was denied access to its local marker files but Gradle fell back to in-process compilation and completed successfully.
+- **Still required:** a new native build and physical-device test. `v0.3.5` predates this change and cannot validate it. Test while SoundShelf plays, start playback in another full media app, and repeat across a track change/buffering transition. SoundShelf must pause promptly, then resume only after Android returns audio focus.
+
 ## Exact next step
+
+**First:** build a new development or release APK with this uncommitted focus patch (`npx expo prebuild --clean --platform android`, then `npx expo run:android --device` or a release build). Do not use `v0.3.5` for the audio-focus test.
 
 0. App icon + launch animation (owner-confirmed 2026-10-26): the splash animation works. At the next device session, confirm the Android launcher icon is the SoundShelf artwork (not the Expo starter icon). On Android 13+, confirm themed icons fall back gracefully. Already committed.
 
