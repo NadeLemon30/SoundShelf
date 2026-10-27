@@ -392,6 +392,13 @@ Build a fresh Android development build, because `expo-sqlite` is a native modul
 - Affected file: `src/features/personal-library/personal-library-provider.tsx`.
 - Exact next step remains the device test above. Connect and authorize an Android device, then run `npx expo run:android --device` from this regenerated native project. Test favorites, playlist add/remove, recent entries, and checkpoint restore across a force-close/reopen. Also check missing/rescanned tracks display a local failure rather than crashing.
 
+## Update (2026-10-27) — library scrolling performance
+
+- Owner explicitly requested a library-scroll optimization. Although list virtualization is normally Phase 9 polish, this focused change is authorized without advancing the current Phase 6 work.
+- Replaced the ready-library screen's eager `ScrollView` rendering with React Native's `FlatList`. Songs, albums, and favorites now render only a small window of rows (12 initially and per batch, with a seven-viewport window); off-screen rows are clipped on native platforms. The title, segmented selector, rescan notice/action, album navigation, empty states, favorites, and mini-player remain part of the same single virtualized scroll surface.
+- Static verification: `npm.cmd run lint` passed with no diagnostics; `npx.cmd tsc --noEmit` passed; `git diff --check` passed (only existing LF-to-CRLF warnings). No device is attached, so large-library fling responsiveness and behavior after switching views remain device-unverified.
+- Affected file: `src/app/library.tsx`. Exact next step: on a device with a large local library, rapidly scroll Songs, Favorites, and Albums; change views while scrolled; open/close an album; and verify no blank/stale rows, touch failures, or mini-player overlap. Retain the Phase 6 database/checkpoint device tests as the primary completion gate.
+
 > The older Phase 5 instructions below are superseded and retained only as historical context.
 
 **First:** build a new development or release APK with this uncommitted focus patch (`npx expo prebuild --clean --platform android`, then `npx expo run:android --device` or a release build). Do not use `v0.3.5` for the audio-focus test.
