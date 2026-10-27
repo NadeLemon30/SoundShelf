@@ -472,6 +472,16 @@ Not yet device-verified. No new native modules were added, so the existing dev b
 - Static verification: `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check` passed; only the repository's existing LF-to-CRLF notice appeared. On device, confirm the added gap clears the tab bar while leaving the player comfortably reachable.
 - Affected files: `src/app/_layout.tsx`, `docs/PROGRESS.md`.
 
+### Follow-up adjustment (2026-10-28)
+
+- Device feedback showed the first 16 dp lift still touched the native tab treatment. Raised the overlay another 8 dp, to `BottomTabInset + Spacing.four` (24 dp above the original inset). Verify the mini-player now has a small clear gap above the tab bar while remaining reachable.
+
+## Update (2026-10-28) — longer startup animation
+
+- Refined the JavaScript launch overlay in `src/components/startup-animation.tsx` while preserving its pixel-matched handoff from the Expo native splash. The still branded-icon stage now lasts 2.45 seconds (was 2.0 seconds), followed by a 1.4-second exit (was 1.15 seconds): about 3.85 seconds total after React draws.
+- The exit now has a gentler logo lift before its final expansion, delayed sound-ring pulses, a longer diagonal sweep, and an extra equalizer beat. All animated properties remain native-driver opacity/transforms; the overlay remains non-interactive and self-unmounts when complete.
+- This is a JavaScript-only change. `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check` passed (the latter reported only the repository's existing LF-to-CRLF notices). On a release APK, assess whether the slightly longer brand moment still feels responsive; Expo Go and development builds do not faithfully show the native-splash portion.
+
 ## Update (2026-10-27) — native icons replace UI emoji and glyphs
 
 - Added the shared `AppIcon` component backed by SDK 57's installed `expo-symbols` package. It maps SF Symbols on iOS to Material Symbols on Android and web, so UI controls use native iconography rather than emoji or text glyphs.

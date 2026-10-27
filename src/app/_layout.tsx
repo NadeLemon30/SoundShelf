@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     // Native tabs can extend slightly above their reported Android inset.
-    bottom: BottomTabInset + Spacing.three,
+    bottom: BottomTabInset + Spacing.four,
     zIndex: 10,
     elevation: 10,
   },

@@ -9,8 +9,8 @@ import { Animated, Easing, StyleSheet } from 'react-native';
  */
 const BACKGROUND = '#185048';
 const LOGO_SIZE = 160;
-const ICON_HOLD_MS = 2_000;
-const GRAPHIC_EXIT_DURATION_MS = 1_150;
+const ICON_HOLD_MS = 2_450;
+const GRAPHIC_EXIT_DURATION_MS = 1_400;
 
 /**
  * Module-level animation driver. `StartupAnimation` renders at most once per app lifetime
@@ -21,20 +21,21 @@ const GRAPHIC_EXIT_DURATION_MS = 1_150;
 const _progress = new Animated.Value(0);
 const overlayOpacity = _progress.interpolate({ inputRange: [0, 0.7, 1], outputRange: [1, 1, 0] });
 const logoOpacity = _progress.interpolate({ inputRange: [0, 0.72, 1], outputRange: [1, 1, 0] });
-const logoScale = _progress.interpolate({ inputRange: [0, 0.62, 1], outputRange: [1, 1.1, 1.3] });
+const logoScale = _progress.interpolate({ inputRange: [0, 0.42, 0.68, 1], outputRange: [1, 1.04, 1.13, 1.34] });
 const graphicsOpacity = _progress.interpolate({ inputRange: [0, 0.12, 0.72, 1], outputRange: [0, 1, 1, 0] });
-const innerRingScale = _progress.interpolate({ inputRange: [0, 1], outputRange: [0.75, 1.45] });
-const outerRingScale = _progress.interpolate({ inputRange: [0, 1], outputRange: [0.55, 2.05] });
-const innerRingOpacity = _progress.interpolate({ inputRange: [0, 0.7, 1], outputRange: [0.5, 0.1, 0] });
-const outerRingOpacity = _progress.interpolate({ inputRange: [0, 0.75, 1], outputRange: [0.32, 0.06, 0] });
-const sweepTranslateY = _progress.interpolate({ inputRange: [0, 1], outputRange: [130, -180] });
-const barOneScale = _progress.interpolate({ inputRange: [0, 0.3, 0.62, 1], outputRange: [0.28, 1, 0.5, 1.15] });
-const barTwoScale = _progress.interpolate({ inputRange: [0, 0.24, 0.55, 1], outputRange: [0.72, 0.3, 1.2, 0.42] });
-const barThreeScale = _progress.interpolate({ inputRange: [0, 0.38, 0.7, 1], outputRange: [0.42, 1.12, 0.32, 0.92] });
+const innerRingScale = _progress.interpolate({ inputRange: [0, 0.3, 1], outputRange: [0.72, 0.94, 1.55] });
+const outerRingScale = _progress.interpolate({ inputRange: [0, 0.22, 1], outputRange: [0.5, 0.72, 2.18] });
+const innerRingOpacity = _progress.interpolate({ inputRange: [0, 0.18, 0.72, 1], outputRange: [0, 0.52, 0.12, 0] });
+const outerRingOpacity = _progress.interpolate({ inputRange: [0, 0.28, 0.78, 1], outputRange: [0, 0.34, 0.07, 0] });
+const sweepTranslateY = _progress.interpolate({ inputRange: [0, 1], outputRange: [150, -210] });
+const barOneScale = _progress.interpolate({ inputRange: [0, 0.24, 0.52, 0.76, 1], outputRange: [0.25, 0.82, 1.08, 0.48, 1.18] });
+const barTwoScale = _progress.interpolate({ inputRange: [0, 0.2, 0.48, 0.72, 1], outputRange: [0.62, 0.3, 1.18, 0.54, 0.94] });
+const barThreeScale = _progress.interpolate({ inputRange: [0, 0.32, 0.62, 0.82, 1], outputRange: [0.35, 1.08, 0.36, 1.02, 0.78] });
 
 /**
  * A full-screen overlay that takes over as soon as React draws. It deliberately holds the same
- * icon-only splash for two seconds, then plays a brief music-inspired exit before revealing the app.
+ * icon-only splash for a little under two and a half seconds, then plays a paced,
+ * music-inspired exit before revealing the app.
  */
 export function StartupAnimation() {
   const [mounted, setMounted] = useState(true);
@@ -57,6 +58,7 @@ export function StartupAnimation() {
     if (hasStarted.current) return;
 
     hasStarted.current = true;
+    _progress.setValue(0);
     Animated.timing(_progress, {
       toValue: 1,
       duration: GRAPHIC_EXIT_DURATION_MS,
@@ -73,7 +75,7 @@ export function StartupAnimation() {
       style={[styles.overlay, { opacity: overlayOpacity }]}
       onLayout={() => {
         // The overlay has painted, so hide the native layer. The matching React overlay stays still
-        // for two seconds before starting its graphic exit.
+        // for a short branded pause before starting its graphic exit.
         // `hide()` is the current SDK API; `hideAsync()` exists only for backwards compatibility.
         SplashScreen.hide();
         exitTimer.current = setTimeout(startExitAnimation, ICON_HOLD_MS);
