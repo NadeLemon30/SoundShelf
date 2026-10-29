@@ -1,0 +1,148 @@
+import { Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+
+import { ThemedText } from '@/components/themed-text';
+import { AppGradient } from '@/components/ui/app-gradient';
+import { AppIcon } from '@/components/ui/app-icon';
+import { BottomTabInset, MaxContentWidth, MiniPlayerInset, Spacing } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
+import { useLibrary } from '@/features/library/library-provider';
+import { usePlayback } from '@/features/playback/playback-provider';
+
+const REPEAT_LABEL = { off: 'Off', all: 'Repeat all', one: 'Repeat one' } as const;
+
+export default function SettingsScreen() {
+  const theme = useTheme();
+  const { status, tracks, albums, needsRescan, permissionBlocked, scan } = useLibrary();
+  const { shuffle, repeat, toggleShuffle, cycleRepeat } = usePlayback();
+  const isScanning = status === 'scanning';
+  const hasPermission = status === 'ready' || isScanning;
+  const librarySummary = hasPermission
+    ? `${tracks.length} song${tracks.length === 1 ? '' : 's'} · ${albums.length} album${albums.length === 1 ? '' : 's'}`
+    : status === 'denied'
+      ? 'Audio access is not allowed'
+      : 'Audio access has not been requested';
+
+  const manageAudioAccess = () => {
+    if (permissionBlocked) {
+      void Linking.openSettings();
+      return;
+    }
+    void scan();
+  };
+
+  return (
+    <AppGradient>
+      <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
+        <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
+          <ThemedText style={styles.title}>Settings</ThemedText>
+
+          <Section title="Library">
+            <SettingRow icon="library" title="Device music" detail={librarySummary} />
+            <ActionRow
+              icon="refresh"
+              title={isScanning ? 'Scanning music…' : needsRescan ? 'Library changed — rescan' : 'Rescan device music'}
+              detail="Find newly added or removed local audio files."
+              disabled={isScanning}
+              onPress={() => { void scan(); }}
+            />
+            <ActionRow
+              icon="settings"
+              title={hasPermission ? 'Manage audio access' : permissionBlocked ? 'Open app settings' : 'Allow audio access'}
+              detail={hasPermission ? 'Change SoundShelf permissions in Android settings.' : 'SoundShelf needs audio access to browse music stored on this device.'}
+              onPress={manageAudioAccess}
+            />
+          </Section>
+
+          <Section title="Playback">
+            <View style={[styles.row, { backgroundColor: theme.surfaceRaised }]}> 
+              <View style={styles.rowIcon}><AppIcon name="shuffle" size={22} color={theme.textMuted} /></View>
+              <View style={styles.rowText}>
+                <ThemedText style={styles.rowTitle}>Shuffle queue</ThemedText>
+                <ThemedText style={styles.rowDetail}>Applies when you start or continue a queue.</ThemedText>
+              </View>
+              <Switch
+                accessibilityLabel="Shuffle queue"
+                accessibilityState={{ checked: shuffle }}
+                onValueChange={toggleShuffle}
+                trackColor={{ false: theme.backgroundSelected, true: theme.accentMuted }}
+                thumbColor={shuffle ? theme.accent : theme.textMuted}
+              />
+            </View>
+            <ActionRow
+              icon={repeat === 'one' ? 'repeatOne' : 'repeat'}
+              title="Repeat"
+              detail={REPEAT_LABEL[repeat]}
+              value={REPEAT_LABEL[repeat]}
+              onPress={cycleRepeat}
+            />
+          </Section>
+
+          <Section title="About">
+            <SettingRow icon="music" title="SoundShelf" detail="Offline music player · Your music and library data stay on this device." />
+          </Section>
+        </ScrollView>
+      </SafeAreaView>
+    </AppGradient>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <View style={styles.section}>
+      <ThemedText style={styles.sectionTitle}>{title.toUpperCase()}</ThemedText>
+      <View style={styles.rows}>{children}</View>
+    </View>
+  );
+}
+
+function SettingRow({ icon, title, detail }: { icon: 'library' | 'music'; title: string; detail: string }) {
+  const theme = useTheme();
+  return (
+    <View style={[styles.row, { backgroundColor: theme.surfaceRaised }]}>
+      <View style={styles.rowIcon}><AppIcon name={icon} size={22} color={theme.textMuted} /></View>
+      <View style={styles.rowText}>
+        <ThemedText style={styles.rowTitle}>{title}</ThemedText>
+        <ThemedText style={styles.rowDetail}>{detail}</ThemedText>
+      </View>
+    </View>
+  );
+}
+
+function ActionRow({ icon, title, detail, value, disabled = false, onPress }: {
+  icon: 'refresh' | 'settings' | 'repeat' | 'repeatOne'; title: string; detail: string; value?: string; disabled?: boolean; onPress: () => void;
+}) {
+  const theme = useTheme();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      accessibilityHint={detail}
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, { backgroundColor: theme.surfaceRaised }, (pressed || disabled) && styles.pressed]}>
+      <View style={styles.rowIcon}><AppIcon name={icon} size={22} color={theme.textMuted} /></View>
+      <View style={styles.rowText}>
+        <ThemedText style={styles.rowTitle}>{title}</ThemedText>
+        <ThemedText style={styles.rowDetail}>{detail}</ThemedText>
+      </View>
+      {value ? <ThemedText style={[styles.value, { color: theme.accent }]}>{value}</ThemedText> : <AppIcon name="chevronRight" size={20} color={theme.textMuted} />}
+    </Pressable>
+  );
+}
+
+const styles = StyleSheet.create({
+  safeArea: { flex: 1 },
+  content: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', padding: Spacing.three, paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.four, gap: Spacing.four },
+  title: { color: '#FFFFFF', fontSize: 30, fontWeight: '700' },
+  section: { gap: Spacing.two },
+  sectionTitle: { color: '#B3B3B3', fontSize: 11, fontWeight: '700', letterSpacing: 1.5 },
+  rows: { gap: 1, overflow: 'hidden', borderRadius: 12 },
+  row: { minHeight: 68, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.three, gap: Spacing.two },
+  rowIcon: { width: 24, alignItems: 'center' },
+  rowText: { flex: 1, gap: 2 },
+  rowTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  rowDetail: { color: '#B3B3B3', fontSize: 12, lineHeight: 17 },
+  value: { fontSize: 12, fontWeight: '600', textAlign: 'right' },
+  pressed: { opacity: 0.68 },
+});

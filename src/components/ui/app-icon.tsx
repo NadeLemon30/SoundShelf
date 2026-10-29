@@ -21,6 +21,7 @@ const symbols = {
   repeat: { ios: 'repeat', android: 'repeat', web: 'repeat' },
   repeatOne: { ios: 'repeat.1', android: 'repeat_one', web: 'repeat_one' },
   search: { ios: 'magnifyingglass', android: 'search', web: 'search' },
+  settings: { ios: 'gearshape', android: 'settings', web: 'settings' },
   shuffle: { ios: 'shuffle', android: 'shuffle', web: 'shuffle' },
 } as const satisfies Record<string, SymbolName>;
 

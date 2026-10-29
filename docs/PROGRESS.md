@@ -4,6 +4,20 @@
 
 - **Current phase (2026-10-27 correction):** 6 — Personal library. The owner confirmed Phase 5 was done and authorized Phase 6. The individual final Phase 5 device-test observations were not captured in this handoff. Phase 6 now has its SQLite foundation, favorites, playlists, recently played tracks, and the deferred playback checkpoint; a native/device verification pass is still required.
 
+## Fix (2026-10-30) — active native-tab icons
+
+- Reported behavior: Android tab icons disappeared after their tab became active.
+- Set the documented per-icon `selectedColor` override on every `NativeTabs.Trigger.Icon` in `src/components/app-tabs.tsx`. This supplies the active accent directly to the Android selected-icon appearance instead of depending only on the navigator-level color object.
+- Static verification passed: `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check` completed without diagnostics (Git only reported the repository's existing LF-to-CRLF notices). Device verification: switch through every tab and confirm its active icon remains visible in Spotify green on the black tab bar.
+- Affected file: `src/components/app-tabs.tsx`.
+
+## Update (2026-10-30) — Settings tab
+
+- Added a Settings tab for the current local-only app: device-library status and rescan, Android audio-permission management, queue shuffle, repeat mode, and a local-data/privacy note.
+- The controls reuse the existing library scanner, Android app-settings link, and playback provider; no accounts, network features, or new storage were introduced. Settings is available in both the native and web tab layouts.
+- Static verification passed: `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check` completed without diagnostics (Git only reported the repository's existing LF-to-CRLF notices). Device verification remains pending. On Android, verify that the tab icon remains visible when selected; rescan, permission-management, shuffle, and repeat controls respond correctly; and the persistent mini-player remains clear of the five-item tab bar.
+- Affected files: `src/app/settings.tsx`, `src/components/app-tabs.tsx`, `src/components/app-tabs.web.tsx`, `src/components/ui/app-icon.tsx`.
+
 - **Current phase:** 5 — Background playback. The owner reported a Phase 4 device test on 2026-10-13 and approved moving to Phase 5. **Background playback is now device-verified and working** (2026-10-13): the true root cause of "audio stops on Home/lock" was a backgrounding crash, fixed by the config plugin below. Remaining Phase 5 item: playback-checkpoint persistence (still deferred to combine with the Phase 6 database foundation).
 - **Repository baseline:** `d0f2289` (`Initial commit`); latest checkpoint `d6d81c5` (Phase 5 background-crash fix + auto-scan). Release `v0.3.5` (`be26715`, 2026-10-26) includes the launcher/splash work, the bug-fix/hygiene pass, and the expo-audio source-build fix recorded below. Recent committed work: album browsing, permission denial, empty-library, and Phase 4 foreground playback increments on 2026-10-12; the Phase 5 background-playback increments are described below.
 - **Framework:** Expo SDK 57 (`expo ~57.0.27`), React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57.
