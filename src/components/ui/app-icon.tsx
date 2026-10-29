@@ -10,6 +10,7 @@ const symbols = {
   chevronRight: { ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' },
   favorite: { ios: 'heart.fill', android: 'favorite', web: 'favorite' },
   favoriteOutline: { ios: 'heart', android: 'favorite_border', web: 'favorite_border' },
+  home: { ios: 'house.fill', android: 'home', web: 'home' },
   library: { ios: 'music.note.list', android: 'library_music', web: 'library_music' },
   more: { ios: 'ellipsis', android: 'more_vert', web: 'more_vert' },
   music: { ios: 'music.note', android: 'music_note', web: 'music_note' },

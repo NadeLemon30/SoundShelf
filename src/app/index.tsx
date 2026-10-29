@@ -1,138 +1,101 @@
-import { Link } from 'expo-router';
+import { Link, type Href } from 'expo-router';
 import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { AppIcon, type AppIconName } from '@/components/ui/app-icon';
 import { AppGradient } from '@/components/ui/app-gradient';
-import { Spacing, BottomTabInset, MaxContentWidth, MiniPlayerInset } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
-import { useLibrary } from '@/features/library/library-provider';
-import { usePlayback } from '@/features/playback/playback-provider';
+import { TrackArtwork } from '@/components/ui/track-artwork';
+import { BottomTabInset, MaxContentWidth, MiniPlayerInset, Spacing } from '@/constants/theme';
 import { LibraryTrackRow } from '@/features/library/components/library-rows';
-import type { LibraryTrack } from '@/features/library/types';
+import { useLibrary } from '@/features/library/library-provider';
+import { usePersonalLibrary } from '@/features/personal-library/personal-library-provider';
+import { usePlayback } from '@/features/playback/playback-provider';
+import { useTheme } from '@/hooks/use-theme';
 
-function greeting(): string {
-  const h = new Date().getHours();
-  if (h < 12) return 'Good morning';
-  if (h < 18) return 'Good afternoon';
-  return 'Good evening';
+function greeting() {
+  const hour = new Date().getHours();
+  return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 }
 
-type QuickLink = { label: string; href: '/library' | '/search' | '/personal-library'; icon: AppIconName };
-const QUICK_LINKS: QuickLink[] = [
-  { label: 'Library', href: '/library', icon: 'library' },
-  { label: 'My music', href: '/personal-library', icon: 'favorite' },
-  { label: 'Search', href: '/search', icon: 'search' },
-];
+type HomeLink = { label: string; detail: string; href: '/library' | '/search' | '/personal-library' | '/settings'; icon: AppIconName };
+
+function HomeLinkCard({ link }: { link: HomeLink }) {
+  const theme = useTheme();
+  return (
+    <Link href={link.href as Href} asChild>
+      <Pressable accessibilityRole="button" accessibilityLabel={link.label} style={({ pressed }) => [styles.linkCard, { backgroundColor: theme.surfaceRaised }, pressed && styles.pressed]}>
+        <View style={[styles.linkIcon, { backgroundColor: theme.surface }]}><AppIcon name={link.icon} size={22} color={theme.accent} /></View>
+        <View style={styles.linkCopy}>
+          <ThemedText numberOfLines={1} style={styles.linkLabel}>{link.label}</ThemedText>
+          <ThemedText numberOfLines={1} style={styles.linkDetail}>{link.detail}</ThemedText>
+        </View>
+      </Pressable>
+    </Link>
+  );
+}
 
 export default function HomeScreen() {
   const theme = useTheme();
   const { scan, status, tracks } = useLibrary();
+  const { recentlyPlayed } = usePersonalLibrary();
   const { currentTrack, playTrack } = usePlayback();
-  const recentTracks = tracks.slice(0, 6);
   const hasLibrary = status === 'ready' && tracks.length > 0;
-
-  type Item =
-    | { type: 'greeting' }
-    | { type: 'scanCard' }
-    | { type: 'quickLinks' }
-    | { type: 'sectionLabel' }
-    | { type: 'track'; data: LibraryTrack }
-    | { type: 'seeAll' };
-
-  const listData: Item[] = [
-    { type: 'greeting' },
-    ...(hasLibrary ? [] : [{ type: 'scanCard' } as Item]),
-    ...(hasLibrary ? [{ type: 'quickLinks' } as Item] : []),
-    ...(recentTracks.length > 0 ? [{ type: 'sectionLabel' } as Item] : []),
-    ...recentTracks.map((data): Item => ({ type: 'track', data })),
-    ...(tracks.length > 6 ? [{ type: 'seeAll' } as Item] : []),
+  const activeTrackIds = new Set(tracks.map((track) => track.id));
+  const recentTracks = recentlyPlayed.filter((track) => activeTrackIds.has(track.id)).slice(0, 8);
+  const displayTracks = recentTracks.length ? recentTracks : tracks.slice(0, 8);
+  const links: HomeLink[] = [
+    { label: 'Your Library', detail: hasLibrary ? `${tracks.length} songs` : 'Browse your music', href: '/library', icon: 'library' },
+    { label: 'Liked Songs', detail: 'Your favourites', href: '/personal-library', icon: 'favorite' },
+    { label: 'Search', detail: 'Find a local track', href: '/search', icon: 'search' },
+    { label: 'Settings', detail: 'Playback and library', href: '/settings', icon: 'settings' },
   ];
-
-  const renderItem = ({ item }: { item: Item }) => {
-    switch (item.type) {
-      case 'greeting':
-        return <ThemedText style={styles.greeting}>{greeting()}</ThemedText>;
-
-      case 'scanCard':
-        return (
-          <View style={[styles.scanCard, { backgroundColor: theme.surfaceRaised }]}>
-            <AppIcon name="music" size={32} color={theme.accent} />
-            <ThemedText style={styles.scanTitle}>Find your music</ThemedText>
-            <ThemedText style={styles.scanSub}>
-              Scan the audio files already saved on your device.
-            </ThemedText>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Scan device music library"
-              disabled={status === 'scanning'}
-              onPress={scan}
-              style={({ pressed }) => [
-                styles.greenBtn,
-                { backgroundColor: theme.accent },
-                (pressed || status === 'scanning') && styles.pressed,
-              ]}>
-              <ThemedText style={styles.greenBtnText}>
-                {status === 'scanning' ? 'Scanning…' : 'Scan device music'}
-              </ThemedText>
-            </Pressable>
-          </View>
-        );
-
-      case 'quickLinks':
-        return (
-          <View style={styles.quickRow}>
-            {QUICK_LINKS.map((link) => (
-              <Link key={link.href} href={link.href} asChild>
-                <Pressable
-                  style={({ pressed }) => [
-                    styles.quickChip,
-                    { backgroundColor: theme.surfaceRaised },
-                    pressed && styles.pressed,
-                  ]}>
-                  <AppIcon name={link.icon} size={16} color="#FFFFFF" />
-                  <ThemedText style={styles.quickChipText}>{link.label}</ThemedText>
-                </Pressable>
-              </Link>
-            ))}
-          </View>
-        );
-
-      case 'sectionLabel':
-        return <ThemedText style={styles.sectionLabel}>YOUR SONGS</ThemedText>;
-
-      case 'track':
-        return (
-          <LibraryTrackRow
-            track={item.data}
-            isCurrent={item.data.id === currentTrack?.id}
-            onPress={() => playTrack(item.data, tracks)}
-          />
-        );
-
-      case 'seeAll':
-        return (
-          <Link href="/library" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <View style={styles.seeAllRow}>
-                <ThemedText style={styles.seeAll}>See all {tracks.length} songs</ThemedText>
-                <AppIcon name="chevronRight" size={16} color="#B3B3B3" />
-              </View>
-            </Pressable>
-          </Link>
-        );
-
-    }
-  };
 
   return (
     <AppGradient>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <FlatList
-          data={listData}
-          keyExtractor={(item, i) => `${item.type}-${i}`}
-          renderItem={renderItem}
+          data={displayTracks}
+          keyExtractor={(track) => track.id}
+          renderItem={({ item }) => <LibraryTrackRow track={item} isCurrent={item.id === currentTrack?.id} onPress={() => playTrack(item, tracks)} />}
+          ListHeaderComponent={
+            <View style={styles.header}>
+              <View style={styles.topBar}>
+                <ThemedText style={styles.greeting}>{greeting()}</ThemedText>
+                <Link href={'/settings' as Href} asChild><Pressable accessibilityRole="button" accessibilityLabel="Open settings" hitSlop={12} style={({ pressed }) => pressed && styles.pressed}><AppIcon name="settings" size={24} color="#FFFFFF" /></Pressable></Link>
+              </View>
+
+              {currentTrack ? (
+                <Pressable accessibilityRole="button" accessibilityLabel={`Play ${currentTrack.title}`} onPress={() => playTrack(currentTrack, tracks)} style={({ pressed }) => [styles.resumeCard, { backgroundColor: theme.surfaceRaised }, pressed && styles.pressed]}>
+                  <TrackArtwork uri={currentTrack.uri} size={68} style={styles.resumeArtwork} />
+                  <View style={styles.resumeCopy}>
+                    <ThemedText style={styles.resumeEyebrow}>NOW PLAYING</ThemedText>
+                    <ThemedText numberOfLines={1} style={styles.resumeTitle}>{currentTrack.title}</ThemedText>
+                    <ThemedText numberOfLines={1} style={styles.resumeSub}>{currentTrack.filename}</ThemedText>
+                  </View>
+                  <View style={[styles.playCircle, { backgroundColor: theme.accent }]}><AppIcon name="play" size={20} color="#000000" /></View>
+                </Pressable>
+              ) : (
+                <View style={[styles.welcomeCard, { backgroundColor: theme.surfaceRaised }]}>
+                  <View style={[styles.welcomeIcon, { backgroundColor: theme.accent }]}><AppIcon name="music" size={26} color="#000000" /></View>
+                  <View style={styles.welcomeCopy}>
+                    <ThemedText style={styles.welcomeTitle}>{hasLibrary ? 'Your music is ready' : 'Your music, on this device'}</ThemedText>
+                    <ThemedText style={styles.welcomeSub}>{hasLibrary ? 'Pick a song and keep listening offline.' : 'Scan files stored on your device to start listening.'}</ThemedText>
+                  </View>
+                  {!hasLibrary && <Pressable accessibilityRole="button" accessibilityLabel="Scan device music library" disabled={status === 'scanning'} onPress={scan} style={({ pressed }) => [styles.scanButton, { backgroundColor: theme.accent }, (pressed || status === 'scanning') && styles.pressed]}><ThemedText style={styles.scanButtonText}>{status === 'scanning' ? 'Scanning…' : 'Scan'}</ThemedText></Pressable>}
+                </View>
+              )}
+
+              <View style={styles.linkGrid}>{links.map((link) => <HomeLinkCard key={link.href} link={link} />)}</View>
+              {displayTracks.length > 0 && (
+                <View style={styles.sectionHeader}>
+                  <View><ThemedText style={styles.sectionTitle}>{recentTracks.length ? 'Jump back in' : 'Recently added'}</ThemedText><ThemedText style={styles.sectionSubtitle}>{recentTracks.length ? 'Continue where you left off' : 'From your local library'}</ThemedText></View>
+                  <Link href="/library" asChild><Pressable accessibilityRole="button" accessibilityLabel="Open your library" style={({ pressed }) => pressed && styles.pressed}><ThemedText style={[styles.showAll, { color: theme.textMuted }]}>Show all</ThemedText></Pressable></Link>
+                </View>
+              )}
+            </View>
+          }
+          ListEmptyComponent={hasLibrary ? null : <ThemedText style={styles.emptyCopy} themeColor="textMuted">Your recently played music will appear here.</ThemedText>}
           contentContainerStyle={styles.listContent}
           keyboardShouldPersistTaps="handled"
           showsVerticalScrollIndicator={false}
@@ -144,48 +107,14 @@ export default function HomeScreen() {
 
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
-  listContent: {
-    width: '100%',
-    maxWidth: MaxContentWidth,
-    alignSelf: 'center',
-    paddingHorizontal: Spacing.three,
-    paddingTop: Spacing.two,
-    paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.three,
-    gap: Spacing.three,
-  },
-  greeting: { fontSize: 30, fontWeight: '700', color: '#FFFFFF' },
-  // Scan card
-  scanCard: { borderRadius: 12, padding: Spacing.four, gap: Spacing.two },
-  scanTitle: { fontSize: 20, fontWeight: '700', color: '#FFFFFF' },
-  scanSub: { fontSize: 14, color: '#B3B3B3', lineHeight: 20 },
-  greenBtn: {
-    alignSelf: 'flex-start',
-    paddingVertical: 12,
-    paddingHorizontal: Spacing.four,
-    borderRadius: 24,
-    marginTop: Spacing.one,
-  },
-  greenBtnText: { fontWeight: '700', fontSize: 14, color: '#000000' },
-  // Quick links
-  quickRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
-  quickChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: Spacing.one,
-    paddingVertical: Spacing.two,
-    paddingHorizontal: Spacing.three,
-    borderRadius: 24,
-  },
-  quickChipText: { fontSize: 13, fontWeight: '600', color: '#FFFFFF' },
-  // Section
-  sectionLabel: {
-    fontSize: 11,
-    fontWeight: '700',
-    letterSpacing: 1.5,
-    color: '#B3B3B3',
-    marginBottom: -Spacing.two,
-  },
-  seeAll: { fontSize: 13, color: '#B3B3B3', paddingVertical: Spacing.one },
-  seeAllRow: { flexDirection: 'row', alignItems: 'center' },
-  pressed: { opacity: 0.7 },
+  listContent: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.three, paddingTop: Spacing.two, paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.three },
+  header: { gap: Spacing.three, paddingBottom: Spacing.one }, topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  greeting: { fontSize: 30, fontWeight: '800', letterSpacing: -0.6, color: '#FFFFFF' },
+  resumeCard: { minHeight: 92, borderRadius: 10, padding: Spacing.two, flexDirection: 'row', alignItems: 'center', gap: Spacing.two }, resumeArtwork: { borderRadius: 6 }, resumeCopy: { flex: 1, gap: 2 },
+  resumeEyebrow: { fontSize: 10, lineHeight: 14, fontWeight: '800', letterSpacing: 1.1, color: '#1DB954' }, resumeTitle: { fontSize: 16, lineHeight: 21, fontWeight: '700', color: '#FFFFFF' }, resumeSub: { fontSize: 12, lineHeight: 17, color: '#B3B3B3' }, playCircle: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
+  welcomeCard: { borderRadius: 10, padding: Spacing.three, gap: Spacing.two }, welcomeIcon: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' }, welcomeCopy: { gap: Spacing.one }, welcomeTitle: { fontSize: 19, lineHeight: 25, fontWeight: '800', color: '#FFFFFF' }, welcomeSub: { fontSize: 13, lineHeight: 19, color: '#B3B3B3' },
+  scanButton: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: Spacing.three, paddingVertical: 9, marginTop: Spacing.one }, scanButtonText: { color: '#000000', fontSize: 13, lineHeight: 17, fontWeight: '800' },
+  linkGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }, linkCard: { width: '48.7%', minHeight: 68, padding: Spacing.two, borderRadius: 7, flexDirection: 'row', alignItems: 'center', gap: Spacing.two }, linkIcon: { width: 38, height: 38, borderRadius: 4, justifyContent: 'center', alignItems: 'center' }, linkCopy: { flex: 1, gap: 2 }, linkLabel: { fontSize: 13, lineHeight: 17, fontWeight: '700', color: '#FFFFFF' }, linkDetail: { fontSize: 11, lineHeight: 15, color: '#B3B3B3' },
+  sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingTop: Spacing.one }, sectionTitle: { fontSize: 22, lineHeight: 28, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 }, sectionSubtitle: { fontSize: 12, lineHeight: 17, color: '#B3B3B3' }, showAll: { fontSize: 12, lineHeight: 17, fontWeight: '700' },
+  emptyCopy: { paddingTop: Spacing.three, fontSize: 13, textAlign: 'center' }, pressed: { opacity: 0.68 },
 });

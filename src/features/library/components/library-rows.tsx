@@ -1,6 +1,6 @@
 import { Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
-import { ArtworkPlaceholder } from '@/components/ui/artwork-placeholder';
+import { TrackArtwork } from '@/components/ui/track-artwork';
 import { AppIcon } from '@/components/ui/app-icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
@@ -19,7 +19,7 @@ export function LibraryTrackRow({ track, onPress, isCurrent = false, isFavorite 
 
   const artworkArea = (
     <View style={styles.artworkWrap}>
-      <ArtworkPlaceholder size={48} />
+      <TrackArtwork size={48} uri={track.uri} />
       {isCurrent && (
         <View style={[styles.playingOverlay, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
           <AppIcon name="play" size={16} color={theme.accent} />
@@ -82,7 +82,7 @@ export function LibraryAlbumRow({ album, onPress }: { album: LibraryAlbum; onPre
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-      <ArtworkPlaceholder size={56} icon="album" />
+      <TrackArtwork size={56} icon="album" uri={album.tracks[0]?.uri} />
       <View style={styles.details}>
         <ThemedText numberOfLines={1} style={styles.albumTitle}>{album.title}</ThemedText>
         <ThemedText numberOfLines={1} themeColor="textMuted" style={styles.trackSub}>

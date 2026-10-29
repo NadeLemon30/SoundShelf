@@ -1,48 +1,35 @@
-import { NativeTabs } from 'expo-router/unstable-native-tabs';
+import { Tabs } from 'expo-router';
 
+import { AppIcon, type AppIconName } from '@/components/ui/app-icon';
 import { Colors } from '@/constants/theme';
 
+const TAB_ICONS: Record<string, AppIconName> = {
+  index: 'home',
+  library: 'library',
+  search: 'search',
+  'personal-library': 'favoriteOutline',
+  settings: 'settings',
+};
+
 export default function AppTabs() {
-  const colors = Colors.dark; // always dark like Spotify
+  const colors = Colors.dark;
 
   return (
-    <NativeTabs
-      backgroundColor="#000000"
-      indicatorColor={colors.accent}
-      iconColor={{ default: colors.textMuted, selected: colors.accent }}
-      labelStyle={{ selected: { color: colors.accent } }}>
-      <NativeTabs.Trigger name="index">
-        <NativeTabs.Trigger.Label>Home</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'house', selected: 'house.fill' }}
-          md={{ default: 'home', selected: 'home_filled' }}
-          selectedColor={colors.accent}
-        />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="library">
-        <NativeTabs.Trigger.Label>Library</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'music.note.list', selected: 'music.note.list' }}
-          md={{ default: 'library_music', selected: 'library_music' }}
-          selectedColor={colors.accent}
-        />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="search">
-        <NativeTabs.Trigger.Label>Search</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="magnifyingglass" md="search" selectedColor={colors.accent} />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="personal-library">
-        <NativeTabs.Trigger.Label>My music</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon
-          sf={{ default: 'heart', selected: 'heart.fill' }}
-          md={{ default: 'favorite_border', selected: 'favorite' }}
-          selectedColor={colors.accent}
-        />
-      </NativeTabs.Trigger>
-      <NativeTabs.Trigger name="settings">
-        <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
-        <NativeTabs.Trigger.Icon sf="gearshape" md="settings" selectedColor={colors.accent} />
-      </NativeTabs.Trigger>
-    </NativeTabs>
+    <Tabs
+      screenOptions={({ route }) => ({
+        headerShown: false,
+        tabBarActiveTintColor: colors.accent,
+        tabBarInactiveTintColor: colors.textMuted,
+        tabBarHideOnKeyboard: true,
+        tabBarStyle: { backgroundColor: '#000000', borderTopColor: colors.surfaceRaised },
+        tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
+        tabBarIcon: ({ color }) => <AppIcon name={TAB_ICONS[route.name] ?? 'music'} size={24} color={color as string} />,
+      })}>
+      <Tabs.Screen name="index" options={{ title: 'Home' }} />
+      <Tabs.Screen name="library" options={{ title: 'Library' }} />
+      <Tabs.Screen name="search" options={{ title: 'Search' }} />
+      <Tabs.Screen name="personal-library" options={{ title: 'My music' }} />
+      <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
+    </Tabs>
   );
 }

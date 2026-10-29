@@ -4,7 +4,7 @@ import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { ArtworkPlaceholder } from '@/components/ui/artwork-placeholder';
+import { TrackArtwork } from '@/components/ui/track-artwork';
 import { AppIcon } from '@/components/ui/app-icon';
 import { Spacing } from '@/constants/theme';
 import { usePersonalLibrary } from '@/features/personal-library/personal-library-provider';
@@ -74,7 +74,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
 
             {/* Artwork — large */}
             <View style={styles.artworkWrap}>
-              <ArtworkPlaceholder size={300} style={styles.artworkRadius} />
+              <TrackArtwork size={300} style={styles.artworkRadius} uri={currentTrack?.uri} />
             </View>
 
             {/* Track info + heart */}

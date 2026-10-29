@@ -1,15 +1,17 @@
+import Constants from 'expo-constants';
 import { Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { AppGradient } from '@/components/ui/app-gradient';
-import { AppIcon } from '@/components/ui/app-icon';
+import { AppIcon, type AppIconName } from '@/components/ui/app-icon';
 import { BottomTabInset, MaxContentWidth, MiniPlayerInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibrary } from '@/features/library/library-provider';
 import { usePlayback } from '@/features/playback/playback-provider';
 
 const REPEAT_LABEL = { off: 'Off', all: 'Repeat all', one: 'Repeat one' } as const;
+const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function SettingsScreen() {
   const theme = useTheme();
@@ -80,6 +82,9 @@ export default function SettingsScreen() {
 
           <Section title="About">
             <SettingRow icon="music" title="SoundShelf" detail="Offline music player · Your music and library data stay on this device." />
+            <SettingRow icon="settings" title="Version" detail={`Version ${APP_VERSION}`} />
+            <SettingRow icon="music" title="Made by" detail="Nade Lemon · Built with Expo, React Native, and TypeScript." />
+            <SettingRow icon="library" title="Privacy" detail="No accounts, cloud sync, streaming, or data collection." />
           </Section>
         </ScrollView>
       </SafeAreaView>
@@ -96,7 +101,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   );
 }
 
-function SettingRow({ icon, title, detail }: { icon: 'library' | 'music'; title: string; detail: string }) {
+function SettingRow({ icon, title, detail }: { icon: AppIconName; title: string; detail: string }) {
   const theme = useTheme();
   return (
     <View style={[styles.row, { backgroundColor: theme.surfaceRaised }]}>

@@ -7,7 +7,7 @@ import { useTheme } from '@/hooks/use-theme';
 import { NowPlaying } from '@/features/playback/components/now-playing';
 import { playbackPercent } from '@/features/playback/format';
 import { usePlayback } from '@/features/playback/playback-provider';
-import { ArtworkPlaceholder } from './artwork-placeholder';
+import { TrackArtwork } from './track-artwork';
 import { ThemedText } from '../themed-text';
 import { AppIcon } from './app-icon';
 
@@ -31,7 +31,7 @@ export function MiniPlayer() {
           accessibilityRole="button"
           onPress={() => setNowPlayingOpen(true)}
           style={({ pressed }) => [styles.openArea, pressed && styles.pressed]}>
-          <ArtworkPlaceholder size={44} style={styles.artwork} />
+          <TrackArtwork size={44} style={styles.artwork} uri={currentTrack.uri} />
           <View style={styles.copy}>
             <ThemedText numberOfLines={1} style={styles.trackTitle}>{currentTrack.title}</ThemedText>
             {errorMessage ? (
