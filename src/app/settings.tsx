@@ -1,5 +1,5 @@
 import Constants from 'expo-constants';
-import { Linking, Pressable, ScrollView, StyleSheet, Switch, View } from 'react-native';
+import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -8,15 +8,11 @@ import { AppIcon, type AppIconName } from '@/components/ui/app-icon';
 import { BottomTabInset, MaxContentWidth, MiniPlayerInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibrary } from '@/features/library/library-provider';
-import { usePlayback } from '@/features/playback/playback-provider';
 
-const REPEAT_LABEL = { off: 'Off', all: 'Repeat all', one: 'Repeat one' } as const;
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function SettingsScreen() {
-  const theme = useTheme();
   const { status, tracks, albums, needsRescan, permissionBlocked, scan } = useLibrary();
-  const { shuffle, repeat, toggleShuffle, cycleRepeat } = usePlayback();
   const isScanning = status === 'scanning';
   const hasPermission = status === 'ready' || isScanning;
   const librarySummary = hasPermission
@@ -56,30 +52,6 @@ export default function SettingsScreen() {
             />
           </Section>
 
-          <Section title="Playback">
-            <View style={[styles.row, { backgroundColor: theme.surfaceRaised }]}> 
-              <View style={styles.rowIcon}><AppIcon name="shuffle" size={22} color={theme.textMuted} /></View>
-              <View style={styles.rowText}>
-                <ThemedText style={styles.rowTitle}>Shuffle queue</ThemedText>
-                <ThemedText style={styles.rowDetail}>Applies when you start or continue a queue.</ThemedText>
-              </View>
-              <Switch
-                accessibilityLabel="Shuffle queue"
-                accessibilityState={{ checked: shuffle }}
-                onValueChange={toggleShuffle}
-                trackColor={{ false: theme.backgroundSelected, true: theme.accentMuted }}
-                thumbColor={shuffle ? theme.accent : theme.textMuted}
-              />
-            </View>
-            <ActionRow
-              icon={repeat === 'one' ? 'repeatOne' : 'repeat'}
-              title="Repeat"
-              detail={REPEAT_LABEL[repeat]}
-              value={REPEAT_LABEL[repeat]}
-              onPress={cycleRepeat}
-            />
-          </Section>
-
           <Section title="About">
             <SettingRow icon="music" title="SoundShelf" detail="Offline music player · Your music and library data stay on this device." />
             <SettingRow icon="settings" title="Version" detail={`Version ${APP_VERSION}`} />
@@ -114,8 +86,8 @@ function SettingRow({ icon, title, detail }: { icon: AppIconName; title: string;
   );
 }
 
-function ActionRow({ icon, title, detail, value, disabled = false, onPress }: {
-  icon: 'refresh' | 'settings' | 'repeat' | 'repeatOne'; title: string; detail: string; value?: string; disabled?: boolean; onPress: () => void;
+function ActionRow({ icon, title, detail, disabled = false, onPress }: {
+  icon: 'refresh' | 'settings'; title: string; detail: string; disabled?: boolean; onPress: () => void;
 }) {
   const theme = useTheme();
   return (
@@ -131,7 +103,7 @@ function ActionRow({ icon, title, detail, value, disabled = false, onPress }: {
         <ThemedText style={styles.rowTitle}>{title}</ThemedText>
         <ThemedText style={styles.rowDetail}>{detail}</ThemedText>
       </View>
-      {value ? <ThemedText style={[styles.value, { color: theme.accent }]}>{value}</ThemedText> : <AppIcon name="chevronRight" size={20} color={theme.textMuted} />}
+      <AppIcon name="chevronRight" size={20} color={theme.textMuted} />
     </Pressable>
   );
 }
@@ -148,6 +120,5 @@ const styles = StyleSheet.create({
   rowText: { flex: 1, gap: 2 },
   rowTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
   rowDetail: { color: '#B3B3B3', fontSize: 12, lineHeight: 17 },
-  value: { fontSize: 12, fontWeight: '600', textAlign: 'right' },
   pressed: { opacity: 0.68 },
 });

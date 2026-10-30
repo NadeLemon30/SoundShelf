@@ -2,6 +2,21 @@
 
 ## Progress updates
 
+## Update (2026-10-30) — metadata-backed Artist and Album library filters
+
+- Added Artists alongside Songs, Albums, and Favorites on the Library screen. Artist and Album views list only groups derived from embedded audio metadata; opening a group shows its tracks and plays against that group’s real queue.
+- `expo-media-library` SDK 57 still provides no audio-tag fields. The existing local Android `MediaMetadataRetriever` module now exposes embedded title, artist, and album values during scanning. Missing or unreadable tags stay `null`, titles retain the filename fallback, and Artist/Album grouping uses explicit “Unknown” fallback groups rather than folder names or invented values.
+- Updated the personal-library SQLite migration to version 2 so metadata remains attached to saved favorites, playlists, recents, and playback checkpoints. Existing databases add nullable `artist` and `album` columns safely.
+- Native configuration was regenerated with `npx.cmd expo prebuild --clean --platform android`; generated Kotlin contains `getMetadata`, artist/album retrieval, and package registration. Static verification passed: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and `git diff --check` (Git only reported the existing LF-to-CRLF notices).
+- Next step: install a fresh development build with `npx.cmd expo run:android --device`, rescan, then verify tagged MP3/M4A files appear under their real Artist and Album values. Verify missing tags appear only in the Unknown groups, saved library entries retain tag subtitles after restart, and every group plays the expected queue.
+- Affected files: `plugins/with-local-album-artwork.js`, `src/features/library/local-audio-metadata.ts`, `src/features/library/media-library-service.ts`, `src/features/library/artists.ts`, `src/features/library/albums.ts`, `src/features/library/types.ts`, `src/features/library/library-provider.tsx`, `src/features/library/components/library-rows.tsx`, `src/app/library.tsx`, `src/features/personal-library/database.ts`, `src/features/personal-library/repository.ts`, and `docs/PROGRESS.md`.
+
+## Update (2026-10-30) — Settings playback controls removed
+
+- Removed the Settings → Playback section, including the Shuffle queue switch and Repeat-cycle control. Queue settings remain available in Now Playing, where they are relevant to the active queue.
+- Static verification: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and `git diff --check` passed (Git only reported the repository's existing LF-to-CRLF notices). Device verification: confirm the Settings screen goes directly from Library to About and the Now Playing queue controls remain available.
+- Affected files: `src/app/settings.tsx`, `docs/PROGRESS.md`.
+
 ## Update (2026-10-30) — Spotify-inspired Home tab
 
 - Reworked `src/app/index.tsx` into a denser, local-first music home screen: time-based greeting and Settings control, a current-track resume card, an offline library/scan state, and four compact navigation cards for Library, Liked Songs, Search, and Settings.

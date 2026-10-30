@@ -3,7 +3,7 @@ import { createContext, type PropsWithChildren, useCallback, useContext, useEffe
 import { AppState } from 'react-native';
 
 import { scanDeviceAudio } from './media-library-service';
-import type { LibraryAlbum, LibraryTrack } from './types';
+import type { LibraryAlbum, LibraryArtist, LibraryTrack } from './types';
 
 type LibraryStatus = 'notRequested' | 'scanning' | 'ready' | 'denied' | 'error';
 
@@ -11,6 +11,7 @@ type LibraryContextValue = {
   status: LibraryStatus;
   tracks: LibraryTrack[];
   albums: LibraryAlbum[];
+  artists: LibraryArtist[];
   skippedAssetCount: number;
   errorMessage: string | null;
   needsRescan: boolean;
@@ -25,6 +26,7 @@ export function LibraryProvider({ children }: PropsWithChildren) {
   const [status, setStatus] = useState<LibraryStatus>('notRequested');
   const [tracks, setTracks] = useState<LibraryTrack[]>([]);
   const [albums, setAlbums] = useState<LibraryAlbum[]>([]);
+  const [artists, setArtists] = useState<LibraryArtist[]>([]);
   const [skippedAssetCount, setSkippedAssetCount] = useState(0);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [needsRescan, setNeedsRescan] = useState(false);
@@ -56,6 +58,7 @@ export function LibraryProvider({ children }: PropsWithChildren) {
       const result = await scanDeviceAudio();
       setTracks(result.tracks);
       setAlbums(result.albums);
+      setArtists(result.artists);
       setSkippedAssetCount(result.skippedAssetCount);
       setNeedsRescan(false);
       setStatus('ready');
@@ -120,7 +123,7 @@ export function LibraryProvider({ children }: PropsWithChildren) {
     return () => subscription.remove();
   }, [scan, status]);
 
-  const value = useMemo(() => ({ status, tracks, albums, skippedAssetCount, errorMessage, needsRescan, permissionBlocked, scan }), [albums, errorMessage, needsRescan, permissionBlocked, scan, skippedAssetCount, status, tracks]);
+  const value = useMemo(() => ({ status, tracks, albums, artists, skippedAssetCount, errorMessage, needsRescan, permissionBlocked, scan }), [albums, artists, errorMessage, needsRescan, permissionBlocked, scan, skippedAssetCount, status, tracks]);
   return <LibraryContext.Provider value={value}>{children}</LibraryContext.Provider>;
 }
 

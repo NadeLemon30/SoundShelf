@@ -8,41 +8,46 @@ import { AppGradient } from '@/components/ui/app-gradient';
 import { EmptyState } from '@/components/ui/empty-state';
 import { BottomTabInset, MaxContentWidth, MiniPlayerInset, Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import { LibraryAlbumRow, LibraryTrackRow } from '@/features/library/components/library-rows';
+import { LibraryAlbumRow, LibraryArtistRow, LibraryTrackRow } from '@/features/library/components/library-rows';
 import { useLibrary } from '@/features/library/library-provider';
-import type { LibraryAlbum, LibraryTrack } from '@/features/library/types';
+import type { LibraryAlbum, LibraryArtist, LibraryTrack } from '@/features/library/types';
 import { usePersonalLibrary } from '@/features/personal-library/personal-library-provider';
 import { usePlayback } from '@/features/playback/playback-provider';
 
-type LibraryView = 'songs' | 'albums' | 'favorites';
-type LibraryListItem = LibraryTrack | LibraryAlbum;
+type LibraryView = 'songs' | 'artists' | 'albums' | 'favorites';
+type LibraryListItem = LibraryTrack | LibraryAlbum | LibraryArtist;
 
 const FILTERS: { key: LibraryView; label: string }[] = [
   { key: 'songs', label: 'Songs' },
+  { key: 'artists', label: 'Artists' },
   { key: 'albums', label: 'Albums' },
   { key: 'favorites', label: 'Favorites' },
 ];
 
 export default function LibraryScreen() {
   const theme = useTheme();
-  const { status, tracks, albums, skippedAssetCount, errorMessage, needsRescan, permissionBlocked, scan } = useLibrary();
+  const { status, tracks, albums, artists, skippedAssetCount, errorMessage, needsRescan, permissionBlocked, scan } = useLibrary();
   const { currentTrack, playTrack } = usePlayback();
   const { favorites, isFavorite, toggleFavorite } = usePersonalLibrary();
   const [view, setView] = useState<LibraryView>('songs');
   const [selectedAlbumId, setSelectedAlbumId] = useState<string | null>(null);
+  const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
 
   const isBusy = status === 'scanning';
   const isDenied = status === 'denied';
   const isBlocked = isDenied && permissionBlocked;
   const isScannedEmpty = status === 'ready' && tracks.length === 0;
   const selectedAlbum = albums.find((a) => a.id === selectedAlbumId) ?? null;
+  const selectedArtist = artists.find((artist) => artist.id === selectedArtistId) ?? null;
   const currentTrackId = currentTrack?.id ?? null;
-  const listTracks = selectedAlbum ? selectedAlbum.tracks : view === 'songs' ? tracks : view === 'favorites' ? favorites : [];
-  const isAlbumOverview = !selectedAlbum && view === 'albums';
-  const data: LibraryListItem[] = isAlbumOverview ? albums : listTracks;
+  const selectedCollection = selectedAlbum ?? selectedArtist;
+  const listTracks = selectedCollection ? selectedCollection.tracks : view === 'songs' ? tracks : view === 'favorites' ? favorites : [];
+  const isAlbumOverview = !selectedCollection && view === 'albums';
+  const isArtistOverview = !selectedCollection && view === 'artists';
+  const data: LibraryListItem[] = isAlbumOverview ? albums : isArtistOverview ? artists : listTracks;
 
-  const rescan = () => { setSelectedAlbumId(null); void scan(); };
-  const selectView = (next: LibraryView) => { setView(next); setSelectedAlbumId(null); };
+  const rescan = () => { setSelectedAlbumId(null); setSelectedArtistId(null); void scan(); };
+  const selectView = (next: LibraryView) => { setView(next); setSelectedAlbumId(null); setSelectedArtistId(null); };
 
   if (status !== 'ready' || tracks.length === 0) {
     return (
@@ -86,12 +91,14 @@ export default function LibraryScreen() {
     );
   }
 
-  const listLabel = selectedAlbum
-    ? selectedAlbum.title
+  const listLabel = selectedCollection
+    ? ('title' in selectedCollection ? selectedCollection.title : selectedCollection.name)
     : view === 'songs'
     ? `${tracks.length} song${tracks.length === 1 ? '' : 's'}`
     : view === 'albums'
     ? `${albums.length} album${albums.length === 1 ? '' : 's'}`
+    : view === 'artists'
+    ? `${artists.length} artist${artists.length === 1 ? '' : 's'}`
     : `${favorites.length} favorite${favorites.length === 1 ? '' : 's'}`;
 
   const ListHeader = (
@@ -115,14 +122,14 @@ export default function LibraryScreen() {
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.filterRow}
         keyboardShouldPersistTaps="handled">
-        {selectedAlbum ? (
+        {selectedCollection ? (
           <Pressable
             accessibilityRole="button"
-            onPress={() => setSelectedAlbumId(null)}
+            onPress={() => { setSelectedAlbumId(null); setSelectedArtistId(null); }}
             style={[styles.filterPill, { backgroundColor: '#FFFFFF' }]}>
             <View style={styles.backPillContent}>
               <AppIcon name="back" size={16} color="#000000" />
-              <ThemedText style={[styles.filterPillText, { color: '#000000' }]}>{selectedAlbum.title}</ThemedText>
+              <ThemedText style={[styles.filterPillText, { color: '#000000' }]}>{'title' in selectedCollection ? selectedCollection.title : selectedCollection.name}</ThemedText>
             </View>
           </Pressable>
         ) : (
@@ -170,10 +177,12 @@ export default function LibraryScreen() {
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
         <FlatList
           data={data}
-          keyExtractor={(item) => `${isAlbumOverview ? 'album' : 'track'}-${item.id}`}
+          keyExtractor={(item) => `${isAlbumOverview ? 'album' : isArtistOverview ? 'artist' : 'track'}-${item.id}`}
           renderItem={({ item }) =>
             isAlbumOverview ? (
               <LibraryAlbumRow album={item as LibraryAlbum} onPress={() => setSelectedAlbumId((item as LibraryAlbum).id)} />
+            ) : isArtistOverview ? (
+              <LibraryArtistRow artist={item as LibraryArtist} onPress={() => setSelectedArtistId((item as LibraryArtist).id)} />
             ) : (
               <LibraryTrackRow
                 track={item as LibraryTrack}
@@ -187,8 +196,8 @@ export default function LibraryScreen() {
           ListHeaderComponent={ListHeader}
           ListEmptyComponent={
             <EmptyState
-              title={isAlbumOverview ? 'No albums' : selectedAlbum ? 'Album empty' : 'No favorites yet'}
-              description={isAlbumOverview ? 'No album folders found.' : selectedAlbum ? 'Rescan if tracks changed.' : 'Tap the favorite icon beside a song to save it here.'}
+              title={isAlbumOverview ? 'No albums' : isArtistOverview ? 'No artists' : selectedCollection ? 'No songs' : 'No favorites yet'}
+              description={isAlbumOverview ? 'No embedded album tags found.' : isArtistOverview ? 'No embedded artist tags found.' : selectedCollection ? 'Rescan if tracks changed.' : 'Tap the favorite icon beside a song to save it here.'}
             />
           }
           ListFooterComponent={

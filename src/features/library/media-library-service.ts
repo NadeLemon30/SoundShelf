@@ -1,6 +1,8 @@
 import * as MediaLibrary from 'expo-media-library/legacy';
 
 import { groupTracksIntoAlbums } from './albums';
+import { groupTracksIntoArtists } from './artists';
+import { getLocalAudioMetadata } from './local-audio-metadata';
 import type { LibraryScanResult, LibraryTrack } from './types';
 
 const PAGE_SIZE = 100;
@@ -19,11 +21,14 @@ async function toTrack(asset: MediaLibrary.Asset): Promise<LibraryTrack | null> 
   }
 
   const filename = info.filename.trim() || 'Unknown audio file';
+  const metadata = await getLocalAudioMetadata(uri);
   return {
     id: info.id,
-    title: titleFromFilename(filename),
+    title: metadata.title ?? titleFromFilename(filename),
     filename,
     uri,
+    artist: metadata.artist,
+    album: metadata.album,
     albumId: info.albumId ?? null,
     durationMs: Number.isFinite(info.duration) ? info.duration * 1_000 : null,
     creationTime: info.creationTime,
@@ -37,21 +42,6 @@ async function toTrack(asset: MediaLibrary.Asset): Promise<LibraryTrack | null> 
  * Titles are cosmetic: when the platform cannot return them (for example a runtime
  * without the album API), grouping still works from the album ids on each track.
  */
-async function fetchAlbumTitles(): Promise<Map<string, string>> {
-  const titles = new Map<string, string>();
-  try {
-    const albums = await MediaLibrary.getAlbumsAsync();
-    for (const album of albums) {
-      if (album?.id && album.title?.trim()) {
-        titles.set(album.id, album.title.trim());
-      }
-    }
-  } catch {
-    // Album names are optional; fall back to the unknown-album label.
-  }
-  return titles;
-}
-
 async function inBatches<T, R>(items: T[], task: (item: T) => Promise<R>) {
   const results: R[] = [];
   for (let start = 0; start < items.length; start += URI_LOOKUP_CONCURRENCY) {
@@ -78,23 +68,21 @@ export async function scanDeviceAudio(): Promise<LibraryScanResult> {
     after = page.hasNextPage ? page.endCursor : undefined;
   } while (after);
 
-  const [resolved, albumTitles] = await Promise.all([
-    inBatches(assets, async (asset) => {
-      try {
-        return await toTrack(asset);
-      } catch {
-        return null;
-      }
-    }),
-    fetchAlbumTitles(),
-  ]);
+  const resolved = await inBatches(assets, async (asset) => {
+    try {
+      return await toTrack(asset);
+    } catch {
+      return null;
+    }
+  });
 
   const tracks = resolved.filter((track): track is LibraryTrack => track !== null)
     .sort((left, right) => left.title.localeCompare(right.title));
 
   return {
     tracks,
-    albums: groupTracksIntoAlbums(tracks, albumTitles),
+    albums: groupTracksIntoAlbums(tracks),
+    artists: groupTracksIntoArtists(tracks),
     skippedAssetCount: assets.length - tracks.length,
   };
 }

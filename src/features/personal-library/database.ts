@@ -1,7 +1,7 @@
 import type { SQLiteDatabase } from 'expo-sqlite';
 
 export const DATABASE_NAME = 'soundshelf.db';
-const DATABASE_VERSION = 1;
+const DATABASE_VERSION = 2;
 
 /** Creates the durable, offline-only personal-library schema. */
 export async function migrateDatabase(db: SQLiteDatabase) {
@@ -74,6 +74,18 @@ export async function migrateDatabase(db: SQLiteDatabase) {
         position_seconds REAL NOT NULL,
         saved_at INTEGER NOT NULL
       );
+    `);
+  }
+  if (version < 2) {
+    await db.execAsync(`
+      ALTER TABLE playlist_items ADD COLUMN artist TEXT;
+      ALTER TABLE playlist_items ADD COLUMN album TEXT;
+      ALTER TABLE favorites ADD COLUMN artist TEXT;
+      ALTER TABLE favorites ADD COLUMN album TEXT;
+      ALTER TABLE recently_played ADD COLUMN artist TEXT;
+      ALTER TABLE recently_played ADD COLUMN album TEXT;
+      ALTER TABLE playback_checkpoint ADD COLUMN artist TEXT;
+      ALTER TABLE playback_checkpoint ADD COLUMN album TEXT;
     `);
   }
   await db.execAsync(`PRAGMA user_version = ${DATABASE_VERSION}`);

@@ -58,13 +58,13 @@ Persist qualified listening events/duration, then derive all day/week/month/year
 
 The installed new API's TypeScript contract exposes no audio tag or embedded-artwork fields. Therefore the current UI derives a display title from the filename and does not fabricate artists, albums, or cover art. A physical Android proof must determine whether the API behavior is sufficient for playback and whether a minimal native MediaStore/tag reader needs to be evaluated before completing Phase 3.
 
-## D-009: Album browsing groups by MediaStore bucket id, without embedded tags
+## D-009: Artist and album browsing use embedded audio metadata on Android
 
-**Status:** implemented; physical-device validation pending (2026-10-12)
+**Status:** implemented; physical-device validation pending (2026-10-30)
 
-The Library screen gained a Songs/Albums switch. Albums are built from the album id each audio asset reports (Android MediaStore `BUCKET_ID`, surfaced as the legacy `expo-media-library` `Asset.albumId`). Album names come from `getAlbumsAsync()` (`BUCKET_DISPLAY_NAME`, which on Android is the storage folder name). Grouping is a pure function in `src/features/library/albums.ts` so it can be reviewed without native calls.
+The Library screen has Songs, Artists, Albums, and Favorites filters. SDK 57 `expo-media-library` does not expose audio tags, so the app's local Android `MediaMetadataRetriever` module retrieves each scanned file's embedded title, artist, and album values. This is entirely local and reuses the already-needed native module that extracts embedded cover art.
 
-This deliberately does not read embedded ID3/MP4 tags. The legacy audio API exposes no artist, title, genre, or embedded-artwork fields, so SoundShelf does not fabricate artist data and does not present folder names as verified album tags. Two folders with the same display name stay separate groups, and tracks without an album id share one "Unknown album" group. Artists and artwork remain blocked on the Phase 3 device proof and, if the API proves insufficient, a separately approved native metadata module (see D-004/D-008).
+Artist and Album groups are built from those tags, not Android storage folder names or guessed filename segments. Missing/unreadable tags remain null: the song title falls back to its filename, and the Library exposes explicit Unknown artist/album groups rather than fabricating a label. The metadata is also stored as nullable values in the Phase 6 SQLite rows, preserving subtitles for personal-library items after restart. Device testing must still validate metadata format coverage across real MP3/M4A files.
 
 ## D-010: Phase 4 foreground playback architecture
 

@@ -14,6 +14,7 @@ const MODULE_SOURCE = `package com.nadelemon.SoundShelf
 
 import android.media.MediaMetadataRetriever
 import android.net.Uri
+import com.facebook.react.bridge.Arguments
 import com.facebook.react.bridge.Promise
 import com.facebook.react.bridge.ReactApplicationContext
 import com.facebook.react.bridge.ReactContextBaseJavaModule
@@ -54,6 +55,30 @@ class LocalAlbumArtworkModule(private val context: ReactApplicationContext) : Re
     } catch (_: Exception) {
       promise.resolve(null)
     }
+  }
+
+  @ReactMethod
+  fun getMetadata(audioUri: String, promise: Promise) {
+    try {
+      val retriever = MediaMetadataRetriever()
+      try {
+        retriever.setDataSource(context, Uri.parse(audioUri))
+        val metadata = Arguments.createMap()
+        putOptionalString(metadata, "title", retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_TITLE))
+        putOptionalString(metadata, "artist", retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ARTIST))
+        putOptionalString(metadata, "album", retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM))
+        promise.resolve(metadata)
+      } finally {
+        retriever.release()
+      }
+    } catch (_: Exception) {
+      promise.resolve(null)
+    }
+  }
+
+  private fun putOptionalString(map: com.facebook.react.bridge.WritableMap, key: String, value: String?) {
+    val cleanValue = value?.trim()?.takeIf { it.isNotEmpty() }
+    if (cleanValue == null) map.putNull(key) else map.putString(key, cleanValue)
   }
 
   private fun sha256(value: String): String = MessageDigest.getInstance("SHA-256")

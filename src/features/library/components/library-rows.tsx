@@ -4,7 +4,7 @@ import { TrackArtwork } from '@/components/ui/track-artwork';
 import { AppIcon } from '@/components/ui/app-icon';
 import { Spacing } from '@/constants/theme';
 import { useTheme } from '@/hooks/use-theme';
-import type { LibraryAlbum, LibraryTrack } from '../types';
+import type { LibraryAlbum, LibraryArtist, LibraryTrack } from '../types';
 
 type LibraryTrackRowProps = {
   track: LibraryTrack;
@@ -31,7 +31,9 @@ export function LibraryTrackRow({ track, onPress, isCurrent = false, isFavorite 
   const textArea = (
     <View style={styles.details}>
       <ThemedText numberOfLines={1} style={[styles.trackTitle, isCurrent && { color: theme.accent }]}>{track.title}</ThemedText>
-      <ThemedText numberOfLines={1} themeColor="textMuted" style={styles.trackSub}>{track.filename}</ThemedText>
+      <ThemedText numberOfLines={1} themeColor="textMuted" style={styles.trackSub}>
+        {[track.artist, track.album].filter((value): value is string => Boolean(value)).join(' · ') || track.filename}
+      </ThemedText>
     </View>
   );
 
@@ -87,6 +89,27 @@ export function LibraryAlbumRow({ album, onPress }: { album: LibraryAlbum; onPre
         <ThemedText numberOfLines={1} style={styles.albumTitle}>{album.title}</ThemedText>
         <ThemedText numberOfLines={1} themeColor="textMuted" style={styles.trackSub}>
           Album · {count} song{count === 1 ? '' : 's'}
+        </ThemedText>
+      </View>
+      <AppIcon name="chevronRight" size={22} color={theme.textMuted} />
+    </Pressable>
+  );
+}
+
+export function LibraryArtistRow({ artist, onPress }: { artist: LibraryArtist; onPress: () => void }) {
+  const theme = useTheme();
+  const count = artist.tracks.length;
+  return (
+    <Pressable
+      accessibilityLabel={`Open artist ${artist.name}`}
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
+      <TrackArtwork size={56} icon="music" uri={artist.tracks[0]?.uri} />
+      <View style={styles.details}>
+        <ThemedText numberOfLines={1} style={styles.albumTitle}>{artist.name}</ThemedText>
+        <ThemedText numberOfLines={1} themeColor="textMuted" style={styles.trackSub}>
+          Artist · {count} song{count === 1 ? '' : 's'}
         </ThemedText>
       </View>
       <AppIcon name="chevronRight" size={22} color={theme.textMuted} />
