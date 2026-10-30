@@ -32,6 +32,41 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Set Android version from release tag
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          node <<'NODE'
+          const fs = require('node:fs');
+
+          const tag = process.env.RELEASE_TAG ?? '';
+          const match = /^v(\d+)\.(\d+)\.(\d+)$/.exec(tag);
+          if (!match) {
+            throw new Error(`Release tag "${tag}" must use vMAJOR.MINOR.PATCH (for example, v0.5.0).`);
+          }
+
+          const [, majorText, minorText, patchText] = match;
+          const major = Number(majorText);
+          const minor = Number(minorText);
+          const patch = Number(patchText);
+          if (minor > 999 || patch > 999) {
+            throw new Error('Minor and patch versions must be at most 999 to generate a valid Android versionCode.');
+          }
+
+          // Android requires each published versionCode to increase. This reserves
+          // three digits each for minor and patch: 1.2.3 becomes 1_002_003.
+          const versionCode = major * 1_000_000 + minor * 1_000 + patch;
+          if (!Number.isSafeInteger(versionCode) || versionCode < 1 || versionCode > 2_100_000_000) {
+            throw new Error(`Generated Android versionCode ${versionCode} is outside Android's supported range.`);
+          }
+
+          const config = JSON.parse(fs.readFileSync('app.json', 'utf8'));
+          config.expo.version = `${major}.${minor}.${patch}`;
+          config.expo.android = { ...config.expo.android, versionCode };
+          fs.writeFileSync('app.json', `${JSON.stringify(config, null, 2)}\n`);
+          console.log(`Building ${config.expo.version} with Android versionCode ${versionCode}.`);
+          NODE
+
       - name: Generate the Android project
         run: npx expo prebuild --platform android --non-interactive
 

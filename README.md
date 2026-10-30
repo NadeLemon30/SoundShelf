@@ -76,7 +76,7 @@ Use `npx expo install <package>` when adding an Expo or React Native package, so
 
 ## Android APK releases
 
-Pushing a tag beginning with `v` (for example, `v1.0.0`) runs [Release Android APK](.github/workflows/release-apk.yml). The GitHub Actions workflow installs dependencies, generates the Android project, builds an APK, creates a GitHub Release, and uploads `SoundShelf-<tag>.apk`.
+Pushing a strict SemVer tag (for example, `v0.5.0`) runs [Release Android APK](.github/workflows/release-apk.yml). The GitHub Actions workflow derives the APK version name from that tag (`0.5.0`) and an increasing Android `versionCode` (`5000`), then generates the Android project, builds an APK, creates a GitHub Release, and uploads `SoundShelf-<tag>.apk`. Version values are changed only in the Actions checkout; the tagged source files are not rewritten.
 
 At present, the workflow uses the generated debug signing configuration. Its APK is for direct testing only and is not suitable for Play Store distribution. A protected release-signing setup is required before a public release.
 

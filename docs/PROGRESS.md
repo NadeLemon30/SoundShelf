@@ -2,6 +2,13 @@
 
 ## Progress updates
 
+## Update (2026-10-30) — tag-derived APK versioning
+
+- The tagged APK workflow now derives the Expo version and Android `versionCode` from strict `vMAJOR.MINOR.PATCH` Git tags before it runs Expo prebuild. For example, `v0.5.0` builds an APK whose displayed version is `0.5.0` and whose Android version code is `5000`.
+- The formula is `major * 1,000,000 + minor * 1,000 + patch`; it reserves three digits for each minor/patch component, rejects values above 999 there, and checks the Android integer range. This guarantees a newer normal SemVer release has a higher Android code within the supported format.
+- Automation alters only GitHub Actions' temporary checkout, keeping tracked `app.json`/`package.json` source versions unchanged. Invalid tags fail before prebuild instead of accidentally producing a mismatched APK.
+- Static YAML/logic review completed; the workflow must be verified by pushing a new valid version tag. Affected files: `.github/workflows/release-apk.yml`, `README.md`, `docs/PROGRESS.md`.
+
 ## Update (2026-10-30) — swipeable Now Playing queue
 
 - Added a Queue drawer directly beneath Now Playing transport controls. Its handle can be swiped upward to expand the current queue, or downward to collapse it; tapping the header provides the equivalent accessible action.
