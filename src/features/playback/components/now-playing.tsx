@@ -1,6 +1,6 @@
 import { useAudioPlayerStatus } from 'expo-audio';
-import { useState } from 'react';
-import { Modal, Pressable, StyleSheet, View } from 'react-native';
+import { useCallback, useMemo, useState } from 'react';
+import { Animated, FlatList, Modal, PanResponder, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -15,13 +15,17 @@ import { usePlayback } from '../playback-provider';
 type NowPlayingProps = { visible: boolean; onClose: () => void };
 
 const REPEAT_LABEL: Record<string, string> = { off: 'Repeat', all: 'Repeat all', one: 'Repeat one' };
+const QUEUE_COLLAPSED_HEIGHT = 52;
+const QUEUE_EXPANDED_HEIGHT = 272;
 
 export function NowPlaying({ visible, onClose }: NowPlayingProps) {
   const theme = useTheme();
-  const { player, currentTrack, queue, index, repeat, shuffle, errorMessage, togglePlayPause, next, previous, seekTo, cycleRepeat, toggleShuffle } = usePlayback();
+  const { player, currentTrack, queue, index, repeat, shuffle, errorMessage, togglePlayPause, next, previous, seekTo, cycleRepeat, toggleShuffle, playTrack } = usePlayback();
   const { isFavorite, toggleFavorite } = usePersonalLibrary();
   const status = useAudioPlayerStatus(player);
   const [barWidth, setBarWidth] = useState(0);
+  const [queueExpanded, setQueueExpanded] = useState(false);
+  const [queueHeight] = useState(() => new Animated.Value(QUEUE_COLLAPSED_HEIGHT));
 
   const duration = status.duration;
   const canSeek = duration > 0;
@@ -36,6 +40,24 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
     if (!canSeek) return;
     seekTo(Math.min(duration, Math.max(0, status.currentTime + deltaSeconds)));
   };
+
+  const setQueueOpen = useCallback((open: boolean) => {
+    setQueueExpanded(open);
+    Animated.spring(queueHeight, {
+      toValue: open ? QUEUE_EXPANDED_HEIGHT : QUEUE_COLLAPSED_HEIGHT,
+      useNativeDriver: false,
+      friction: 9,
+      tension: 90,
+    }).start();
+  }, [queueHeight]);
+
+  const queuePanResponder = useMemo(() => PanResponder.create({
+    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 8 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+    onPanResponderRelease: (_, gesture) => {
+      if (gesture.dy < -20 || gesture.vy < -0.35) setQueueOpen(true);
+      else if (gesture.dy > 20 || gesture.vy > 0.35) setQueueOpen(false);
+    },
+  }), [setQueueOpen]);
 
   return (
     <Modal animationType="slide" onRequestClose={onClose} statusBarTranslucent transparent visible={visible}>
@@ -84,7 +106,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
                   {currentTrack?.title ?? 'Nothing playing'}
                 </ThemedText>
                 <ThemedText numberOfLines={1} style={styles.trackSub}>
-                  {currentTrack?.filename ?? 'Choose a song from your library'}
+                  {currentTrack?.artist ?? currentTrack?.filename ?? 'Choose a song from your library'}
                 </ThemedText>
               </View>
               {/* Favorite the active track. */}
@@ -193,6 +215,48 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
               </Pressable>
             </View>
 
+            <Animated.View style={[styles.queueDrawer, { backgroundColor: theme.surfaceRaised, height: queueHeight }]}>
+              <Pressable
+                {...queuePanResponder.panHandlers}
+                accessibilityRole="button"
+                accessibilityLabel={`${queueExpanded ? 'Hide' : 'Show'} current queue`}
+                accessibilityHint="Swipe up to show the queue or swipe down to hide it"
+                onPress={() => setQueueOpen(!queueExpanded)}
+                style={({ pressed }) => [styles.queueHeader, pressed && styles.pressed]}>
+                <View style={[styles.queueGrabber, { backgroundColor: theme.textMuted }]} />
+                <View style={styles.queueHeaderCopy}>
+                  <ThemedText style={styles.queueTitle}>Queue</ThemedText>
+                  <ThemedText style={styles.queueCount}>{queue.length} song{queue.length === 1 ? '' : 's'}</ThemedText>
+                </View>
+                <AppIcon name={queueExpanded ? 'chevronDown' : 'chevronRight'} size={22} color={theme.textMuted} />
+              </Pressable>
+              <FlatList
+                data={queue}
+                keyExtractor={(track, queueIndex) => `${track.id}-${queueIndex}`}
+                scrollEnabled={queueExpanded}
+                contentContainerStyle={styles.queueList}
+                renderItem={({ item, index: queueIndex }) => {
+                  const isCurrent = item.id === currentTrack?.id;
+                  return (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`Play ${item.title}`}
+                      accessibilityState={{ selected: isCurrent }}
+                      onPress={() => playTrack(item, queue)}
+                      style={({ pressed }) => [styles.queueRow, isCurrent && { backgroundColor: theme.accentMuted }, pressed && styles.pressed]}>
+                      <TrackArtwork uri={item.uri} size={40} style={styles.queueArtwork} />
+                      <View style={styles.queueTrackCopy}>
+                        <ThemedText numberOfLines={1} style={[styles.queueTrackTitle, isCurrent && { color: theme.accent }]}>{item.title}</ThemedText>
+                        <ThemedText numberOfLines={1} style={styles.queueTrackSub}>{item.artist ?? item.filename}</ThemedText>
+                      </View>
+                      {isCurrent ? <AppIcon name="music" size={18} color={theme.accent} /> : <ThemedText style={styles.queuePosition}>{queueIndex + 1}</ThemedText>}
+                    </Pressable>
+                  );
+                }}
+                ListEmptyComponent={<ThemedText style={styles.emptyQueue}>Choose a song to start a queue.</ThemedText>}
+              />
+            </Animated.View>
+
           </View>
         </SafeAreaView>
       </View>
@@ -233,5 +297,19 @@ const styles = StyleSheet.create({
   sideBtn: { width: 48, alignItems: 'center', gap: 4 },
   activeDot: { width: 4, height: 4, borderRadius: 2 },
   playBtn: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center' },
+  queueDrawer: { borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden', marginTop: 'auto' },
+  queueHeader: { height: QUEUE_COLLAPSED_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingHorizontal: Spacing.three, position: 'relative' },
+  queueGrabber: { position: 'absolute', top: 7, alignSelf: 'center', width: 32, height: 3, borderRadius: 2, opacity: 0.65 },
+  queueHeaderCopy: { flex: 1, paddingTop: 7 },
+  queueTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  queueCount: { color: '#B3B3B3', fontSize: 11, lineHeight: 15 },
+  queueList: { paddingHorizontal: Spacing.two, paddingBottom: Spacing.two, gap: 2 },
+  queueRow: { minHeight: 52, borderRadius: 6, paddingHorizontal: Spacing.one, flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  queueArtwork: { borderRadius: 4 },
+  queueTrackCopy: { flex: 1, gap: 1 },
+  queueTrackTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
+  queueTrackSub: { color: '#B3B3B3', fontSize: 12 },
+  queuePosition: { color: '#B3B3B3', fontSize: 12, width: 20, textAlign: 'right' },
+  emptyQueue: { color: '#B3B3B3', textAlign: 'center', padding: Spacing.three },
   pressed: { opacity: 0.65 },
 });

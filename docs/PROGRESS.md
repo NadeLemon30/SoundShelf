@@ -2,6 +2,19 @@
 
 ## Progress updates
 
+## Update (2026-10-30) — swipeable Now Playing queue
+
+- Added a Queue drawer directly beneath Now Playing transport controls. Its handle can be swiped upward to expand the current queue, or downward to collapse it; tapping the header provides the equivalent accessible action.
+- The expanded list identifies the active track, shows embedded artist metadata where available, and lets the listener select any queued track. Selection reuses the existing queue playback action, so it does not create a separate or fabricated queue.
+- Static verification passed: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and `git diff --check` (Git only reported the repository's existing LF-to-CRLF notices). Device verification: confirm the drawer opens/collapses reliably, scrolls long queues, selects the expected track, and remains usable at smaller Android screen heights.
+- Affected files: `src/features/playback/components/now-playing.tsx`, `docs/PROGRESS.md`.
+
+## Update (2026-10-30) — Now Playing artist subtitle
+
+- Now Playing now shows the embedded artist name beneath the active song title. Files with no artist metadata retain the filename fallback, so no artist is invented.
+- Static verification passed: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and `git diff --check` (Git only reported the repository's existing LF-to-CRLF notices).
+- Affected files: `src/features/playback/components/now-playing.tsx`, `docs/PROGRESS.md`.
+
 ## Update (2026-10-30) — metadata-backed Artist and Album library filters
 
 - Added Artists alongside Songs, Albums, and Favorites on the Library screen. Artist and Album views list only groups derived from embedded audio metadata; opening a group shows its tracks and plays against that group’s real queue.
