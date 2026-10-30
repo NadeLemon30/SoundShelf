@@ -3,7 +3,7 @@ import { FlatList, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
-import { AppIcon, type AppIconName } from '@/components/ui/app-icon';
+import { AppIcon } from '@/components/ui/app-icon';
 import { AppGradient } from '@/components/ui/app-gradient';
 import { TrackArtwork } from '@/components/ui/track-artwork';
 import { BottomTabInset, MaxContentWidth, MiniPlayerInset, Spacing } from '@/constants/theme';
@@ -18,23 +18,6 @@ function greeting() {
   return hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
 }
 
-type HomeLink = { label: string; detail: string; href: '/library' | '/search' | '/personal-library' | '/settings'; icon: AppIconName };
-
-function HomeLinkCard({ link }: { link: HomeLink }) {
-  const theme = useTheme();
-  return (
-    <Link href={link.href as Href} asChild>
-      <Pressable accessibilityRole="button" accessibilityLabel={link.label} style={({ pressed }) => [styles.linkCard, { backgroundColor: theme.surfaceRaised }, pressed && styles.pressed]}>
-        <View style={[styles.linkIcon, { backgroundColor: theme.surface }]}><AppIcon name={link.icon} size={22} color={theme.accent} /></View>
-        <View style={styles.linkCopy}>
-          <ThemedText numberOfLines={1} style={styles.linkLabel}>{link.label}</ThemedText>
-          <ThemedText numberOfLines={1} style={styles.linkDetail}>{link.detail}</ThemedText>
-        </View>
-      </Pressable>
-    </Link>
-  );
-}
-
 export default function HomeScreen() {
   const theme = useTheme();
   const { scan, status, tracks } = useLibrary();
@@ -44,13 +27,6 @@ export default function HomeScreen() {
   const activeTrackIds = new Set(tracks.map((track) => track.id));
   const recentTracks = recentlyPlayed.filter((track) => activeTrackIds.has(track.id)).slice(0, 8);
   const displayTracks = recentTracks.length ? recentTracks : tracks.slice(0, 8);
-  const links: HomeLink[] = [
-    { label: 'Your Library', detail: hasLibrary ? `${tracks.length} songs` : 'Browse your music', href: '/library', icon: 'library' },
-    { label: 'Liked Songs', detail: 'Your favourites', href: '/personal-library', icon: 'favorite' },
-    { label: 'Search', detail: 'Find a local track', href: '/search', icon: 'search' },
-    { label: 'Settings', detail: 'Playback and library', href: '/settings', icon: 'settings' },
-  ];
-
   return (
     <AppGradient>
       <SafeAreaView style={styles.safeArea} edges={['top', 'left', 'right']}>
@@ -86,7 +62,6 @@ export default function HomeScreen() {
                 </View>
               )}
 
-              <View style={styles.linkGrid}>{links.map((link) => <HomeLinkCard key={link.href} link={link} />)}</View>
               {displayTracks.length > 0 && (
                 <View style={styles.sectionHeader}>
                   <View><ThemedText style={styles.sectionTitle}>{recentTracks.length ? 'Jump back in' : 'Recently added'}</ThemedText><ThemedText style={styles.sectionSubtitle}>{recentTracks.length ? 'Continue where you left off' : 'From your local library'}</ThemedText></View>
@@ -114,7 +89,6 @@ const styles = StyleSheet.create({
   resumeEyebrow: { fontSize: 10, lineHeight: 14, fontWeight: '800', letterSpacing: 1.1, color: '#1DB954' }, resumeTitle: { fontSize: 16, lineHeight: 21, fontWeight: '700', color: '#FFFFFF' }, resumeSub: { fontSize: 12, lineHeight: 17, color: '#B3B3B3' }, playCircle: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
   welcomeCard: { borderRadius: 10, padding: Spacing.three, gap: Spacing.two }, welcomeIcon: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' }, welcomeCopy: { gap: Spacing.one }, welcomeTitle: { fontSize: 19, lineHeight: 25, fontWeight: '800', color: '#FFFFFF' }, welcomeSub: { fontSize: 13, lineHeight: 19, color: '#B3B3B3' },
   scanButton: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: Spacing.three, paddingVertical: 9, marginTop: Spacing.one }, scanButtonText: { color: '#000000', fontSize: 13, lineHeight: 17, fontWeight: '800' },
-  linkGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two }, linkCard: { width: '48.7%', minHeight: 68, padding: Spacing.two, borderRadius: 7, flexDirection: 'row', alignItems: 'center', gap: Spacing.two }, linkIcon: { width: 38, height: 38, borderRadius: 4, justifyContent: 'center', alignItems: 'center' }, linkCopy: { flex: 1, gap: 2 }, linkLabel: { fontSize: 13, lineHeight: 17, fontWeight: '700', color: '#FFFFFF' }, linkDetail: { fontSize: 11, lineHeight: 15, color: '#B3B3B3' },
   sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingTop: Spacing.one }, sectionTitle: { fontSize: 22, lineHeight: 28, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 }, sectionSubtitle: { fontSize: 12, lineHeight: 17, color: '#B3B3B3' }, showAll: { fontSize: 12, lineHeight: 17, fontWeight: '700' },
   emptyCopy: { paddingTop: Spacing.three, fontSize: 13, textAlign: 'center' }, pressed: { opacity: 0.68 },
 });

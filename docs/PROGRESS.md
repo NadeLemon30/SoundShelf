@@ -2,6 +2,12 @@
 
 ## Progress updates
 
+## Update (2026-10-30) — Home shortcuts removed
+
+- Removed the redundant Library, Liked Songs, Search, and Settings shortcut-card grid from Home. Those destinations remain directly available through the persistent tab bar and the Home header's Settings control.
+- Static verification passed: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and `git diff --check` (Git only reported the repository's existing LF-to-CRLF notices).
+- Affected files: `src/app/index.tsx`, `docs/PROGRESS.md`.
+
 ## Update (2026-10-30) — tag-derived APK versioning
 
 - The tagged APK workflow now derives the Expo version and Android `versionCode` from strict `vMAJOR.MINOR.PATCH` Git tags before it runs Expo prebuild. For example, `v0.5.0` builds an APK whose displayed version is `0.5.0` and whose Android version code is `5000`.
@@ -11,7 +17,7 @@
 
 ## Update (2026-10-30) — swipeable Now Playing queue
 
-- Added a Queue drawer directly beneath Now Playing transport controls. Its handle can be swiped upward to expand the current queue, or downward to collapse it; tapping the header provides the equivalent accessible action.
+- Added a Queue drawer directly beneath Now Playing transport controls. Its dedicated header captures vertical drags before the press interaction, so an upward swipe reliably expands the current queue and a downward swipe collapses it; tapping the header provides the equivalent accessible action. Its collapsed state explicitly says “Swipe up to view queue.”
 - The expanded list identifies the active track, shows embedded artist metadata where available, and lets the listener select any queued track. Selection reuses the existing queue playback action, so it does not create a separate or fabricated queue.
 - Static verification passed: `npx.cmd tsc --noEmit`, `npm.cmd run lint`, and `git diff --check` (Git only reported the repository's existing LF-to-CRLF notices). Device verification: confirm the drawer opens/collapses reliably, scrolls long queues, selects the expected track, and remains usable at smaller Android screen heights.
 - Affected files: `src/features/playback/components/now-playing.tsx`, `docs/PROGRESS.md`.

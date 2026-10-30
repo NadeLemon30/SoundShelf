@@ -52,7 +52,8 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
   }, [queueHeight]);
 
   const queuePanResponder = useMemo(() => PanResponder.create({
-    onMoveShouldSetPanResponder: (_, gesture) => Math.abs(gesture.dy) > 8 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
+    // Capture vertical drags before Pressable treats the queue header as a tap.
+    onMoveShouldSetPanResponderCapture: (_, gesture) => Math.abs(gesture.dy) > 6 && Math.abs(gesture.dy) > Math.abs(gesture.dx),
     onPanResponderRelease: (_, gesture) => {
       if (gesture.dy < -20 || gesture.vy < -0.35) setQueueOpen(true);
       else if (gesture.dy > 20 || gesture.vy > 0.35) setQueueOpen(false);
@@ -216,8 +217,8 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
             </View>
 
             <Animated.View style={[styles.queueDrawer, { backgroundColor: theme.surfaceRaised, height: queueHeight }]}>
+              <View {...queuePanResponder.panHandlers}>
               <Pressable
-                {...queuePanResponder.panHandlers}
                 accessibilityRole="button"
                 accessibilityLabel={`${queueExpanded ? 'Hide' : 'Show'} current queue`}
                 accessibilityHint="Swipe up to show the queue or swipe down to hide it"
@@ -226,10 +227,11 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
                 <View style={[styles.queueGrabber, { backgroundColor: theme.textMuted }]} />
                 <View style={styles.queueHeaderCopy}>
                   <ThemedText style={styles.queueTitle}>Queue</ThemedText>
-                  <ThemedText style={styles.queueCount}>{queue.length} song{queue.length === 1 ? '' : 's'}</ThemedText>
+                  <ThemedText style={styles.queueCount}>{queueExpanded ? `${queue.length} song${queue.length === 1 ? '' : 's'}` : 'Swipe up to view queue'}</ThemedText>
                 </View>
                 <AppIcon name={queueExpanded ? 'chevronDown' : 'chevronRight'} size={22} color={theme.textMuted} />
               </Pressable>
+              </View>
               <FlatList
                 data={queue}
                 keyExtractor={(track, queueIndex) => `${track.id}-${queueIndex}`}
