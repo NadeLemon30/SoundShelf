@@ -1,6 +1,6 @@
 import { useAudioPlayerStatus } from 'expo-audio';
 import { useCallback, useMemo, useState } from 'react';
-import { Animated, FlatList, Modal, PanResponder, Pressable, StyleSheet, View } from 'react-native';
+import { Animated, Dimensions, FlatList, Modal, PanResponder, Pressable, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
@@ -15,8 +15,9 @@ import { usePlayback } from '../playback-provider';
 type NowPlayingProps = { visible: boolean; onClose: () => void };
 
 const REPEAT_LABEL: Record<string, string> = { off: 'Repeat', all: 'Repeat all', one: 'Repeat one' };
-const QUEUE_COLLAPSED_HEIGHT = 52;
-const QUEUE_EXPANDED_HEIGHT = 272;
+const { height: SCREEN_HEIGHT } = Dimensions.get('window');
+const QUEUE_COLLAPSED_HEIGHT = 64;
+const QUEUE_EXPANDED_HEIGHT = Math.round(SCREEN_HEIGHT * 0.62);
 
 export function NowPlaying({ visible, onClose }: NowPlayingProps) {
   const theme = useTheme();
@@ -216,27 +217,31 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
               </Pressable>
             </View>
 
-            <Animated.View style={[styles.queueDrawer, { backgroundColor: theme.surfaceRaised, height: queueHeight }]}>
+            <Animated.View style={[styles.queueDrawer, { backgroundColor: '#181818', height: queueHeight }]}>
               <View {...queuePanResponder.panHandlers}>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`${queueExpanded ? 'Hide' : 'Show'} current queue`}
-                accessibilityHint="Swipe up to show the queue or swipe down to hide it"
-                onPress={() => setQueueOpen(!queueExpanded)}
-                style={({ pressed }) => [styles.queueHeader, pressed && styles.pressed]}>
-                <View style={[styles.queueGrabber, { backgroundColor: theme.textMuted }]} />
-                <View style={styles.queueHeaderCopy}>
-                  <ThemedText style={styles.queueTitle}>Queue</ThemedText>
-                  <ThemedText style={styles.queueCount}>{queueExpanded ? `${queue.length} song${queue.length === 1 ? '' : 's'}` : 'Swipe up to view queue'}</ThemedText>
-                </View>
-                <AppIcon name={queueExpanded ? 'chevronDown' : 'chevronRight'} size={22} color={theme.textMuted} />
-              </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={`${queueExpanded ? 'Hide' : 'Show'} current queue`}
+                  accessibilityHint="Swipe up to show the queue or swipe down to hide it"
+                  onPress={() => setQueueOpen(!queueExpanded)}
+                  style={({ pressed }) => [styles.queueHeader, pressed && styles.pressed]}>
+                  <View style={[styles.queueGrabber, { backgroundColor: '#535353' }]} />
+                  <View style={styles.queueHeaderCopy}>
+                    <ThemedText style={styles.queueTitle}>Up next</ThemedText>
+                    <ThemedText style={styles.queueCount}>
+                      {queue.length > 0 ? `${queue.length} song${queue.length === 1 ? '' : 's'}` : 'No songs in queue'}
+                    </ThemedText>
+                  </View>
+                  <AppIcon name={queueExpanded ? 'chevronDown' : 'chevronRight'} size={22} color="#B3B3B3" />
+                </Pressable>
               </View>
               <FlatList
                 data={queue}
                 keyExtractor={(track, queueIndex) => `${track.id}-${queueIndex}`}
                 scrollEnabled={queueExpanded}
-                contentContainerStyle={styles.queueList}
+                showsVerticalScrollIndicator={false}
+                contentContainerStyle={[styles.queueList, { paddingBottom: queueExpanded ? Spacing.six : Spacing.two }]}
+                ItemSeparatorComponent={() => <View style={styles.queueSeparator} />}
                 renderItem={({ item, index: queueIndex }) => {
                   const isCurrent = item.id === currentTrack?.id;
                   return (
@@ -245,13 +250,25 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
                       accessibilityLabel={`Play ${item.title}`}
                       accessibilityState={{ selected: isCurrent }}
                       onPress={() => playTrack(item, queue)}
-                      style={({ pressed }) => [styles.queueRow, isCurrent && { backgroundColor: theme.accentMuted }, pressed && styles.pressed]}>
-                      <TrackArtwork uri={item.uri} size={40} style={styles.queueArtwork} />
+                      style={({ pressed }) => [styles.queueRow, pressed && styles.pressed]}>
+                      {isCurrent ? (
+                        <View style={styles.queueCurrentIndicator}>
+                          <AppIcon name="music" size={16} color={theme.accent} />
+                        </View>
+                      ) : (
+                        <ThemedText style={styles.queuePosition}>{queueIndex + 1}</ThemedText>
+                      )}
+                      <TrackArtwork uri={item.uri} size={48} style={styles.queueArtwork} />
                       <View style={styles.queueTrackCopy}>
-                        <ThemedText numberOfLines={1} style={[styles.queueTrackTitle, isCurrent && { color: theme.accent }]}>{item.title}</ThemedText>
-                        <ThemedText numberOfLines={1} style={styles.queueTrackSub}>{item.artist ?? item.filename}</ThemedText>
+                        <ThemedText
+                          numberOfLines={1}
+                          style={[styles.queueTrackTitle, isCurrent && { color: theme.accent }]}>
+                          {item.title}
+                        </ThemedText>
+                        <ThemedText numberOfLines={1} style={styles.queueTrackSub}>
+                          {item.artist ?? item.filename}
+                        </ThemedText>
                       </View>
-                      {isCurrent ? <AppIcon name="music" size={18} color={theme.accent} /> : <ThemedText style={styles.queuePosition}>{queueIndex + 1}</ThemedText>}
                     </Pressable>
                   );
                 }}
@@ -299,19 +316,21 @@ const styles = StyleSheet.create({
   sideBtn: { width: 48, alignItems: 'center', gap: 4 },
   activeDot: { width: 4, height: 4, borderRadius: 2 },
   playBtn: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center' },
-  queueDrawer: { borderTopLeftRadius: 12, borderTopRightRadius: 12, overflow: 'hidden', marginTop: 'auto' },
-  queueHeader: { height: QUEUE_COLLAPSED_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingHorizontal: Spacing.three, position: 'relative' },
-  queueGrabber: { position: 'absolute', top: 7, alignSelf: 'center', width: 32, height: 3, borderRadius: 2, opacity: 0.65 },
-  queueHeaderCopy: { flex: 1, paddingTop: 7 },
-  queueTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  queueCount: { color: '#B3B3B3', fontSize: 11, lineHeight: 15 },
-  queueList: { paddingHorizontal: Spacing.two, paddingBottom: Spacing.two, gap: 2 },
-  queueRow: { minHeight: 52, borderRadius: 6, paddingHorizontal: Spacing.one, flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
+  queueDrawer: { borderTopLeftRadius: 16, borderTopRightRadius: 16, overflow: 'hidden', marginTop: 'auto' },
+  queueHeader: { height: QUEUE_COLLAPSED_HEIGHT, flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingHorizontal: Spacing.four, position: 'relative' },
+  queueGrabber: { position: 'absolute', top: 8, alignSelf: 'center', width: 36, height: 4, borderRadius: 2, opacity: 0.8 },
+  queueHeaderCopy: { flex: 1, paddingTop: 10 },
+  queueTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  queueCount: { color: '#B3B3B3', fontSize: 12, lineHeight: 16, marginTop: 1 },
+  queueList: { paddingHorizontal: Spacing.three, paddingTop: Spacing.one },
+  queueSeparator: { height: 2 },
+  queueRow: { minHeight: 64, borderRadius: 8, flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   queueArtwork: { borderRadius: 4 },
-  queueTrackCopy: { flex: 1, gap: 1 },
-  queueTrackTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-  queueTrackSub: { color: '#B3B3B3', fontSize: 12 },
-  queuePosition: { color: '#B3B3B3', fontSize: 12, width: 20, textAlign: 'right' },
-  emptyQueue: { color: '#B3B3B3', textAlign: 'center', padding: Spacing.three },
+  queueTrackCopy: { flex: 1, gap: 2 },
+  queueTrackTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
+  queueTrackSub: { color: '#B3B3B3', fontSize: 13 },
+  queueCurrentIndicator: { width: 24, alignItems: 'center', justifyContent: 'center' },
+  queuePosition: { color: '#B3B3B3', fontSize: 13, width: 24, textAlign: 'center' },
+  emptyQueue: { color: '#B3B3B3', textAlign: 'center', paddingVertical: Spacing.four, paddingHorizontal: Spacing.three },
   pressed: { opacity: 0.65 },
 });
