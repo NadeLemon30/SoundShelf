@@ -45,7 +45,7 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     // Sit just above the native tab bar.
-    bottom: BottomTabInset,
+    bottom: BottomTabInset - 15,
     zIndex: 10,
     elevation: 10,
   },

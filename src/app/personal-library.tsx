@@ -30,7 +30,7 @@ type Item =
 export default function PersonalLibraryScreen() {
   const theme = useTheme();
   const { currentTrack, playTrack } = usePlayback();
-  const { favorites, recentlyPlayed, playlists, createPlaylist, deletePlaylist, addToPlaylist, removeFromPlaylist } = usePersonalLibrary();
+  const { favorites, recentlyPlayed, playlists, createPlaylist, deletePlaylist, addToPlaylist, removeFromPlaylist, moveTrackInPlaylist } = usePersonalLibrary();
   const [name, setName] = useState('');
   const [selectedPlaylistId, setSelectedPlaylistId] = useState<string | null>(null);
 
@@ -162,6 +162,11 @@ export default function PersonalLibraryScreen() {
 
       case 'track': {
         const { data: trackData, playlistId } = item;
+        const playlistTracks = playlistId ? playlists.find((p) => p.id === playlistId)?.tracks ?? [] : [];
+        const trackIndexInPlaylist = playlistId ? playlistTracks.findIndex((t) => t.id === trackData.id) : -1;
+        const canMoveUp = playlistId && trackIndexInPlaylist > 0;
+        const canMoveDown = playlistId && trackIndexInPlaylist >= 0 && trackIndexInPlaylist < playlistTracks.length - 1;
+
         return (
           <View>
             <LibraryTrackRow
@@ -170,11 +175,31 @@ export default function PersonalLibraryScreen() {
               onPress={() => playTrack(trackData, tracks)}
             />
             {playlistId ? (
-              <Pressable
-                accessibilityRole="button"
-                onPress={() => { void removeFromPlaylist(playlistId, trackData.id); }}>
-                <ThemedText style={[styles.removeBtn, { color: theme.danger }]}>Remove from playlist</ThemedText>
-              </Pressable>
+              <View style={styles.playlistTrackActions}>
+                <View style={styles.moveRow}>
+                  {canMoveUp && (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Move track up"
+                      onPress={() => { void moveTrackInPlaylist(playlistId, trackData.id, 'up'); }}>
+                      <ThemedText style={{ fontSize: 13, color: theme.accent }}>Move up</ThemedText>
+                    </Pressable>
+                  )}
+                  {canMoveDown && (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel="Move track down"
+                      onPress={() => { void moveTrackInPlaylist(playlistId, trackData.id, 'down'); }}>
+                      <ThemedText style={{ fontSize: 13, color: theme.accent }}>Move down</ThemedText>
+                    </Pressable>
+                  )}
+                </View>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => { void removeFromPlaylist(playlistId, trackData.id); }}>
+                  <ThemedText style={[styles.removeBtn, { color: theme.danger }]}>Remove from playlist</ThemedText>
+                </Pressable>
+              </View>
             ) : playlists.length > 0 ? (
               <View style={styles.addRow}>
                 {playlists.map((pl) => (
@@ -288,7 +313,9 @@ const styles = StyleSheet.create({
   playlistCount: { fontSize: 13 },
   // Track actions
   listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  removeBtn: { fontSize: 13, paddingLeft: 60, paddingBottom: Spacing.one },
+  playlistTrackActions: { paddingLeft: 60, paddingBottom: Spacing.one, gap: Spacing.one },
+  moveRow: { flexDirection: 'row', gap: Spacing.three },
+  removeBtn: { fontSize: 13 },
   addRow: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, paddingLeft: 60, paddingBottom: Spacing.one },
   pressed: { opacity: 0.7 },
 });

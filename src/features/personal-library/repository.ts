@@ -54,7 +54,38 @@ export async function addTrackToPlaylist(db: SQLiteDatabase, playlistId: string,
 }
 export async function removeTrackFromPlaylist(db: SQLiteDatabase, playlistId: string, trackId: string) {
   await db.runAsync('DELETE FROM playlist_items WHERE playlist_id = ? AND track_id = ?', playlistId, trackId);
+  // Reorder remaining items to avoid gaps
+  const items = await db.getAllAsync<{ id: number }>('SELECT id FROM playlist_items WHERE playlist_id = ? ORDER BY position', playlistId);
+  for (let i = 0; i < items.length; i += 1) {
+    await db.runAsync('UPDATE playlist_items SET position = ? WHERE id = ?', i, items[i].id);
+  }
   await db.runAsync('UPDATE playlists SET updated_at = ? WHERE id = ?', Date.now(), playlistId);
+}
+
+export async function reorderPlaylistTracks(db: SQLiteDatabase, playlistId: string, trackIdsInOrder: string[]) {
+  await db.withTransactionAsync(async () => {
+    for (let i = 0; i < trackIdsInOrder.length; i += 1) {
+      await db.runAsync('UPDATE playlist_items SET position = ? WHERE playlist_id = ? AND track_id = ?', i, playlistId, trackIdsInOrder[i]);
+    }
+    await db.runAsync('UPDATE playlists SET updated_at = ? WHERE id = ?', Date.now(), playlistId);
+  });
+}
+
+export async function moveTrackInPlaylist(db: SQLiteDatabase, playlistId: string, trackId: string, direction: 'up' | 'down') {
+  const items = await db.getAllAsync<{ id: number; track_id: string; position: number }>('SELECT id, track_id, position FROM playlist_items WHERE playlist_id = ? ORDER BY position', playlistId);
+  const currentIndex = items.findIndex((item) => item.track_id === trackId);
+  if (currentIndex === -1) return;
+  const targetIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+  if (targetIndex < 0 || targetIndex >= items.length) return;
+
+  const current = items[currentIndex];
+  const target = items[targetIndex];
+
+  await db.withTransactionAsync(async () => {
+    await db.runAsync('UPDATE playlist_items SET position = ? WHERE id = ?', target.position, current.id);
+    await db.runAsync('UPDATE playlist_items SET position = ? WHERE id = ?', current.position, target.id);
+    await db.runAsync('UPDATE playlists SET updated_at = ? WHERE id = ?', Date.now(), playlistId);
+  });
 }
 export async function saveCheckpoint(db: SQLiteDatabase, checkpoint: PlaybackCheckpoint) {
   const { track } = checkpoint;
@@ -65,4 +96,34 @@ export async function loadCheckpoint(db: SQLiteDatabase): Promise<PlaybackCheckp
   const row = await db.getFirstAsync<StoredTrack & { queue_json: string; queue_index: number; repeat_mode: RepeatMode; shuffle_enabled: number; position_seconds: number }>('SELECT * FROM playback_checkpoint WHERE singleton = 1');
   if (!row) return null;
   try { const queue = JSON.parse(row.queue_json) as LibraryTrack[]; return { track: fromStored(row), queue: queue.length ? queue : [fromStored(row)], index: Math.max(0, Math.min(row.queue_index, queue.length - 1)), repeat: row.repeat_mode, shuffle: Boolean(row.shuffle_enabled), positionSeconds: Math.max(0, row.position_seconds) }; } catch { return null; }
+}
+
+export async function pruneStaleTracks(db: SQLiteDatabase, validTrackIds: string[]) {
+  if (validTrackIds.length === 0) {
+    // If library is empty, clear personal library references to avoid broken state
+    await db.runAsync('DELETE FROM playlist_items');
+    await db.runAsync('DELETE FROM favorites');
+    await db.runAsync('DELETE FROM recently_played');
+    await db.runAsync('DELETE FROM playback_checkpoint');
+    return;
+  }
+  const placeholders = validTrackIds.map(() => '?').join(',');
+  // Remove favorites/recent that are no longer in library
+  await db.runAsync(`DELETE FROM favorites WHERE track_id NOT IN (${placeholders})`, ...validTrackIds);
+  await db.runAsync(`DELETE FROM recently_played WHERE track_id NOT IN (${placeholders})`, ...validTrackIds);
+  // Remove playlist items not in library and reindex affected playlists
+  const staleItems = await db.getAllAsync<{ playlist_id: string }>(`SELECT DISTINCT playlist_id FROM playlist_items WHERE track_id NOT IN (${placeholders})`, ...validTrackIds);
+  await db.runAsync(`DELETE FROM playlist_items WHERE track_id NOT IN (${placeholders})`, ...validTrackIds);
+  for (const { playlist_id } of staleItems) {
+    const items = await db.getAllAsync<{ id: number }>('SELECT id FROM playlist_items WHERE playlist_id = ? ORDER BY position', playlist_id);
+    for (let i = 0; i < items.length; i += 1) {
+      await db.runAsync('UPDATE playlist_items SET position = ? WHERE id = ?', i, items[i].id);
+    }
+    await db.runAsync('UPDATE playlists SET updated_at = ? WHERE id = ?', Date.now(), playlist_id);
+  }
+  // Clear checkpoint if track no longer valid
+  const checkpoint = await db.getFirstAsync<{ track_id: string }>('SELECT track_id FROM playback_checkpoint WHERE singleton = 1');
+  if (checkpoint && !validTrackIds.includes(checkpoint.track_id)) {
+    await db.runAsync('DELETE FROM playback_checkpoint WHERE singleton = 1');
+  }
 }
