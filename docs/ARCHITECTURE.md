@@ -2,7 +2,7 @@
 
 ## Status and guiding constraints
 
-This is the architecture for a fresh Expo SDK 57 / React Native 0.86 / TypeScript starter. Android is the first target; the app operates on device-local media and stores all user data locally. Expo Router remains the only navigation layer and Continuous Native Generation remains enabled. Phases 2–4 are implemented (app shell, local library, foreground playback); later sections below remain proposed until their phase begins.
+This is the architecture for a fresh Expo SDK 57 / React Native 0.86 / TypeScript starter. Android is the first target; the app operates on device-local media and stores all user data locally. Expo Router remains the only navigation layer and Continuous Native Generation remains enabled. Phases 2–7 are implemented (app shell, local library, foreground playback, personal library, listening analytics); later sections below remain proposed until their phase begins.
 
 ## Proposed structure
 
@@ -87,6 +87,10 @@ The audio layer owns player lifecycle and translates platform status/events into
 ## Analytics and Replay integrity
 
 Define qualification rules before code: a play count should require a minimum audible duration or completion percentage, and listening duration must exclude paused time. Store timestamps in UTC plus the local calendar/time-zone context needed for user-facing buckets. Calculate Replay data deterministically from stored listening events, including a clear eligibility threshold. If the data cannot support a claim, present an explanatory insufficient-history state instead of zeroes or invented rankings.
+
+**Listening analytics (Phase 7, D-013).** `src/features/analytics/listening-model.js` holds every rule and window calculation as dependency-free JavaScript with JSDoc types; `listening-model.d.ts` supplies the TypeScript contract. `listen-tracker.tsx` mounts inside `PlaybackProvider`, subscribes to the shared player's `playbackStatusUpdate`, and stores attempts through `repository.ts` into SQLite schema version 3. It writes one row per contiguous attempt (`listening_events`), a throttled singleton snapshot for restart recovery (`open_listen_session`), and never throws into the player's listener. The screen (`src/app/listening.tsx`) reads only the events visible in the selected period and derives all totals client-side with `summarizeListening`, so the persisted facts stay the source of truth. `tests/listening-model.test.mjs` exercises qualification, pause/seek/clamp behavior, restart recovery, calendar boundaries, and aggregation under plain `node --test`.
+
+The `ListenEvent` persisted fields are: track identity and display metadata, UTC start/end timestamps, audible milliseconds, track duration, completion, the derived qualified flag, an end reason (`completed`, `track_change`, `stopped`, `recovered`), and the device-local date plus UTC offset captured at the start. Day, week (Monday–Sunday), month, and year ranges are computed from those stored local dates, never recomputed from the current time zone when viewing.
 
 ## Sources consulted (planning, 2026-10-11)
 

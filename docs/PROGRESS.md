@@ -2,6 +2,55 @@
 
 ## Progress updates
 
+## Update (2026-11-01) — Phase 7 listening analytics
+
+Owner approved Phase 7 and chose three rules: (1) a play qualifies after **30 seconds**, or half of a track that is **60 seconds or shorter**, whichever comes first; (2) listening is bucketed by the **device-local date stored per event at the start of the attempt**; (3) statistics live on a **dedicated Listening screen** opened from Home and Settings, not a sixth tab. These are recorded in `docs/DECISIONS.md` D-013.
+
+### Implemented
+
+- `src/features/analytics/listening-model.js` (+ `listening-model.d.ts`): the single source of truth for qualification, audible-time accounting, local-date keys, day/week/month/year ranges and labels, aggregation, duration text, and the live accumulator. It has no imports and JSDoc types, so plain Node can execute it; TypeScript consumers still get checked types from the declaration file while Metro bundles the `.js`.
+- `tests/listening-model.test.mjs`: 29 dependency-free tests covering the threshold, short tracks, unknown durations, pause/resume, forward and backward seeks, duration clamping, completion, mid-track baselines, local-midnight and time-zone boundaries, Monday-start weeks, leap years, previous periods, aggregation with partial attempts, empty ranges, duration formatting, and restart recovery.
+- `src/features/analytics/repository.ts`: insert/list/count/earliest event queries plus save/load/clear for the single open session and `clearListeningHistory`.
+- `src/features/analytics/listen-tracker.tsx`: mounted inside `PlaybackProvider`; folds the shared player's `playbackStatusUpdate` into one session, closes attempts on completion/track change/unmount, saves a recovery snapshot at most every 5 s, converts an interrupted snapshot into a `recovered` event on launch, closes a session as soon as a status sample reports a different track (so a new track's position can never be folded into the previous attempt), and ignores duplicate finish samples so repeat-one cannot create empty completed plays. Storage failures are swallowed so analytics can never interrupt playback.
+- Schema version 3 in `src/features/personal-library/database.ts`: additive `listening_events` and `open_listen_session` tables with local-date and track indexes.
+- `src/app/listening.tsx`: hidden tab screen (`href: null` in `src/components/app-tabs.tsx`) with Day/Week/Month/Year pills, previous/next period navigation capped at today, summary tiles, top tracks, top artists, daily bars, the listen rule, and explicit "no listening recorded" / "no listening in this period" / "no qualified listens" states instead of zero-filled rankings. Partial attempts still contribute to time listened, while play counts and rankings use qualified listens only.
+- Home gained a chart header control linking to the screen; Settings gained a Listening section with "Listening stats" and a confirmed "Clear listening history" action that deletes only listening data. `AppIcon` gained `chart`, `chevronLeft`, and `trash`.
+- Also included in the working tree: the 2026-11-01 mini-player lift fix described below.
+
+### Verification
+
+- `node --test tests/listening-model.test.mjs`: **29 passed, 0 failed** (verified in this session). Node 22.22.1 in this environment is not compiled with TypeScript support (`ERR_NO_TYPESCRIPT`), which is why the tested module is plain JSDoc JavaScript rather than `.ts`.
+- `npx tsc --noEmit` and `npm run lint`: **not run.** `node_modules/` is absent (the earlier `npm ci` failed with `npm ERR! network`), and there is no network access to install it. Do not treat static verification as complete.
+- Physical-device verification: **not done.** It needs a development build; no new native module or config was added, so a JS reload of an existing development build is enough to exercise it.
+
+### Next steps
+
+1. In an environment with dependencies installed, run `npx tsc --noEmit` and `npm run lint`; fix any diagnostics before proceeding. Likely areas to watch: the `useFocusEffect` import from `expo-router`, the `Href` casts for `/listening`, the `${number}%` width, `accessibilityRole="tablist"`, and the `chart`/`chevronLeft`/`trash` symbol entries.
+2. On an Android development build, verify: a 60-second track counts at 30 s; a 40-second track counts at 20 s; a skip under the threshold contributes time but no play; pausing does not accrue time; seeking forward does not inflate time; going to the next track closes the attempt; finishing a track under repeat-one creates one play per repetition, not an extra empty play; defining the period boundaries at local midnight; and that returning to the Listening screen refreshes totals.
+3. Verify restart recovery by playing longer than 5 s, force-stopping the app, and relaunching: the interrupted attempt should appear as one recovered event with only the time already observed, and must not double count.
+4. Verify "Clear listening history" removes all stats and leaves favorites, playlists, recents, the playback checkpoint, and the music files intact. Then confirm the empty state returns.
+5. Confirm the hidden `listening` route does not appear in the tab bar, that the back control returns to Settings when opened there and Home when opened from Home, and that hardware back behaves acceptably.
+
+### Known limitations
+
+- The screen's back control uses the `from` query parameter and `router.replace`; Android hardware back follows the tab navigator's default back behavior, which may return to Home rather than the originating screen.
+- While the screen stays open across local midnight, its "today" cap does not roll over until the screen is re-focused.
+- Weekly buckets always start Monday; the owner chose stored local dates, not a locale-specific first day of week.
+- `pruneStaleTracks()` in `src/features/personal-library/repository.ts` still deletes all user collections when the valid track list is empty; this pre-existing conflict with "preserve user data" remains unaddressed.
+
+### Affected files
+
+`src/features/analytics/listening-model.js`, `src/features/analytics/listening-model.d.ts`, `src/features/analytics/repository.ts`, `src/features/analytics/listen-tracker.tsx`, `tests/listening-model.test.mjs`, `src/features/personal-library/database.ts`, `src/features/playback/playback-provider.tsx`, `src/app/listening.tsx`, `src/components/app-tabs.tsx`, `src/app/settings.tsx`, `src/app/index.tsx`, `src/components/ui/app-icon.tsx`, `docs/DECISIONS.md`, `docs/ARCHITECTURE.md`, `docs/ROADMAP.md`, `docs/PROGRESS.md`, `README.md`.
+
+## Fix (2026-11-01) — mini-player was lowered onto the tab bar
+
+- Reported behavior: the persistent mini-player moved **down** over the native tab bar instead of up, covering roughly half of it.
+- Cause: `src/app/_layout.tsx` used `bottom: BottomTabInset - 15`. For an absolutely positioned view, subtracting from `bottom` lowers the card; the intended clearance was an addition. The offset is now `BottomTabInset + MINI_PLAYER_LIFT`, with `MINI_PLAYER_LIFT = 15` named so the direction is explicit. On Android the card's bottom edge now sits 95 dp above the screen bottom (80 dp baseline + 15 dp) rather than 65 dp.
+- Content clearance is unchanged and still sufficient: screens reserve `BottomTabInset + MiniPlayerInset + Spacing.three` (168 dp), which is greater than the raised card's top edge.
+- Static verification: **not run.** This session had no network access, so `npm ci` failed (`npm ERR! network`) and the dependency tree could not be installed. `npx tsc --noEmit` / `npm run lint` therefore fail on missing TypeScript lib and `expo/tsconfig.base` types, not on this change, and that partial `node_modules/` was deleted again (it did not exist at session start). Run both commands in an environment with installed dependencies before treating this as verified.
+- Device verification needed: with a track selected on Android, confirm the mini-player sits fully above the tab bar with a visible gap, that all five tab icons and labels stay visible and tappable, and that the last row of each list can still be scrolled clear of the player.
+- Affected file: `src/app/_layout.tsx`, `docs/PROGRESS.md`.
+
 ## Update (2026-10-30) — Home shortcuts removed
 
 - Removed the redundant Library, Liked Songs, Search, and Settings shortcut-card grid from Home. Those destinations remain directly available through the persistent tab bar and the Home header's Settings control.
@@ -62,7 +111,7 @@
 
 ## Current state
 
-- **Current phase (2026-10-27 correction):** 6 — Personal library. The owner confirmed Phase 5 was done and authorized Phase 6. The individual final Phase 5 device-test observations were not captured in this handoff. Phase 6 now has its SQLite foundation, favorites, playlists, recently played tracks, and the deferred playback checkpoint; a native/device verification pass is still required.
+- **Current phase (2026-11-01):** 7 — Listening analytics, implemented and awaiting verification. The owner approved Phase 7 and chose the rules recorded in D-013. The pure model's 29 tests pass under Node; `tsc`, lint, and physical-device checks are still open. Phase 6's personal-library features are implemented but their device pass was also never recorded. Phase 8 requires explicit owner approval.
 
 ## Fix (2026-10-30) — active native-tab icons
 

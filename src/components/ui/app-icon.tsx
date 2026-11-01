@@ -6,7 +6,9 @@ type SymbolName = ComponentProps<typeof SymbolView>['name'];
 const symbols = {
   album: { ios: 'music.note.list', android: 'album', web: 'album' },
   back: { ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' },
+  chart: { ios: 'chart.bar.fill', android: 'bar_chart', web: 'bar_chart' },
   chevronDown: { ios: 'chevron.down', android: 'keyboard_arrow_down', web: 'keyboard_arrow_down' },
+  chevronLeft: { ios: 'chevron.left', android: 'chevron_left', web: 'chevron_left' },
   chevronRight: { ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' },
   favorite: { ios: 'heart.fill', android: 'favorite', web: 'favorite' },
   favoriteOutline: { ios: 'heart', android: 'favorite_border', web: 'favorite_border' },
@@ -24,6 +26,7 @@ const symbols = {
   search: { ios: 'magnifyingglass', android: 'search', web: 'search' },
   settings: { ios: 'gearshape', android: 'settings', web: 'settings' },
   shuffle: { ios: 'shuffle', android: 'shuffle', web: 'shuffle' },
+  trash: { ios: 'trash', android: 'delete', web: 'delete' },
 } as const satisfies Record<string, SymbolName>;
 
 export type AppIconName = keyof typeof symbols;

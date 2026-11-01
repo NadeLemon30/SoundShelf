@@ -38,14 +38,18 @@ export default function RootLayout() {
   );
 }
 
+// Extra clearance between the mini-player and the top edge of the native tab bar.
+const MINI_PLAYER_LIFT = 15;
+
 const styles = StyleSheet.create({
   root: { flex: 1 },
   miniPlayerOverlay: {
     position: 'absolute',
     left: 0,
     right: 0,
-    // Sit just above the native tab bar.
-    bottom: BottomTabInset - 15,
+    // Sit above the native tab bar. Adding the lift raises the card; subtracting it
+    // pushes the card down over the tab bar.
+    bottom: BottomTabInset + MINI_PLAYER_LIFT,
     zIndex: 10,
     elevation: 10,
   },

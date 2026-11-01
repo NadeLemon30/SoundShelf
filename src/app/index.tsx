@@ -38,7 +38,10 @@ export default function HomeScreen() {
             <View style={styles.header}>
               <View style={styles.topBar}>
                 <ThemedText style={styles.greeting}>{greeting()}</ThemedText>
-                <Link href={'/settings' as Href} asChild><Pressable accessibilityRole="button" accessibilityLabel="Open settings" hitSlop={12} style={({ pressed }) => pressed && styles.pressed}><AppIcon name="settings" size={24} color="#FFFFFF" /></Pressable></Link>
+                <View style={styles.topActions}>
+                  <Link href={'/listening?from=home' as Href} asChild><Pressable accessibilityRole="button" accessibilityLabel="Open listening stats" hitSlop={12} style={({ pressed }) => pressed && styles.pressed}><AppIcon name="chart" size={24} color="#FFFFFF" /></Pressable></Link>
+                  <Link href={'/settings' as Href} asChild><Pressable accessibilityRole="button" accessibilityLabel="Open settings" hitSlop={12} style={({ pressed }) => pressed && styles.pressed}><AppIcon name="settings" size={24} color="#FFFFFF" /></Pressable></Link>
+                </View>
               </View>
 
               {currentTrack ? (
@@ -83,7 +86,7 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   listContent: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.three, paddingTop: Spacing.two, paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.three },
-  header: { gap: Spacing.three, paddingBottom: Spacing.one }, topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  header: { gap: Spacing.three, paddingBottom: Spacing.one }, topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, topActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
   greeting: { fontSize: 30, fontWeight: '800', letterSpacing: -0.6, color: '#FFFFFF' },
   resumeCard: { minHeight: 92, borderRadius: 10, padding: Spacing.two, flexDirection: 'row', alignItems: 'center', gap: Spacing.two }, resumeArtwork: { borderRadius: 6 }, resumeCopy: { flex: 1, gap: 2 },
   resumeEyebrow: { fontSize: 10, lineHeight: 14, fontWeight: '800', letterSpacing: 1.1, color: '#1DB954' }, resumeTitle: { fontSize: 16, lineHeight: 21, fontWeight: '700', color: '#FFFFFF' }, resumeSub: { fontSize: 12, lineHeight: 17, color: '#B3B3B3' }, playCircle: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },

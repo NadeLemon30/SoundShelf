@@ -1,17 +1,22 @@
 import Constants from 'expo-constants';
-import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { useRouter, type Href } from 'expo-router';
+import { useSQLiteContext } from 'expo-sqlite';
+import { Alert, Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { AppGradient } from '@/components/ui/app-gradient';
 import { AppIcon, type AppIconName } from '@/components/ui/app-icon';
 import { BottomTabInset, MaxContentWidth, MiniPlayerInset, Spacing } from '@/constants/theme';
+import { clearListeningHistory } from '@/features/analytics/repository';
 import { useTheme } from '@/hooks/use-theme';
 import { useLibrary } from '@/features/library/library-provider';
 
 const APP_VERSION = Constants.expoConfig?.version ?? '1.0.0';
 
 export default function SettingsScreen() {
+  const router = useRouter();
+  const db = useSQLiteContext();
   const { status, tracks, albums, needsRescan, permissionBlocked, scan } = useLibrary();
   const isScanning = status === 'scanning';
   const hasPermission = status === 'ready' || isScanning;
@@ -27,6 +32,25 @@ export default function SettingsScreen() {
       return;
     }
     void scan();
+  };
+
+  const confirmClearListeningHistory = () => {
+    Alert.alert(
+      'Clear listening history?',
+      'This deletes every recorded play and all listening time from this device. Your music files, favorites, and playlists are not affected.',
+      [
+        { text: 'Cancel', style: 'cancel' },
+        {
+          text: 'Clear',
+          style: 'destructive',
+          onPress: () => {
+            void clearListeningHistory(db)
+              .then(() => Alert.alert('Listening history cleared'))
+              .catch(() => Alert.alert('Could not clear listening history', 'Try again.'));
+          },
+        },
+      ],
+    );
   };
 
   return (
@@ -49,6 +73,21 @@ export default function SettingsScreen() {
               title={hasPermission ? 'Manage audio access' : permissionBlocked ? 'Open app settings' : 'Allow audio access'}
               detail={hasPermission ? 'Change SoundShelf permissions in Android settings.' : 'SoundShelf needs audio access to browse music stored on this device.'}
               onPress={manageAudioAccess}
+            />
+          </Section>
+
+          <Section title="Listening">
+            <ActionRow
+              icon="chart"
+              title="Listening stats"
+              detail="See time listened, top tracks, and daily listening."
+              onPress={() => router.push('/listening?from=settings' as Href)}
+            />
+            <ActionRow
+              icon="trash"
+              title="Clear listening history"
+              detail="Delete recorded listening stats from this device."
+              onPress={confirmClearListeningHistory}
             />
           </Section>
 
@@ -87,7 +126,7 @@ function SettingRow({ icon, title, detail }: { icon: AppIconName; title: string;
 }
 
 function ActionRow({ icon, title, detail, disabled = false, onPress }: {
-  icon: 'refresh' | 'settings'; title: string; detail: string; disabled?: boolean; onPress: () => void;
+  icon: AppIconName; title: string; detail: string; disabled?: boolean; onPress: () => void;
 }) {
   const theme = useTheme();
   return (

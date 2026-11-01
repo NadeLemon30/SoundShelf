@@ -30,6 +30,8 @@ export default function AppTabs() {
       <Tabs.Screen name="search" options={{ title: 'Search' }} />
       <Tabs.Screen name="personal-library" options={{ title: 'My music' }} />
       <Tabs.Screen name="settings" options={{ title: 'Settings' }} />
+      {/* Reached from Home/Settings; hidden from the tab bar. */}
+      <Tabs.Screen name="listening" options={{ href: null }} />
     </Tabs>
   );
 }

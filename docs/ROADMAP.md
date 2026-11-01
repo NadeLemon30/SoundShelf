@@ -54,6 +54,8 @@ Phase advancement requires user approval. Completion criteria mean evidence exis
 
 ## 7. Listening analytics
 
+**Status update (2026-11-01):** implemented. Qualification, audible-time accounting, local-date bucketing, restart recovery, aggregation, and the dedicated Listening screen are in place, and 29 dependency-free model tests pass under `node --test`. Static checks (`tsc`, lint) and physical-device verification remain pending — see `PROGRESS.md`.
+
 **Objective:** record accurate private listening behavior.
 
 **Tasks:** define qualified-listen and duration-accounting rules; persist listening sessions/events; calculate daily, weekly, monthly, and yearly aggregates; expose honest insufficient-data states.
@@ -61,6 +63,8 @@ Phase advancement requires user approval. Completion criteria mean evidence exis
 **Completion criteria:** aggregation tests cover pauses, seeks, skips, repeats, midnight/time-zone boundaries, and restart recovery.
 
 ## 8. Replay Stories
+
+**Status update (2026-11-01):** not started; requires explicit owner approval after Phase 7 verification. It will consume the qualified-listening events and rules from D-013.
 
 **Objective:** turn verified annual listening data into clear, shareable recap cards.
 

@@ -5,6 +5,7 @@ import { AppState, Platform } from 'react-native';
 import { useLibrary } from '@/features/library/library-provider';
 import type { LibraryTrack } from '@/features/library/types';
 import { usePersonalLibrary } from '@/features/personal-library/personal-library-provider';
+import { ListenTracker } from '@/features/analytics/listen-tracker';
 
 import { naturalOrder, positionInOrder, shuffledOrder } from './playlist';
 import { nextRepeatMode, type RepeatMode } from './types';
@@ -315,7 +316,13 @@ export function PlaybackProvider({ children }: PropsWithChildren) {
     [currentTrack, cycleRepeat, errorMessage, index, next, playTrack, player, previous, queue, repeat, seekTo, shuffle, togglePlayPause, toggleShuffle],
   );
 
-  return <PlaybackContext.Provider value={value}>{children}</PlaybackContext.Provider>;
+  return (
+    <PlaybackContext.Provider value={value}>
+      {children}
+      {/* Records listening analytics from the shared player. Renders nothing. */}
+      <ListenTracker player={player} track={currentTrack} />
+    </PlaybackContext.Provider>
+  );
 }
 
 export function usePlayback() {

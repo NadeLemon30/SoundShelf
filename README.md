@@ -6,16 +6,18 @@ The project is in active development. Its current local-library work is an early
 
 ## What works today
 
-- A mobile app shell with Home, Library, and Search tabs, including light and dark themes.
+- A mobile app shell with Home, Library, Search, My music, and Settings tabs in the app's dark theme.
 - A deliberate **Scan device music** action that requests Android audio access only when selected.
 - Local audio discovery through Android's media library, paged for larger collections.
 - Filename-based song titles, resolved local URIs, duration and file timestamps where available.
-- A Songs/Albums library view and local, in-memory search by song title or filename. Albums use Android's per-file album id (the storage folder); tracks with no album id appear under "Unknown album".
+- Songs/Artists/Albums/Favorites library views, embedded artist and album tags on Android, extracted embedded artwork, and local in-memory search by title or filename. Missing metadata stays an explicit fallback; no artist or album is invented.
 - Clear empty, permission-denied (with an app-settings path when Android stops prompting), scan-error, and skipped-file states.
 - **Foreground playback** with a queue, play/pause, next/previous, seek, shuffle, repeat (off/all/one), and automatic track-end advance. A mini-player sits on every tab and opens a full-screen Now Playing view.
 - **Background playback**: the audio session keeps playing when the app is backgrounded, and the current track is surfaced through lock-screen and notification media controls. Sustained playback through screen lock and an active media session was verified on a physical device on 2026-10-13; the notification transport controls, audio-focus interruption, and headphone/Bluetooth disconnect still need device confirmation.
+- **Personal library**: SQLite-backed favorites, playlists, recently played tracks, and a playback checkpoint that survives restarts.
+- **Private listening analytics**: per-device listening events with a dedicated Day/Week/Month/Year Listening screen, top tracks and artists, daily listening, and an explicit insufficient-history state. Rules and caveats are in [D-013](docs/DECISIONS.md).
 
-Library metadata is intentionally conservative: artist, genre, and embedded artwork are not shown yet. Album names reflect Android's reported folder names rather than parsed audio tags. Nothing is stored in a database yet: a killed process rescans automatically when audio permission is already granted, but the playback position is not restored after a restart.
+Library metadata stays conservative: missing tags remain explicit fallbacks, and no artist, album, or genre is invented. Device-scanned tracks are held in memory and rescanned on launch; SoundShelf-owned data (favorites, playlists, recently played, the playback checkpoint, and listening events) is stored locally in SQLite and survives restarts while the files remain available. Genres are never required for browsing.
 
 ## Planned scope
 
@@ -66,9 +68,12 @@ Run these before submitting changes:
 ```bash
 npm run lint
 npx tsc --noEmit
+node --test tests/listening-model.test.mjs
 npx expo config --type public
 git diff --check
 ```
+
+The last test command runs the dependency-free listening-analytics suite with plain Node; it needs no installed packages. See [D-013](docs/DECISIONS.md) for the qualification and time-zone rules it verifies.
 
 In PowerShell environments that block `npm.ps1`, use `npm.cmd` and `npx.cmd` instead.
 
@@ -107,8 +112,9 @@ Routes belong in `src/app/`; feature logic and reusable code belong outside it.
 
 ## Current limitations
 
-- Phase 5 is not finished: the notification/lock-screen transport controls, audio-focus interruption, and headphone/Bluetooth disconnect behavior still need physical-device verification, and no playback checkpoint is persisted yet.
-- Scanned tracks live only in memory. A launch with audio permission already granted rescans automatically, but there is no database-backed library, playlist, history, or playback state yet.
+- Phase 5 is not finished: the notification/lock-screen transport controls, audio-focus interruption, and headphone/Bluetooth disconnect behavior still need physical-device verification. The playback checkpoint itself is persisted and restored.
+- Scanned tracks live only in memory. A launch with audio permission already granted rescans automatically, but there is no database-backed library; favorites, playlists, recently played tracks, the playback checkpoint, and listening events are stored in SQLite.
+- Listening analytics are implemented and unit-tested, but the paused/seek/skip, local-midnight, restart-recovery, and clear-history paths still need physical-device verification.
 - Artist, embedded artwork, and corrupt-file behavior require physical-device validation.
 - Album grouping and names come from Android's media store but are not yet recorded as device-verified.
 - Large libraries are rendered in `ScrollView` lists rather than virtualized lists, so very large collections may stutter (planned for the polish phase).

@@ -48,7 +48,7 @@ Expo Go may be useful for basic UI iteration, but it is not sufficient evidence 
 
 **Status:** accepted (2026-10-11)
 
-Persist qualified listening events/duration, then derive all day/week/month/year reports and Replay Stories. Do not persist decorative totals as the source of truth or create recaps from too little data. Exact qualification threshold, time-zone handling, and recap eligibility threshold remain a Phase 7 design task.
+Persist qualified listening events/duration, then derive all day/week/month/year reports and Replay Stories. Do not persist decorative totals as the source of truth or create recaps from too little data. Qualification, audible-time accounting, and local-date bucketing are settled in D-013 (2026-11-01); the Replay eligibility threshold remains a Phase 8 design task.
 
 ## D-008: Phase 3 scan uses the SDK 57 MediaLibrary API as a bounded proof
 
@@ -105,12 +105,28 @@ The patch target is `node_modules/expo-audio/android`. SDK 57 ships expo-audio a
 
 Trade-offs accepted: this mutates `node_modules`, so it must re-apply after dependency changes (the postinstall hook does that automatically); the patches are local rather than an upstream fork, and should be removed once expo-audio fixes the bugs. Do not replace this with hand-editing `android/`, which Continuous Native Generation deletes.
 
+## D-013: Listening-analytics rules and local-date bucketing
+
+**Status:** implemented; unit-tested; static and physical-device verification pending (2026-11-01)
+
+**Qualified listen.** A playback attempt counts as one play once **30 seconds** of audible playback have accumulated, or once **half of the track** has been heard when the track is **60 seconds or shorter**, whichever comes first. A track with an unknown duration uses the 30-second rule. This follows the owner's choice on 2026-11-01 and avoids the failure where tracks shorter than 30 seconds could never register.
+
+**Audible time only.** The accumulator folds player position samples while playback is playing and credits `min(position delta, wall-clock elapsed + 1 s)`. Pauses, buffering, and forward seeks therefore cannot invent listening time, and backward seeks neither add nor remove it. Only attempts with at least **1 second** of audible time (or a completed play) are stored at all. `totalListenedMs` includes partial attempts; play counts and rankings use qualified listens only, so a skipped track can contribute time but never a play.
+
+**Local calendar bucketing.** Every event stores the attempt's UTC timestamps plus the **device-local date (YYYY-MM-DD) and UTC offset at the moment the attempt started**. A listen belongs to that start date even if it continues past local midnight, and stored history stays stable when the device later travels or changes time zone. Weeks run Monday–Sunday; months and years follow the calendar. Attempts that do not qualify still contribute accurate audible time, but never a play.
+
+**Restart recovery.** A singleton `open_listen_session` row is saved at most every 5 seconds while a listen is in progress. On the next launch it is converted into a `recovered` event using only the time already observed; time while the process was dead is never invented. The row is cleared when an attempt is stored, so attempts cannot double count.
+
+**Presentation.** `src/features/analytics/listening-model.js` is the single source of truth for all rules and window calculations; it intentionally has no imports and ships with a sibling `.d.ts` so TypeScript checks consumers while plain Node runs `tests/listening-model.test.mjs`. The dedicated Listening screen is registered as a hidden tab (`href: null`) and opened from Home and Settings. It presents an explicit "no listening recorded" / "no listening in this period" / "no qualified listens" state instead of zero-filled rankings. "Clear listening history" in Settings deletes only `listening_events` and `open_listen_session`; music files, favorites, playlists, recents, and the playback checkpoint are untouched.
+
+**Schema.** Database version 3 adds `listening_events` (indexed by local date and track) and `open_listen_session`. All migrations are additive; no existing user data is dropped.
+
 ## Open questions requiring owner input or device evidence
 
 1. Which Android OS versions and physical devices are the initial support/test floor?
 2. Is Android-only acceptable through Phase 10, or should iOS/web have defined degraded behavior earlier?
 3. Should SoundShelf treat user-created folders as a browse/filter concept, or only derive Songs, Artists, Albums, and search from MediaStore?
-4. What threshold should qualify a play and make an annual Replay eligible? Until decided, do not display hard-coded recap numbers.
+4. The qualified-listen rule is settled (D-013). What threshold should make an annual Replay eligible in Phase 8? Until decided, do not display hard-coded recap numbers.
 5. Does the Phase 3 device proof show that `expo-media-library` supplies enough metadata and artwork? If not, select and test a minimal native alternative before feature implementation.
 6. Phase 4 foreground playback (queue semantics, seek, track-end, shuffle/repeat, and an unplayable file) is implemented but still needs a physical-device check; record the results before treating Phase 4 as complete.
 7. Phase 5 needs physical-device evidence for sustained screen-off playback, notification/lock-screen actions, interruption recovery, and disconnect behavior, plus a playback-checkpoint persistence decision (snapshot policy and restore validation).
