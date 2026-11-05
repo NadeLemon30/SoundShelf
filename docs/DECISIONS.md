@@ -107,7 +107,7 @@ Trade-offs accepted: this mutates `node_modules`, so it must re-apply after depe
 
 ## D-013: Listening-analytics rules and local-date bucketing
 
-**Status:** implemented; unit-tested; static and physical-device verification pending (2026-11-01)
+**Status:** implemented; unit-tested (29 tests); static checks passed (2026-11-05); physical-device verification reported by owner (2026-11-05)
 
 **Qualified listen.** A playback attempt counts as one play once **30 seconds** of audible playback have accumulated, or once **half of the track** has been heard when the track is **60 seconds or shorter**, whichever comes first. A track with an unknown duration uses the 30-second rule. This follows the owner's choice on 2026-11-01 and avoids the failure where tracks shorter than 30 seconds could never register.
 
@@ -121,12 +121,25 @@ Trade-offs accepted: this mutates `node_modules`, so it must re-apply after depe
 
 **Schema.** Database version 3 adds `listening_events` (indexed by local date and track) and `open_listen_session`. All migrations are additive; no existing user data is dropped.
 
+## D-014: Replay Stories eligibility and shareable recap
+
+**Status:** implemented; recap rules unit-tested (8 tests) and static checks passed (2026-11-05); Android share/device verification pending
+
+**Eligibility (never fabricated).** A yearly Replay is shown only when the year has at least **20 qualified listens** (D-013), on **7 different local dates**, with at least **1 hour** of total audible listening time. These thresholds live in `src/features/replay/replay-model.js` (dependency-free, `node --test tests/replay-model.test.mjs`). If any threshold is not met, the UI presents an honest insufficient-history state with the exact shortfall — never a decorative recap and never hard-coded numbers.
+
+**Data source.** The recap is deterministic from the year's qualified-listening summary (`summarizeListening`, D-013): qualified plays/starts, total audible time (includes partial attempts per D-013), unique qualified tracks, active days, top track/artist, and biggest day by audible time. Rankings use qualified listens only. Artwork is shown only when the device already has a local cover; missing artwork is not fabricated.
+
+**Sharing.** The recap card is rendered to a PNG with `react-native-view-shot` (`captureRef`) and shared through `expo-sharing`. The shared image contains only the card's recap; listening history remains on device. The Replay route is a hidden tab screen (`src/app/replay.tsx`, `href: null`) reached from Listening/Settings.
+
+**Dependencies/config.** `react-native-view-shot` and `expo-sharing` were installed via `npx expo install`; the `expo-sharing` config plugin was added to `app.json`. Native/config changes require a new development build and Android share verification before treating Phase 8 as complete.
+
+
 ## Open questions requiring owner input or device evidence
 
 1. Which Android OS versions and physical devices are the initial support/test floor?
 2. Is Android-only acceptable through Phase 10, or should iOS/web have defined degraded behavior earlier?
 3. Should SoundShelf treat user-created folders as a browse/filter concept, or only derive Songs, Artists, Albums, and search from MediaStore?
-4. The qualified-listen rule is settled (D-013). What threshold should make an annual Replay eligible in Phase 8? Until decided, do not display hard-coded recap numbers.
+4. The qualified-listen rule is settled (D-013). Annual Replay eligibility is settled in D-014 (20 qualified listens, 7 active days, 1 hour). Revisit thresholds only with owner approval after device evidence.
 5. Does the Phase 3 device proof show that `expo-media-library` supplies enough metadata and artwork? If not, select and test a minimal native alternative before feature implementation.
 6. Phase 4 foreground playback (queue semantics, seek, track-end, shuffle/repeat, and an unplayable file) is implemented but still needs a physical-device check; record the results before treating Phase 4 as complete.
 7. Phase 5 needs physical-device evidence for sustained screen-off playback, notification/lock-screen actions, interruption recovery, and disconnect behavior, plus a playback-checkpoint persistence decision (snapshot policy and restore validation).

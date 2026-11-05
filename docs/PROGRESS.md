@@ -2,7 +2,44 @@
 
 ## Progress updates
 
+## Update (2026-11-05) — Phase 7 verified; Phase 8 Replay Stories implemented
+
+Owner reported Phase 7 device verification complete and explicitly approved starting Phase 8 (2026-11-05).
+
+### Phase 7 verification/status
+
+- Owner-reported device verification: **complete** (2026-11-05). Detailed device evidence (device model/Android version and per-check results for thresholds, pause/seek/track-change/repeat-one, local midnight, restart recovery, clear-history scope, and hidden-route/back behavior) was not captured in this session; record it here when available.
+- Static verification re-run in this session (Node 22.12.0, `node_modules` present): `node --test tests/listening-model.test.mjs` **29/29 passed**; `npm run lint` passed; `npx tsc --noEmit` passed; `git diff --check` passed (only LF→CRLF notices are expected on this repo).
+
+### Phase 8 implemented (D-014)
+
+- `src/features/replay/replay-model.js` (+ `.d.ts`): dependency-free, deterministic yearly recap rules. Eligibility is explicit and never fabricated: **≥20 qualified listens** (D-013), **≥7 active local dates**, **≥1 hour** total audible listening time. Returns `null`/insufficient reasons instead of a decorative recap.
+- `tests/replay-model.test.mjs`: **8/8 passed** — eligible deterministic recap, each shortfall, qualified-only rankings with partial-time contribution, out-of-year isolation, biggest day, and empty history never fabricates a recap.
+- `src/app/replay.tsx`: hidden tab screen (`href: null` in `src/components/app-tabs.tsx`). Reads the year's events from the existing analytics repository, builds a D-013 summary, shows the honest insufficient-history state with exact shortfalls, or renders a shareable recap card (time, qualified plays, tracks, active days, top track/artist, biggest day). Share uses `react-native-view-shot` `captureRef` → PNG and `expo-sharing`; the image contains only the card.
+- Navigation: Listening screen header gained a Replay control; Settings → Listening gained a "Replay" row. `AppIcon` gained `share`.
+- Dependencies/config: `npx expo install expo-sharing react-native-view-shot` (SDK 57 compatible). `expo-sharing` added its config plugin to `app.json`. **Native/config changes require a new Android development build** before device verification (`npx expo prebuild --clean --platform android`, then `npx expo run:android --device`).
+- Unrelated fix preserved in this session: `src/app/settings.tsx` "Manage audio access" opens Android app settings when access is granted or blocked; it only requests/scans when not yet granted.
+
+### Next steps (Phase 8)
+
+1. Build/install a fresh Android development build (required for `react-native-view-shot` / `expo-sharing` config) and verify: Replay opens, eligible history produces the recap, insufficient history shows the honest shortfall (never a fabricated recap), "Share recap card" renders/shares the PNG, the hidden route is not in the tab bar, and back navigation works from Listening/Settings.
+2. Record device model, Android version, and per-check results in `docs/PROGRESS.md`; update D-014/roadmap status when the share flow is device-verified.
+3. After Phase 8 verification, get explicit owner approval before starting Phase 9 (polish/reliability).
+
+### Verification (this session)
+
+| Command / check | Result |
+| --- | --- |
+| `node --test tests/listening-model.test.mjs` | Passed — 29/29. |
+| `node --test tests/replay-model.test.mjs` | Passed — 8/8. |
+| `npm run lint` | Passed. |
+| `npx tsc --noEmit` | Passed. |
+| `git diff --check` | Passed (repository LF→CRLF notices only). |
+| Phase 7 device checks | Owner-reported complete (2026-11-05); detailed evidence not captured. |
+| Phase 8 recap/share on Android | **Not done** — needs new dev build + device. |
+
 ## Update (2026-11-01) — Phase 7 listening analytics
+
 
 Owner approved Phase 7 and chose three rules: (1) a play qualifies after **30 seconds**, or half of a track that is **60 seconds or shorter**, whichever comes first; (2) listening is bucketed by the **device-local date stored per event at the start of the attempt**; (3) statistics live on a **dedicated Listening screen** opened from Home and Settings, not a sixth tab. These are recorded in `docs/DECISIONS.md` D-013.
 
@@ -111,7 +148,7 @@ Owner approved Phase 7 and chose three rules: (1) a play qualifies after **30 se
 
 ## Current state
 
-- **Current phase (2026-11-01):** 7 — Listening analytics, implemented and awaiting verification. The owner approved Phase 7 and chose the rules recorded in D-013. The pure model's 29 tests pass under Node; `tsc`, lint, and physical-device checks are still open. Phase 6's personal-library features are implemented but their device pass was also never recorded. Phase 8 requires explicit owner approval.
+- **Current phase (2026-11-05):** 8 — Replay Stories, implemented and awaiting Android device verification (owner approved Phase 8 after reporting Phase 7 device verification complete). D-013/D-014 rules are unit-tested and static checks pass. Phase 9 requires explicit owner approval after Phase 8 device verification.
 
 ## Fix (2026-10-30) — active native-tab icons
 

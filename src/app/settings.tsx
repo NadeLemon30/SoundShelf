@@ -27,7 +27,7 @@ export default function SettingsScreen() {
       : 'Audio access has not been requested';
 
   const manageAudioAccess = () => {
-    if (permissionBlocked) {
+    if (hasPermission || permissionBlocked) {
       void Linking.openSettings();
       return;
     }
@@ -82,6 +82,12 @@ export default function SettingsScreen() {
               title="Listening stats"
               detail="See time listened, top tracks, and daily listening."
               onPress={() => router.push('/listening?from=settings' as Href)}
+            />
+            <ActionRow
+              icon="music"
+              title="Replay"
+              detail="Your yearly recap from real listening history."
+              onPress={() => router.push('/replay?from=settings' as Href)}
             />
             <ActionRow
               icon="trash"

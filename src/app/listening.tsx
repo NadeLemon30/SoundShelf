@@ -151,6 +151,14 @@ export default function ListeningScreen() {
               <AppIcon name="back" size={24} color="#FFFFFF" />
             </Pressable>
             <ThemedText style={styles.title}>Listening</ThemedText>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open Replay"
+              hitSlop={12}
+              onPress={() => router.push(('/replay?from=' + (from === 'home' ? 'home' : 'settings')) as Href)}
+              style={({ pressed }) => pressed && styles.pressed}>
+              <AppIcon name="music" size={24} color="#FFFFFF" />
+            </Pressable>
           </View>
 
           <View style={styles.pills}>
@@ -357,7 +365,7 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   content: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', padding: Spacing.three, paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.four, gap: Spacing.three },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingTop: Spacing.one },
-  title: { color: '#FFFFFF', fontSize: 30, fontWeight: '700', letterSpacing: -0.4 },
+  title: { flex: 1, color: '#FFFFFF', fontSize: 30, fontWeight: '700', letterSpacing: -0.4 },
   pills: { flexDirection: 'row', gap: Spacing.one },
   pill: { flex: 1, minHeight: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   pillText: { fontSize: 13, fontWeight: '700' },

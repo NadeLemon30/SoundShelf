@@ -16,6 +16,7 @@ The project is in active development. Its current local-library work is an early
 - **Background playback**: the audio session keeps playing when the app is backgrounded, and the current track is surfaced through lock-screen and notification media controls. Sustained playback through screen lock and an active media session was verified on a physical device on 2026-10-13; the notification transport controls, audio-focus interruption, and headphone/Bluetooth disconnect still need device confirmation.
 - **Personal library**: SQLite-backed favorites, playlists, recently played tracks, and a playback checkpoint that survives restarts.
 - **Private listening analytics**: per-device listening events with a dedicated Day/Week/Month/Year Listening screen, top tracks and artists, daily listening, and an explicit insufficient-history state. Rules and caveats are in [D-013](docs/DECISIONS.md).
+- **Replay Stories (new, device verification pending)**: a yearly recap derived only from verified listening data, with explicit eligibility thresholds and Android share-card rendering. It never fabricates a recap; insufficient history shows an honest shortfall. Rules are in [D-014](docs/DECISIONS.md).
 
 Library metadata stays conservative: missing tags remain explicit fallbacks, and no artist, album, or genre is invented. Device-scanned tracks are held in memory and rescanned on launch; SoundShelf-owned data (favorites, playlists, recently played, the playback checkpoint, and listening events) is stored locally in SQLite and survives restarts while the files remain available. Genres are never required for browsing.
 
@@ -69,11 +70,12 @@ Run these before submitting changes:
 npm run lint
 npx tsc --noEmit
 node --test tests/listening-model.test.mjs
+node --test tests/replay-model.test.mjs
 npx expo config --type public
 git diff --check
 ```
 
-The last test command runs the dependency-free listening-analytics suite with plain Node; it needs no installed packages. See [D-013](docs/DECISIONS.md) for the qualification and time-zone rules it verifies.
+The `node --test` commands run dependency-free analytics/replay suites with plain Node; they need no installed packages. See [D-013](docs/DECISIONS.md) and [D-014](docs/DECISIONS.md) for the rules they verify.
 
 In PowerShell environments that block `npm.ps1`, use `npm.cmd` and `npx.cmd` instead.
 
@@ -91,6 +93,8 @@ At present, the workflow uses the generated debug signing configuration. Its APK
 src/app/               Expo Router screens and navigation layouts
 src/components/        reusable UI components
 src/features/library/  local-media permission, scanning, and album grouping logic
+src/features/analytics/ listening-event tracking, aggregation, and stats repository
+src/features/replay/   yearly recap eligibility, deterministic story model, and share UI
 src/features/playback/ queue, shuffle/repeat helpers, player provider, and Now Playing UI
 src/hooks/             reusable React hooks
 src/constants/         theme tokens and shared values
@@ -114,7 +118,7 @@ Routes belong in `src/app/`; feature logic and reusable code belong outside it.
 
 - Phase 5 is not finished: the notification/lock-screen transport controls, audio-focus interruption, and headphone/Bluetooth disconnect behavior still need physical-device verification. The playback checkpoint itself is persisted and restored.
 - Scanned tracks live only in memory. A launch with audio permission already granted rescans automatically, but there is no database-backed library; favorites, playlists, recently played tracks, the playback checkpoint, and listening events are stored in SQLite.
-- Listening analytics are implemented and unit-tested, but the paused/seek/skip, local-midnight, restart-recovery, and clear-history paths still need physical-device verification.
+- Listening analytics and Replay Stories are implemented and unit-tested, but Phase 7/8 physical-device verification (paused/seek/skip, local midnight, restart recovery, clear-history, Replay insufficient/eligible states, and Android share flow) still needs recorded evidence. Replay sharing requires a fresh development build after the native/config change.
 - Artist, embedded artwork, and corrupt-file behavior require physical-device validation.
 - Album grouping and names come from Android's media store but are not yet recorded as device-verified.
 - Large libraries are rendered in `ScrollView` lists rather than virtualized lists, so very large collections may stutter (planned for the polish phase).
