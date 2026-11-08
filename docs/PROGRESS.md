@@ -2,6 +2,68 @@
 
 ## Progress updates
 
+## Update (2026-11-08) — Phase 10 testing and release started (owner-directed)
+
+Owner explicitly approved proceeding to Phase 10 (2026-11-08) before Phase 9 device profiling, TalkBack regression, and a fully documented regression pass were completed. Phase 9 code-level polish/static checks were recorded; incomplete evidence is carried forward as release risk.
+
+### Phase 10 increment (this session)
+
+- Updated `docs/ROADMAP.md`/`docs/PROGRESS.md` to reflect owner-directed Phase 9 closeout and Phase 10 as current.
+- Added `eas.json` with Android build profiles (`development`/`preview` APK, `production` AAB) and submit stub for future EAS-based builds.
+- Added `docs/RELEASE.md` with a Phase 10 release checklist: pre-release gates, Android identity/versioning, device regression matrix, known risks, build outputs, and final approval.
+- Updated `README.md` limitations/release notes to reflect current implementation status and the debug-signed GitHub workflow constraint.
+
+### A fixes (code/docs, this session)
+
+- **Accessibility (code-level):** added/clarified labels, hints, roles, and states on controls in `src/app/personal-library.tsx` (create playlist, playlist open/delete confirmation text, back to favorites, move/remove/add-to-playlist actions), `src/app/library.tsx` (filter pills, selected collection back, rescan banner action, scan/settings button state/hints), and `src/components/app-tabs.web.tsx` (tab selected state/labels, tablist role). Reviewed `settings.tsx`, `listening.tsx`, `replay.tsx`, and `search.tsx` inputs/actions; key controls already had labels.
+- **Error handling (code-level):** personal-library playlist/favorite-adjacent async actions now show honest `Alert` messages on failure (create/delete/move/remove/add) instead of failing silently via `void` calls.
+- **Song row actions (UI fix):** `src/features/library/components/library-rows.tsx` — the 3-dots button on track rows now opens an accessible modal action menu (all `LibraryTrackRow` usages: Home, Library, Search, My music). The inline heart/favorite toggle was removed from the row and moved into that menu; favorite add/remove appears when `onToggleFavorite` is provided.
+- **Now Playing queue (UI):** `src/features/playback/components/now-playing.tsx` — replaced the small expandable bottom queue panel with a full-screen queue view. Expanding “Up Next” shows the queue across the full screen and minimizes the player to a top bar (artwork/title/artist, play/pause, next, collapse/close). Queue selection still plays via `playAt`; Android back collapses the queue before closing Now Playing.
+- **Regression docs:** added a regression results template to `docs/RELEASE.md` and recorded this A-fix verification below. Device/TalkBack/performance matrix execution remains required.
+
+### Device connected (this session)
+
+- **Device detected via adb:** Xiaomi `25078RA3EA` (product `dew_global`), Android **15**, serial `DE75AAFUUSAU5LLN`.
+- **Installed app:** `com.nadelemon.SoundShelf` versionName **0.9.0**, versionCode **9000** (appears to be a non-debuggable/release-style install). **A-fix JS/UI changes are not in this installed build**; a rebuild/reinstall (or dev-client reload with current bundle) is required before device-verifying the A fixes.
+- **Blocker for automated matrix completion:** I can collect device/log/build info and help install, but I cannot physically operate the touchscreen/TalkBack or grant permissions in all cases. The full `docs/RELEASE.md` matrix still requires manual device execution and evidence recording.
+
+### Verification (this session)
+
+| Command / check | Result |
+| --- | --- |
+| `npx.cmd tsc --noEmit` | Passed (after Phase 10 prep + A fixes). |
+| `npm.cmd run lint` | Passed (`expo lint`). |
+| `node --test tests/listening-model.test.mjs` | Passed (29/29). |
+| `node --test tests/replay-model.test.mjs` | Passed (8/8). |
+| `npx.cmd expo config --type public` | Passed (resolved config). |
+| `git diff --check` | No whitespace/conflict issues (only existing LF→CRLF notices on Windows). |
+| A-fix static review | Accessibility/error-handling gaps addressed in `personal-library.tsx`, `library.tsx`, `app-tabs.web.tsx`; no broad refactors. |
+| Signed release AAB / Play Store readiness | **Not done** — requires protected signing credentials and production build setup. |
+| Full device regression matrix | **Not done** — see `docs/RELEASE.md`. |
+
+### Regression results (Phase 10, in progress)
+
+| Area | Device / Android / build | Result | Evidence / notes | Date |
+| --- | --- | --- | --- | --- |
+| Static checks (lint/typecheck/tests/config/diff) | Dev machine / Node local | Pass | `tsc`, `expo lint`, listening 29/29, replay 8/8, `expo config --type public`, `git diff --check` clean except LF→CRLF notices | 2026-11-08 |
+| A-fix device verification (accessibility + personal-library error alerts) | Xiaomi 25078RA3EA / Android 15 / local debug 0.9.1-dev (9001) | Pending manual | Installed **0.9.1-dev (9001)** over 0.9.0 without uninstall (`adb install -r -d --user 0`) after incremental `:app:assembleDebug` (`BUILD SUCCESSFUL`). Build includes current source A fixes; `android/app/build.gradle` was adjusted locally (git-ignored) for install compatibility. Verify on device: TalkBack labels/states on Library filters/back/rescan/scan controls and web tab semantics where applicable; My music create/delete/move/remove/add labels + honest error alerts. | 2026-11-08 |
+| Install/launch/permissions/scan | Xiaomi 25078RA3EA / Android 15 | Pending | Manual execution required. |  |
+| Library/search/metadata/artwork | Xiaomi 25078RA3EA / Android 15 | Pending | Manual execution required. |  |
+| Playback/queue/controls/corrupt files | Xiaomi 25078RA3EA / Android 15 | Pending | Manual execution required. |  |
+| Background/notification/focus/disconnect/checkpoint | Xiaomi 25078RA3EA / Android 15 | Pending | Manual execution required. |  |
+| Personal library/favorites/playlists/recents | Xiaomi 25078RA3EA / Android 15 | Pending | Manual execution required. |  |
+| Analytics thresholds/midnight/restart/clear | Xiaomi 25078RA3EA / Android 15 | Pending | Manual execution required. |  |
+| Replay eligible/insufficient/share | Xiaomi 25078RA3EA / Android 15 | Pending | Manual execution required (needs build with share deps/config as applicable). |  |
+| TalkBack/large-library/UI reliability | Xiaomi 25078RA3EA / Android 15 | Pending | Manual execution required; prioritize carried-forward Phase 9 risks. |  |
+
+### Next steps
+
+1. Complete the device regression matrix in `docs/RELEASE.md`; record model/Android/build and per-check results in `docs/PROGRESS.md` (template added).
+2. Run Android device regression, prioritizing carried-forward Phase 9 risks: large-library performance/profiling and full TalkBack pass across Home, Library, Search, My music, Now Playing, Settings, Listening, Replay.
+3. Fix any defects found (especially unlabeled controls, focus issues, scan/playback/personal-library/analytics/Replay edge cases) and re-run static checks.
+4. Decide release path: continue tag-driven GitHub APKs for internal testing, and/or configure EAS credentials for a signed production AAB.
+5. Produce release notes/known limitations for the chosen build and get explicit owner release approval.
+
 ## Update (2026-11-08) — Phase 8 verified; Phase 9 polish and reliability started
 
 Owner reported Phase 8 device verification complete and explicitly approved starting Phase 9 (2026-11-08). Detailed Phase 8 device evidence was not captured in this session; record device model/Android version and recap/share/insufficient-history/route checks in a future handoff when available.
@@ -177,12 +239,13 @@ Owner approved Phase 7 and chose three rules: (1) a play qualifies after **30 se
 
 ## Current state
 
-- **Current phase (2026-11-08):** 9 — Polish and reliability. Owner reported Phase 8 device verification complete and explicitly approved starting Phase 9. Phases 1–8 are implemented; prior phases include owner-reported device verification where noted, with some detailed evidence still sparse in the historical record.
-- **Repository state:** git repo on `main`; working tree had Phase 9 in-progress edits during this session. Review `git status` before committing.
+- **Current phase (2026-11-08):** 10 — Testing and release (owner explicitly approved). Phase 9 was ended by owner direction before device profiling/TalkBack/regression evidence was fully completed; those gaps are carried forward as release risk (see `docs/RELEASE.md`).
+- **Repository state:** git repo on `main`; working tree contains Phase 9/10 edits during this session. Review `git status` before committing.
 - **Framework:** Expo SDK 57 (`expo ~57.0.27`), React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57.
 - **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
 - **Native projects:** `android/` is generated locally by `expo run:android` and is git-ignored. Regenerate it with `npx expo prebuild --clean --platform android` after any `app.json`/config-plugin change. `ios/` is not generated locally.
-- **Key open work:** complete Phase 9 device profiling (large libraries), TalkBack/accessibility regression, edge-case/error-state review, and documented regression checklist; then get explicit owner approval for Phase 10.
+- **Release setup:** tag-driven GitHub APK workflow exists (`.github/workflows/release-apk.yml`, debug-signed, internal testing only). `eas.json` added for future EAS builds (`preview` APK / `production` AAB); signed Play Store distribution still needs credentials and setup.
+- **Key open work:** execute and document the device regression matrix (`docs/RELEASE.md`), resolve carried-forward Phase 9 risks, decide/complete signing + release artifact path, and obtain explicit owner release approval.
 
 ## Fix (2026-10-30) — active native-tab icons
 

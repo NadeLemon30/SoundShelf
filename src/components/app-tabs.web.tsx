@@ -27,9 +27,12 @@ export default function AppTabs() {
 
 function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
   const theme = useTheme();
+  const label = typeof children === 'string' ? children : undefined;
   return (
     <Pressable
+      accessibilityLabel={label}
       accessibilityRole="tab"
+      accessibilityState={{ selected: !!isFocused }}
       {...props}
       style={({ pressed }) => [styles.tabButton, isFocused && { backgroundColor: theme.accentMuted }, pressed && styles.pressed]}>
       <ThemedText type="smallBold" style={{ color: isFocused ? theme.accent : theme.textMuted }}>{children}</ThemedText>
@@ -40,7 +43,7 @@ function TabButton({ children, isFocused, ...props }: TabTriggerSlotProps) {
 function CustomTabList(props: TabListProps) {
   const theme = useTheme();
   return (
-    <View {...props} style={styles.tabListContainer}>
+    <View {...props} accessibilityRole="tablist" style={styles.tabListContainer}>
       <ThemedView type="surface" style={[styles.innerContainer, { borderColor: theme.outline }]}>
         <ThemedText type="smallBold" style={styles.brandText}>SoundShelf</ThemedText>
         {props.children}

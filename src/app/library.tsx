@@ -75,10 +75,15 @@ export default function LibraryScreen() {
                 }
               />
               <Pressable
-                accessibilityRole="button"
+                accessibilityHint={isBlocked ? 'Opens Android settings for SoundShelf.' : 'Scans local audio files on this device.'}
                 accessibilityLabel={isBlocked ? 'Open SoundShelf app settings' : 'Scan device music library'}
+                accessibilityRole="button"
+                accessibilityState={{ disabled: isBusy, busy: isBusy }}
                 disabled={isBusy}
-                onPress={isBlocked ? () => { void Linking.openSettings(); } : scan}
+                onPress={() => {
+                  if (isBlocked) void Linking.openSettings().catch(() => {});
+                  else void scan();
+                }}
                 style={({ pressed }) => [styles.greenBtn, { backgroundColor: theme.accent }, (pressed || isBusy) && styles.pressed]}>
                 <ThemedText style={styles.greenBtnText}>
                   {isBusy ? 'Scanning…' : isBlocked ? 'Open settings' : isDenied ? 'Allow audio access' : isScannedEmpty ? 'Scan again' : 'Scan music'}
@@ -124,6 +129,7 @@ export default function LibraryScreen() {
         keyboardShouldPersistTaps="handled">
         {selectedCollection ? (
           <Pressable
+            accessibilityLabel={`Back from ${'title' in selectedCollection ? selectedCollection.title : selectedCollection.name}`}
             accessibilityRole="button"
             onPress={() => { setSelectedAlbumId(null); setSelectedArtistId(null); }}
             style={[styles.filterPill, { backgroundColor: '#FFFFFF' }]}>
@@ -138,6 +144,7 @@ export default function LibraryScreen() {
             return (
               <Pressable
                 key={key}
+                accessibilityLabel={`Show ${label}`}
                 accessibilityRole="button"
                 accessibilityState={{ selected: isActive }}
                 onPress={() => selectView(key)}
@@ -161,7 +168,11 @@ export default function LibraryScreen() {
       {needsRescan ? (
         <View accessibilityRole="alert" style={[styles.rescanBanner, { backgroundColor: theme.surfaceRaised }]}>
           <ThemedText style={styles.rescanBannerText}>Library changed</ThemedText>
-          <Pressable onPress={rescan}>
+          <Pressable
+            accessibilityHint="Scans your device music library again."
+            accessibilityLabel="Rescan library"
+            accessibilityRole="button"
+            onPress={rescan}>
             <ThemedText style={{ fontSize: 13, color: theme.accent }}>Rescan</ThemedText>
           </Pressable>
         </View>

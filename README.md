@@ -116,9 +116,8 @@ Routes belong in `src/app/`; feature logic and reusable code belong outside it.
 
 ## Current limitations
 
-- Phase 5 is not finished: the notification/lock-screen transport controls, audio-focus interruption, and headphone/Bluetooth disconnect behavior still need physical-device verification. The playback checkpoint itself is persisted and restored.
-- Scanned tracks live only in memory. A launch with audio permission already granted rescans automatically, but there is no database-backed library; favorites, playlists, recently played tracks, the playback checkpoint, and listening events are stored in SQLite.
-- Listening analytics and Replay Stories are implemented and unit-tested, but Phase 7/8 physical-device verification (paused/seek/skip, local midnight, restart recovery, clear-history, Replay insufficient/eligible states, and Android share flow) still needs recorded evidence. Replay sharing requires a fresh development build after the native/config change.
-- Artist, embedded artwork, and corrupt-file behavior require physical-device validation.
-- Album grouping and names come from Android's media store but are not yet recorded as device-verified.
-- Large libraries are rendered in `ScrollView` lists rather than virtualized lists, so very large collections may stutter (planned for the polish phase).
+- **Phase 10 (testing/release) is in progress.** Phase 9 was ended by owner direction before full device profiling, TalkBack regression, and a complete documented regression pass; those risks are carried forward. See `docs/RELEASE.md` and `docs/PROGRESS.md`.
+- **Some device evidence is incomplete.** Core playback/background/personal-library/analytics/Replay flows are implemented and many were owner-reported as verified, but detailed per-check device evidence is still sparse in parts of the historical record. Run the full regression matrix before release.
+- **Scanned tracks live in memory.** A launch with audio permission already granted rescans automatically. Favorites, playlists, recently played tracks, playback checkpoints, and listening events are stored locally in SQLite.
+- **Metadata is best-effort.** Artist/album/embedded artwork depend on local file tags and Android extraction; missing metadata uses explicit fallbacks and no data is fabricated.
+- **Release signing is not Play Store ready.** The tag-driven GitHub APK workflow produces debug-signed APKs for internal testing. A protected keystore/EAS credentials setup and signed AAB are required for public distribution.

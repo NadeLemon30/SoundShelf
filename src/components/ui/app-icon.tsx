@@ -8,6 +8,7 @@ const symbols = {
   back: { ios: 'arrow.left', android: 'arrow_back', web: 'arrow_back' },
   chart: { ios: 'chart.bar.fill', android: 'bar_chart', web: 'bar_chart' },
   chevronDown: { ios: 'chevron.down', android: 'keyboard_arrow_down', web: 'keyboard_arrow_down' },
+  chevronUp: { ios: 'chevron.up', android: 'keyboard_arrow_up', web: 'keyboard_arrow_up' },
   chevronLeft: { ios: 'chevron.left', android: 'chevron_left', web: 'chevron_left' },
   chevronRight: { ios: 'chevron.right', android: 'chevron_right', web: 'chevron_right' },
   favorite: { ios: 'heart.fill', android: 'favorite', web: 'favorite' },

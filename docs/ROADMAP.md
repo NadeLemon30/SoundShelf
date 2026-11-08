@@ -72,17 +72,19 @@ Phase advancement requires user approval. Completion criteria mean evidence exis
 
 **Completion criteria:** generated recaps match fixture data, share correctly on Android, and never fabricate a recap.
 
-## 9. Polish and reliability — current
+## 9. Polish and reliability — ended by owner direction (evidence incomplete)
 
-**Status update (2026-11-08):** started with owner approval after Phase 8 verification.
+**Status update (2026-11-08):** owner explicitly approved proceeding to Phase 10 before Phase 9 device profiling, TalkBack regression, and a fully documented regression pass were completed. Code-level polish and static checks were done; device/performance/accessibility evidence remains incomplete and is carried forward as release risk — see `docs/PROGRESS.md`.
 
 **Objective:** make everyday use dependable and polished.
 
 **Tasks:** profile large libraries; improve list virtualization and image loading; audit accessibility; refine motion, themes, error states, migrations, and edge cases.
 
-**Completion criteria:** performance/accessibility checks and a regression pass are documented.
+**Completion criteria:** performance/accessibility checks and a regression pass are documented. *(Not fully met; owner-directed advance to Phase 10.)*
 
-## 10. Testing and release
+## 10. Testing and release — current
+
+**Status update (2026-11-08):** started with explicit owner approval.
 
 **Objective:** prepare a distributable Android build and repeatable release process.
 

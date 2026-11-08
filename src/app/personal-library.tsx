@@ -37,12 +37,16 @@ export default function PersonalLibraryScreen() {
   const selectedPlaylist = playlists.find((p) => p.id === selectedPlaylistId) ?? null;
   const tracks = selectedPlaylist ? selectedPlaylist.tracks : favorites;
 
+  const showActionError = (title: string, error: unknown, fallback: string) => {
+    Alert.alert(title, error instanceof Error ? error.message : fallback);
+  };
+
   const create = async () => {
     try {
       await createPlaylist(name);
       setName('');
     } catch (error) {
-      Alert.alert('Could not create playlist', error instanceof Error ? error.message : 'Try a different name.');
+      showActionError('Could not create playlist', error, 'Try a different name.');
     }
   };
 
@@ -90,6 +94,7 @@ export default function PersonalLibraryScreen() {
               style={[styles.input, { color: theme.text }]}
             />
             <Pressable
+              accessibilityLabel="Create playlist"
               accessibilityRole="button"
               onPress={() => { void create(); }}
               style={({ pressed }) => [styles.createBtn, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
@@ -113,8 +118,9 @@ export default function PersonalLibraryScreen() {
         return (
           <View style={[styles.playlistCard, { backgroundColor: theme.surfaceRaised }]}>
             <Pressable
-              accessibilityRole="button"
+              accessibilityHint="Shows songs in this playlist."
               accessibilityLabel={`Open playlist ${playlist.name}`}
+              accessibilityRole="button"
               onPress={() => setSelectedPlaylistId(playlist.id)}
               style={({ pressed }) => [styles.playlistOpenArea, pressed && styles.pressed]}>
             <ArtworkPlaceholder size={52} icon="album" style={styles.playlistArtwork} />
@@ -126,18 +132,25 @@ export default function PersonalLibraryScreen() {
               </View>
             </Pressable>
             <Pressable
-              accessibilityRole="button"
+              accessibilityHint="Asks for confirmation before deleting the playlist."
               accessibilityLabel={`Delete playlist ${playlist.name}`}
+              accessibilityRole="button"
               hitSlop={12}
               onPress={() =>
-                Alert.alert('Delete playlist?', `Remove "${playlist.name}"?`, [
+                Alert.alert('Delete playlist?', `Remove "${playlist.name}"? This does not delete the audio files.`, [
                   { text: 'Cancel', style: 'cancel' },
                   {
                     text: 'Delete',
                     style: 'destructive',
                     onPress: () => {
-                      void deletePlaylist(playlist.id);
-                      if (selectedPlaylistId === playlist.id) setSelectedPlaylistId(null);
+                      void (async () => {
+                        try {
+                          await deletePlaylist(playlist.id);
+                          if (selectedPlaylistId === playlist.id) setSelectedPlaylistId(null);
+                        } catch (error) {
+                          showActionError('Could not delete playlist', error, 'Try again.');
+                        }
+                      })();
                     },
                   },
                 ])
@@ -153,7 +166,10 @@ export default function PersonalLibraryScreen() {
           <View style={styles.listHeader}>
             <ThemedText style={styles.sectionLabel}>{item.label}</ThemedText>
             {item.hasBack && (
-              <Pressable accessibilityRole="button" onPress={() => setSelectedPlaylistId(null)}>
+              <Pressable
+                accessibilityLabel="Show all favorites"
+                accessibilityRole="button"
+                onPress={() => setSelectedPlaylistId(null)}>
                 <ThemedText style={{ fontSize: 13, color: theme.accent }}>All favorites</ThemedText>
               </Pressable>
             )}
@@ -179,24 +195,37 @@ export default function PersonalLibraryScreen() {
                 <View style={styles.moveRow}>
                   {canMoveUp && (
                     <Pressable
+                      accessibilityLabel={`Move ${trackData.title} up`}
                       accessibilityRole="button"
-                      accessibilityLabel="Move track up"
-                      onPress={() => { void moveTrackInPlaylist(playlistId, trackData.id, 'up'); }}>
+                      onPress={() => {
+                        void moveTrackInPlaylist(playlistId, trackData.id, 'up').catch((error: unknown) => {
+                          showActionError('Could not move track', error, 'Try again.');
+                        });
+                      }}>
                       <ThemedText style={{ fontSize: 13, color: theme.accent }}>Move up</ThemedText>
                     </Pressable>
                   )}
                   {canMoveDown && (
                     <Pressable
+                      accessibilityLabel={`Move ${trackData.title} down`}
                       accessibilityRole="button"
-                      accessibilityLabel="Move track down"
-                      onPress={() => { void moveTrackInPlaylist(playlistId, trackData.id, 'down'); }}>
+                      onPress={() => {
+                        void moveTrackInPlaylist(playlistId, trackData.id, 'down').catch((error: unknown) => {
+                          showActionError('Could not move track', error, 'Try again.');
+                        });
+                      }}>
                       <ThemedText style={{ fontSize: 13, color: theme.accent }}>Move down</ThemedText>
                     </Pressable>
                   )}
                 </View>
                 <Pressable
+                  accessibilityLabel={`Remove ${trackData.title} from this playlist`}
                   accessibilityRole="button"
-                  onPress={() => { void removeFromPlaylist(playlistId, trackData.id); }}>
+                  onPress={() => {
+                    void removeFromPlaylist(playlistId, trackData.id).catch((error: unknown) => {
+                      showActionError('Could not remove track', error, 'Try again.');
+                    });
+                  }}>
                   <ThemedText style={[styles.removeBtn, { color: theme.danger }]}>Remove from playlist</ThemedText>
                 </Pressable>
               </View>
@@ -204,9 +233,14 @@ export default function PersonalLibraryScreen() {
               <View style={styles.addRow}>
                 {playlists.map((pl) => (
                   <Pressable
+                    accessibilityLabel={`Add ${trackData.title} to playlist ${pl.name}`}
                     accessibilityRole="button"
                     key={pl.id}
-                    onPress={() => { void addToPlaylist(pl.id, trackData); }}>
+                    onPress={() => {
+                      void addToPlaylist(pl.id, trackData).catch((error: unknown) => {
+                        showActionError('Could not add track', error, 'Try again.');
+                      });
+                    }}>
                     <ThemedText style={{ fontSize: 13, color: theme.accent }}>+ {pl.name}</ThemedText>
                   </Pressable>
                 ))}

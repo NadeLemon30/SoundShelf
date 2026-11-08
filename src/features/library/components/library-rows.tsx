@@ -1,4 +1,5 @@
-import { Pressable, StyleSheet, View } from 'react-native';
+import { useState } from 'react';
+import { Modal, Pressable, StyleSheet, View } from 'react-native';
 import { ThemedText } from '@/components/themed-text';
 import { TrackArtwork } from '@/components/ui/track-artwork';
 import { AppIcon } from '@/components/ui/app-icon';
@@ -16,6 +17,14 @@ type LibraryTrackRowProps = {
 
 export function LibraryTrackRow({ track, onPress, isCurrent = false, isFavorite = false, onToggleFavorite }: LibraryTrackRowProps) {
   const theme = useTheme();
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const closeMenu = () => setMenuOpen(false);
+
+  const toggleFavoriteFromMenu = () => {
+    closeMenu();
+    onToggleFavorite?.();
+  };
 
   const artworkArea = (
     <View style={styles.artworkWrap}>
@@ -37,21 +46,75 @@ export function LibraryTrackRow({ track, onPress, isCurrent = false, isFavorite 
     </View>
   );
 
-  const favoriteBtn = onToggleFavorite ? (
+  const menuButton = (
     <Pressable
+      accessibilityHint="Opens actions for this song."
+      accessibilityLabel={`More actions for ${track.title}`}
       accessibilityRole="button"
-      accessibilityLabel={`${isFavorite ? 'Remove' : 'Add'} ${track.title} ${isFavorite ? 'from' : 'to'} favorites`}
-      onPress={onToggleFavorite}
       hitSlop={12}
+      onPress={() => setMenuOpen(true)}
       style={({ pressed }) => [styles.iconBtn, pressed && styles.pressed]}>
-      <AppIcon name={isFavorite ? 'favorite' : 'favoriteOutline'} size={20} color={isFavorite ? theme.accent : theme.textMuted} />
+      <AppIcon name="more" size={22} color={theme.textMuted} />
     </Pressable>
-  ) : null;
+  );
+
+  const menu = (
+    <Modal
+      animationType="fade"
+      onRequestClose={closeMenu}
+      transparent
+      visible={menuOpen}>
+      <Pressable
+        accessibilityLabel="Close song actions"
+        accessibilityRole="button"
+        onPress={closeMenu}
+        style={styles.menuBackdrop}>
+        <View
+          accessibilityViewIsModal
+          importantForAccessibility="yes"
+          style={[styles.menuCard, { backgroundColor: theme.surfaceRaised, borderColor: theme.outline }]}>
+          <ThemedText numberOfLines={1} style={styles.menuTitle}>{track.title}</ThemedText>
+          <ThemedText numberOfLines={1} themeColor="textMuted" style={styles.menuSubtitle}>
+            {[track.artist, track.album].filter((value): value is string => Boolean(value)).join(' · ') || track.filename}
+          </ThemedText>
+
+          {onToggleFavorite ? (
+            <Pressable
+              accessibilityLabel={`${isFavorite ? 'Remove' : 'Add'} ${track.title} ${isFavorite ? 'from' : 'to'} favorites`}
+              accessibilityRole="button"
+              onPress={toggleFavoriteFromMenu}
+              style={({ pressed }) => [styles.menuItem, pressed && styles.menuItemPressed]}>
+              <AppIcon name={isFavorite ? 'favorite' : 'favoriteOutline'} size={22} color={isFavorite ? theme.accent : theme.text} />
+              <ThemedText style={styles.menuItemText}>
+                {isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+              </ThemedText>
+            </Pressable>
+          ) : (
+            <View style={styles.menuItem}>
+              <AppIcon name="more" size={22} color={theme.textMuted} />
+              <ThemedText themeColor="textMuted" style={styles.menuItemText}>No actions available</ThemedText>
+            </View>
+          )}
+
+          <Pressable
+            accessibilityLabel="Cancel"
+            accessibilityRole="button"
+            onPress={closeMenu}
+            style={({ pressed }) => [styles.menuItem, styles.menuCancel, pressed && styles.menuItemPressed]}>
+            <ThemedText style={[styles.menuItemText, { color: theme.accent }]}>Cancel</ThemedText>
+          </Pressable>
+        </View>
+      </Pressable>
+    </Modal>
+  );
 
   if (!onPress) {
     return (
       <View style={styles.row}>
-        {artworkArea}{textArea}{favoriteBtn}
+        {artworkArea}
+        {textArea}
+        {menuButton}
+        {menu}
       </View>
     );
   }
@@ -66,11 +129,8 @@ export function LibraryTrackRow({ track, onPress, isCurrent = false, isFavorite 
         {artworkArea}
         {textArea}
       </Pressable>
-      {favoriteBtn}
-      {/* Visual affordance reserved for a future context menu. */}
-      <View accessible={false} style={styles.iconBtn}>
-        <AppIcon name="more" size={22} color={theme.textMuted} />
-      </View>
+      {menuButton}
+      {menu}
     </View>
   );
 }
@@ -135,4 +195,30 @@ const styles = StyleSheet.create({
   albumTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
   iconBtn: { padding: Spacing.one },
   pressed: { opacity: 0.65 },
+  menuBackdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+    padding: Spacing.three,
+  },
+  menuCard: {
+    borderRadius: 16,
+    borderWidth: 1,
+    padding: Spacing.three,
+    gap: Spacing.one,
+  },
+  menuTitle: { fontSize: 17, fontWeight: '700', color: '#FFFFFF' },
+  menuSubtitle: { fontSize: 13, marginBottom: Spacing.one },
+  menuItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.two,
+    minHeight: 48,
+    paddingVertical: Spacing.two,
+    paddingHorizontal: Spacing.one,
+    borderRadius: 10,
+  },
+  menuItemPressed: { opacity: 0.7 },
+  menuItemText: { fontSize: 15, fontWeight: '500', color: '#FFFFFF' },
+  menuCancel: { justifyContent: 'center', marginTop: Spacing.one },
 });
