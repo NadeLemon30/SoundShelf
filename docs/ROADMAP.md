@@ -34,17 +34,17 @@ Phase advancement requires user approval. Completion criteria mean evidence exis
 
 **Completion criteria:** queue semantics and all controls are device-tested with local media. *(The owner reported device testing on 2026-10-13; detailed results were not captured in this session.)*
 
-## 5. Background playback — current
+## 5. Background playback — implemented; core device-verified
 
 **Objective:** preserve expected music-player behavior outside the foreground.
 
 **Tasks:** add required config plugin/settings and development build; wire notification and lock-screen controls; configure interruptions/audio focus; verify headphone/Bluetooth disconnect behavior; persist and restore an appropriate playback checkpoint.
 
-**Completion criteria:** physical-device tests confirm sustained screen-off playback, notification/lock-screen actions, interruption recovery, disconnect behavior, and resume policy. *(Sustained screen-off playback with the media session active was confirmed on 2026-10-13. The notification/lock-screen round-trip, audio-focus interruption, disconnect behavior, and the playback checkpoint are still open — see `PROGRESS.md`.)*
+**Completion criteria:** physical-device tests confirm sustained screen-off playback, notification/lock-screen actions, interruption recovery, disconnect behavior, and resume policy. *(Sustained screen-off playback with the media session active was confirmed on 2026-10-13. Checkpoint persistence was implemented in Phase 6; some interruption/disconnect/notification round-trip checks remain recorded as open in `PROGRESS.md` pending full device evidence.)*
 
-## 6. Personal library
+## 6. Personal library — implemented; device verification pending
 
-**Status update (2026-10-27):** current phase. SQLite schema/repositories and initial favorites, playlists, recents, and checkpoint UI are implemented; physical-device verification and playlist ordering remain open — see `PROGRESS.md`.
+**Status update (2026-10-27):** SQLite schema/repositories and initial favorites, playlists, recents, and checkpoint UI are implemented; playlist ordering and stale-track pruning were added in later increments. Physical-device verification remains open — see `PROGRESS.md`.
 
 **Objective:** make personal organization durable and local.
 
@@ -52,7 +52,7 @@ Phase advancement requires user approval. Completion criteria mean evidence exis
 
 **Completion criteria:** state survives restart and library rescans, and stale tracks fail gracefully.
 
-## 7. Listening analytics
+## 7. Listening analytics — implemented; owner-reported device-verified
 
 **Status update (2026-11-05):** implemented and owner-reported as device-verified. Qualification, audible-time accounting, local-date bucketing, restart recovery, aggregation, and the dedicated Listening screen are in place (D-013). Dependency-free model tests: 29 passed (`node --test tests/listening-model.test.mjs`). Static checks passed in this session (`npm run lint`, `npx tsc --noEmit`). Record device evidence details in `PROGRESS.md` as they are captured.
 
@@ -62,9 +62,9 @@ Phase advancement requires user approval. Completion criteria mean evidence exis
 
 **Completion criteria:** aggregation tests cover pauses, seeks, skips, repeats, midnight/time-zone boundaries, and restart recovery.
 
-## 8. Replay Stories — current
+## 8. Replay Stories — implemented; owner-reported device-verified
 
-**Status update (2026-11-05):** implemented with owner approval after Phase 7 verification. Eligibility thresholds, deterministic recap rules, the hidden Replay screen, and Android share-card rendering are in place (D-014). Recap-rule tests: 8 passed (`node --test tests/replay-model.test.mjs`). Static checks passed (`npm run lint`, `npx tsc --noEmit`). **Not yet complete:** Android device verification of the recap, insufficient-history state, and share flow is required; `react-native-view-shot`/`expo-sharing` are native/config changes and need a new development build.
+**Status update (2026-11-08):** owner reported Phase 8 device verification complete and approved starting Phase 9. Eligibility thresholds, deterministic recap rules, the hidden Replay screen, and Android share-card rendering are in place (D-014). Recap-rule tests: 8 passed (`node --test tests/replay-model.test.mjs`). Static checks pass. Record detailed device evidence in `PROGRESS.md` as available.
 
 **Objective:** turn verified annual listening data into clear, shareable recap cards.
 
@@ -72,7 +72,9 @@ Phase advancement requires user approval. Completion criteria mean evidence exis
 
 **Completion criteria:** generated recaps match fixture data, share correctly on Android, and never fabricate a recap.
 
-## 9. Polish and reliability
+## 9. Polish and reliability — current
+
+**Status update (2026-11-08):** started with owner approval after Phase 8 verification.
 
 **Objective:** make everyday use dependable and polished.
 

@@ -98,7 +98,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
 
             {/* Artwork — large */}
             <View style={styles.artworkWrap}>
-              <TrackArtwork size={300} style={styles.artworkRadius} uri={currentTrack?.uri} />
+              <TrackArtwork decorative size={300} style={styles.artworkRadius} uri={currentTrack?.uri} />
             </View>
 
             {/* Track info + heart */}
@@ -258,7 +258,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
                       ) : (
                         <ThemedText style={styles.queuePosition}>{queueIndex + 1}</ThemedText>
                       )}
-                      <TrackArtwork uri={item.uri} size={48} style={styles.queueArtwork} />
+                      <TrackArtwork decorative uri={item.uri} size={48} style={styles.queueArtwork} />
                       <View style={styles.queueTrackCopy}>
                         <ThemedText
                           numberOfLines={1}

@@ -1,6 +1,6 @@
 import { Image } from 'expo-image';
-import { useEffect, useState } from 'react';
-import { type ImageStyle } from 'react-native';
+import { memo, useEffect, useMemo, useState } from 'react';
+import type { ImageStyle, StyleProp } from 'react-native';
 
 import { getLocalAlbumArtwork } from '@/features/library/local-album-artwork';
 import { ArtworkPlaceholder } from './artwork-placeholder';
@@ -9,24 +9,47 @@ type TrackArtworkProps = {
   uri?: string | null;
   size?: number;
   icon?: 'music' | 'album';
-  style?: ImageStyle;
+  style?: StyleProp<ImageStyle>;
+  /** When true, the image is decorative because a parent control already names the action/content. */
+  decorative?: boolean;
 };
 
 /** Renders cached embedded artwork when available, otherwise the standard fallback. */
-export function TrackArtwork({ uri, size = 56, icon = 'music', style }: TrackArtworkProps) {
-  const [artwork, setArtwork] = useState<{ sourceUri: string; artworkUri: string | null } | null>(null);
+export const TrackArtwork = memo(function TrackArtwork({
+  uri,
+  size = 56,
+  icon = 'music',
+  style,
+  decorative = false,
+}: TrackArtworkProps) {
+  const [artworkUri, setArtworkUri] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
-    if (uri) {
-      void getLocalAlbumArtwork(uri).then((nextArtworkUri) => {
-        if (active) setArtwork({ sourceUri: uri, artworkUri: nextArtworkUri });
-      });
-    }
+    setArtworkUri(null);
+    if (!uri) return () => { active = false; };
+
+    void getLocalAlbumArtwork(uri).then((nextArtworkUri) => {
+      if (active) setArtworkUri(nextArtworkUri);
+    });
     return () => { active = false; };
   }, [uri]);
 
-  const artworkUri = artwork && artwork.sourceUri === uri ? artwork.artworkUri : null;
+  const imageStyle = useMemo(() => [{ width: size, height: size }, style], [size, style]);
+
   if (!artworkUri) return <ArtworkPlaceholder size={size} icon={icon} style={style} />;
-  return <Image accessibilityLabel="Album artwork" contentFit="cover" source={{ uri: artworkUri }} style={[{ width: size, height: size }, style]} />;
-}
+  return (
+    <Image
+      accessible={!decorative}
+      accessibilityElementsHidden={decorative}
+      accessibilityLabel={decorative ? undefined : 'Album artwork'}
+      cachePolicy="memory-disk"
+      contentFit="cover"
+      importantForAccessibility={decorative ? 'no-hide-descendants' : 'auto'}
+      recyclingKey={artworkUri}
+      source={{ uri: artworkUri }}
+      style={imageStyle}
+      transition={120}
+    />
+  );
+});

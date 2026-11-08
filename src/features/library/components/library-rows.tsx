@@ -19,7 +19,7 @@ export function LibraryTrackRow({ track, onPress, isCurrent = false, isFavorite 
 
   const artworkArea = (
     <View style={styles.artworkWrap}>
-      <TrackArtwork size={48} uri={track.uri} />
+      <TrackArtwork decorative size={48} uri={track.uri} />
       {isCurrent && (
         <View style={[styles.playingOverlay, { backgroundColor: 'rgba(0,0,0,0.55)' }]}>
           <AppIcon name="play" size={16} color={theme.accent} />
@@ -84,7 +84,7 @@ export function LibraryAlbumRow({ album, onPress }: { album: LibraryAlbum; onPre
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-      <TrackArtwork size={56} icon="album" uri={album.tracks[0]?.uri} />
+      <TrackArtwork decorative size={56} icon="album" uri={album.tracks[0]?.uri} />
       <View style={styles.details}>
         <ThemedText numberOfLines={1} style={styles.albumTitle}>{album.title}</ThemedText>
         <ThemedText numberOfLines={1} themeColor="textMuted" style={styles.trackSub}>
@@ -105,7 +105,7 @@ export function LibraryArtistRow({ artist, onPress }: { artist: LibraryArtist; o
       accessibilityRole="button"
       onPress={onPress}
       style={({ pressed }) => [styles.row, pressed && styles.pressed]}>
-      <TrackArtwork size={56} icon="music" uri={artist.tracks[0]?.uri} />
+      <TrackArtwork decorative size={56} icon="music" uri={artist.tracks[0]?.uri} />
       <View style={styles.details}>
         <ThemedText numberOfLines={1} style={styles.albumTitle}>{artist.name}</ThemedText>
         <ThemedText numberOfLines={1} themeColor="textMuted" style={styles.trackSub}>

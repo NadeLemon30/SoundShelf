@@ -31,7 +31,7 @@ export function MiniPlayer() {
           accessibilityRole="button"
           onPress={() => setNowPlayingOpen(true)}
           style={({ pressed }) => [styles.openArea, pressed && styles.pressed]}>
-          <TrackArtwork size={44} style={styles.artwork} uri={currentTrack.uri} />
+          <TrackArtwork decorative size={44} style={styles.artwork} uri={currentTrack.uri} />
           <View style={styles.copy}>
             <ThemedText numberOfLines={1} style={styles.trackTitle}>{currentTrack.title}</ThemedText>
             {errorMessage ? (

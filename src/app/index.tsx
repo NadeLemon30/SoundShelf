@@ -46,7 +46,7 @@ export default function HomeScreen() {
 
               {currentTrack ? (
                 <Pressable accessibilityRole="button" accessibilityLabel={`Play ${currentTrack.title}`} onPress={() => playTrack(currentTrack, tracks)} style={({ pressed }) => [styles.resumeCard, { backgroundColor: theme.surfaceRaised }, pressed && styles.pressed]}>
-                  <TrackArtwork uri={currentTrack.uri} size={68} style={styles.resumeArtwork} />
+                  <TrackArtwork decorative uri={currentTrack.uri} size={68} style={styles.resumeArtwork} />
                   <View style={styles.resumeCopy}>
                     <ThemedText style={styles.resumeEyebrow}>NOW PLAYING</ThemedText>
                     <ThemedText numberOfLines={1} style={styles.resumeTitle}>{currentTrack.title}</ThemedText>

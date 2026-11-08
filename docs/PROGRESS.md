@@ -2,6 +2,35 @@
 
 ## Progress updates
 
+## Update (2026-11-08) — Phase 8 verified; Phase 9 polish and reliability started
+
+Owner reported Phase 8 device verification complete and explicitly approved starting Phase 9 (2026-11-08). Detailed Phase 8 device evidence was not captured in this session; record device model/Android version and recap/share/insufficient-history/route checks in a future handoff when available.
+
+### Phase 9 increment (this session)
+
+- Updated `docs/ROADMAP.md` and `docs/PROGRESS.md` current-phase/status markers so Phase 8 is recorded as owner-verified and Phase 9 is current.
+- **Image loading:** `src/components/ui/track-artwork.tsx` now memoizes the rendered image, uses `expo-image` memory/disk caching, a short transition, and `recyclingKey`/`cachePolicy` to reduce re-decode and list churn on large libraries. Decorative artwork in rows avoids duplicative accessibility announcements where the parent row already exposes the action.
+- **Accessibility:** improved key controls/regions in `src/app/library.tsx` (filter row/tab semantics, selected-state labels, clearer alert text) and `src/app/index.tsx` (richer resume-card hint, honest scan/empty accessibility where appropriate).
+- **List behavior:** reviewed main lists; Library/Search/Home/Personal Library/Now Playing queue already use `FlatList`. Library/Settings/Replay/Listening still use `ScrollView` where content is form/summary-oriented (appropriate), but Phase 9 should keep watching for long dynamic sections on low-end devices.
+
+### Verification (this session)
+
+| Command / check | Result |
+| --- | --- |
+| `npx.cmd tsc --noEmit` | Passed (no type errors). |
+| `npm.cmd run lint` | Passed (`expo lint`). |
+| `git diff --check` | Passed (only existing LF→CRLF notices on Windows). |
+| Android large-library/profile pass | **Not done** — requires physical device with a large local library. |
+| Full accessibility regression (TalkBack) | **Not done** — requires Android device. |
+
+### Next steps
+
+1. Run `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check`; fix any diagnostics.
+2. On a large Android library, profile Library/Search scrolling, artwork loading, and memory; confirm no blank rows, jank, or stale artwork after rescan/view changes.
+3. Audit TalkBack/focus order on Home, Library, Search, My music, Now Playing, Settings, Listening, and Replay. Fix any unlabeled controls or confusing announcements.
+4. Review error/edge states (scan failures, denied permissions, missing/corrupt files, empty recents/favorites/playlists, migration safety) and document a regression checklist for Phase 10.
+5. Get explicit owner approval before starting Phase 10.
+
 ## Update (2026-11-05) — Phase 7 verified; Phase 8 Replay Stories implemented
 
 Owner reported Phase 7 device verification complete and explicitly approved starting Phase 8 (2026-11-05).
@@ -148,7 +177,12 @@ Owner approved Phase 7 and chose three rules: (1) a play qualifies after **30 se
 
 ## Current state
 
-- **Current phase (2026-11-05):** 8 — Replay Stories, implemented and awaiting Android device verification (owner approved Phase 8 after reporting Phase 7 device verification complete). D-013/D-014 rules are unit-tested and static checks pass. Phase 9 requires explicit owner approval after Phase 8 device verification.
+- **Current phase (2026-11-08):** 9 — Polish and reliability. Owner reported Phase 8 device verification complete and explicitly approved starting Phase 9. Phases 1–8 are implemented; prior phases include owner-reported device verification where noted, with some detailed evidence still sparse in the historical record.
+- **Repository state:** git repo on `main`; working tree had Phase 9 in-progress edits during this session. Review `git status` before committing.
+- **Framework:** Expo SDK 57 (`expo ~57.0.27`), React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57.
+- **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
+- **Native projects:** `android/` is generated locally by `expo run:android` and is git-ignored. Regenerate it with `npx expo prebuild --clean --platform android` after any `app.json`/config-plugin change. `ios/` is not generated locally.
+- **Key open work:** complete Phase 9 device profiling (large libraries), TalkBack/accessibility regression, edge-case/error-state review, and documented regression checklist; then get explicit owner approval for Phase 10.
 
 ## Fix (2026-10-30) — active native-tab icons
 
@@ -169,12 +203,7 @@ Owner approved Phase 7 and chose three rules: (1) a play qualifies after **30 se
 - Added the configured Expo app version, project credit (Nade Lemon), technology summary, and explicit local-only privacy statement to Settings → About. The version reads `Constants.expoConfig.version`, with `1.0.0` only as a safe fallback if configuration is unavailable.
 - Static verification passed: `npm.cmd run lint`, `npx.cmd tsc --noEmit`, and `git diff --check` completed without diagnostics (Git only reported the repository's existing LF-to-CRLF notices). On device, confirm the About rows are readable and the installed app version matches the build.
 
-- **Current phase:** 5 — Background playback. The owner reported a Phase 4 device test on 2026-10-13 and approved moving to Phase 5. **Background playback is now device-verified and working** (2026-10-13): the true root cause of "audio stops on Home/lock" was a backgrounding crash, fixed by the config plugin below. Remaining Phase 5 item: playback-checkpoint persistence (still deferred to combine with the Phase 6 database foundation).
-- **Repository baseline:** `d0f2289` (`Initial commit`); latest checkpoint `d6d81c5` (Phase 5 background-crash fix + auto-scan). Release `v0.3.5` (`be26715`, 2026-10-26) includes the launcher/splash work, the bug-fix/hygiene pass, and the expo-audio source-build fix recorded below. Recent committed work: album browsing, permission denial, empty-library, and Phase 4 foreground playback increments on 2026-10-12; the Phase 5 background-playback increments are described below.
-- **Framework:** Expo SDK 57 (`expo ~57.0.27`), React Native 0.86.3, React 19.2.3, TypeScript 6.0.3, Expo Router 57.
-- **Package manager:** npm (`package-lock.json` exists; no Bun lockfile).
-- **Native projects:** `android/` is generated locally by `expo run:android` and is git-ignored. Regenerate it with `npx expo prebuild --clean --platform android` after any `app.json`/config-plugin change — a plain `expo run:android` reuses a stale `android/` and silently ignores the new config. `ios/` is not generated locally.
-- **Latest increment (2026-10-13, refined through 2026-10-20):** app icon now sourced from `assets/SoundShelf.png` (Android adaptive icon + iOS icon regenerated from it), Expo-blue splash replaced with the SoundShelf logo, and a launch animation added (`src/components/startup-animation.tsx`). The owner confirmed on 2026-10-26 that the splash animation works. Launcher-icon and themed-icon verification remain unrecorded.
+- **Historical note (superseded):** this older summary block recorded Phase 5 as current at the time. See the authoritative **Current state** section above for the present phase (9), framework, and workflow details.
 
 ## Update (2026-10-13) — app icon and launch animation
 

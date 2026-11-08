@@ -1,8 +1,8 @@
-import { StyleSheet, View, type ViewStyle } from 'react-native';
+import { StyleSheet, View, type StyleProp, type ViewStyle } from 'react-native';
 import { useTheme } from '@/hooks/use-theme';
 import { AppIcon, type AppIconName } from './app-icon';
 
-type ArtworkPlaceholderProps = { size?: number; icon?: AppIconName; style?: ViewStyle };
+type ArtworkPlaceholderProps = { size?: number; icon?: AppIconName; style?: StyleProp<ViewStyle> };
 
 export function ArtworkPlaceholder({ size = 56, icon = 'music', style }: ArtworkPlaceholderProps) {
   const theme = useTheme();
