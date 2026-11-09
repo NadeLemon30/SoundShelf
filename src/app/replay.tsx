@@ -88,7 +88,7 @@ export default function ReplayScreen() {
         <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
           <View style={styles.header}>
             <Pressable accessibilityRole="button" accessibilityLabel="Go back" hitSlop={12} onPress={goBack} style={({ pressed }) => pressed && styles.pressed}>
-              <AppIcon name="back" size={24} color="#FFFFFF" />
+              <AppIcon name="back" size={24} color={theme.text} />
             </Pressable>
             <ThemedText style={styles.title}>{year} Replay</ThemedText>
           </View>
@@ -105,7 +105,7 @@ export default function ReplayScreen() {
             <Insufficient eligibility={state.eligibility} />
           ) : (
             <>
-              <View ref={cardRef} collapsable={false} style={[styles.card, { backgroundColor: '#121212', borderColor: theme.surfaceRaised }]}>
+              <View ref={cardRef} collapsable={false} style={[styles.card, { backgroundColor: theme.surface, borderColor: theme.outline }]}>
                 <View style={styles.cardBadge}><AppIcon name="music" size={18} color={theme.accent} /><ThemedText style={[styles.cardBadgeText, { color: theme.accent }]}>SOUNDSHELF</ThemedText></View>
                 <ThemedText style={styles.cardYear}>{state.story.year}</ThemedText>
                 <ThemedText style={styles.cardHeadline}>Your year in music</ThemedText>
@@ -122,8 +122,8 @@ export default function ReplayScreen() {
               </View>
 
               <Pressable accessibilityRole="button" accessibilityLabel={sharing ? 'Creating recap image' : 'Share Replay card'} disabled={sharing} onPress={() => { void share(); }} style={({ pressed }) => [styles.share, { backgroundColor: theme.accent }, (pressed || sharing) && styles.pressed]}>
-                <AppIcon name="share" size={20} color="#000000" />
-                <ThemedText style={styles.shareText}>{sharing ? 'Creating image…' : 'Share recap card'}</ThemedText>
+                <AppIcon name="share" size={20} color={theme.onAccent} />
+                <ThemedText style={[styles.shareText, { color: theme.onAccent }]}>{sharing ? 'Creating image…' : 'Share recap card'}</ThemedText>
               </Pressable>
               <ThemedText style={styles.muted}>The shared image contains only the recap on this card. Your listening history stays on this device.</ThemedText>
             </>
@@ -176,32 +176,32 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   content: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', padding: Spacing.three, paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.four, gap: Spacing.three },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingTop: Spacing.one },
-  title: { color: '#FFFFFF', fontSize: 30, fontWeight: '700', letterSpacing: -0.4 },
+  title: { fontSize: 30, fontWeight: '700', letterSpacing: -0.4 },
   center: { alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.five },
-  muted: { color: '#B3B3B3', fontSize: 13, lineHeight: 19, textAlign: 'center' },
+  muted: { fontSize: 13, lineHeight: 19, textAlign: 'center' },
   notice: { borderRadius: 12, padding: Spacing.three, gap: Spacing.two },
-  noticeTitle: { color: '#FFFFFF', fontSize: 18, fontWeight: '800' },
-  noticeBody: { color: '#B3B3B3', fontSize: 13, lineHeight: 19 },
+  noticeTitle: { fontSize: 18, fontWeight: '800' },
+  noticeBody: { fontSize: 13, lineHeight: 19 },
   reasons: { gap: 4 },
-  reason: { color: '#FFFFFF', fontSize: 13, lineHeight: 19 },
+  reason: { fontSize: 13, lineHeight: 19 },
   action: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: Spacing.three, paddingVertical: 9 },
-  actionText: { color: '#000000', fontSize: 13, fontWeight: '800' },
+  actionText: { fontSize: 13, fontWeight: '800' },
   card: { borderRadius: 16, borderWidth: 1, padding: Spacing.three, gap: Spacing.two },
   cardBadge: { flexDirection: 'row', alignItems: 'center', gap: 6 },
   cardBadgeText: { fontSize: 11, fontWeight: '800', letterSpacing: 1.4 },
-  cardYear: { color: '#FFFFFF', fontSize: 48, fontWeight: '900', letterSpacing: -1 },
-  cardHeadline: { color: '#B3B3B3', fontSize: 15, fontWeight: '600', marginTop: -6 },
+  cardYear: { fontSize: 48, fontWeight: '900', letterSpacing: -1 },
+  cardHeadline: { fontSize: 15, fontWeight: '600', marginTop: -6 },
   stats: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two, marginTop: Spacing.one },
   stat: { flexGrow: 1, flexBasis: '46%', borderRadius: 10, padding: Spacing.two, gap: 2 },
   statLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1 },
-  statValue: { color: '#FFFFFF', fontSize: 20, fontWeight: '800' },
+  statValue: { fontSize: 20, fontWeight: '800' },
   highlight: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, borderRadius: 10, padding: Spacing.two },
   highlightCopy: { flex: 1, gap: 1 },
   highlightLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1 },
-  highlightValue: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
+  highlightValue: { fontSize: 15, fontWeight: '700' },
   highlightSub: { fontSize: 12 },
   cardFoot: { color: '#7A7A7A', fontSize: 10, lineHeight: 14, marginTop: Spacing.one },
   share: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: Spacing.two, borderRadius: 24, minHeight: 48 },
-  shareText: { color: '#000000', fontSize: 15, fontWeight: '800' },
+  shareText: { fontSize: 15, fontWeight: '800' },
   pressed: { opacity: 0.68 },
 });

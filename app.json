@@ -4,15 +4,15 @@
     "slug": "SoundShelf",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/icon.png",
     "scheme": "soundshelf",
     "userInterfaceStyle": "automatic",
     "ios": {
-      "icon": "./assets/images/icon-ios.png"
+      "icon": "./assets/icon.png"
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#185048",
+        "backgroundColor": "#FDF6EC",
         "foregroundImage": "./assets/images/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
@@ -41,7 +41,7 @@
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#185048",
+          "backgroundColor": "#FDF6EC",
           "image": "./assets/icon.png",
           "imageWidth": 160
         }

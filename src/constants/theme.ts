@@ -2,37 +2,39 @@ import { Platform } from 'react-native';
 
 export const Colors = {
   light: {
-    text: '#FFFFFF',
-    textMuted: '#B3B3B3',
-    textSecondary: '#B3B3B3',
-    background: '#121212',
-    surface: '#1E1E1E',
-    surfaceRaised: '#282828',
-    backgroundElement: '#282828',
-    backgroundSelected: '#333333',
-    accent: '#1DB954',
-    accentMuted: '#1a3d2b',
-    outline: '#282828',
-    danger: '#FF4444',
+    text: '#3D4A5C',
+    textMuted: '#66788C',
+    textSecondary: '#66788C',
+    background: '#FDF6EC',
+    surface: '#E8D5A3',
+    surfaceRaised: '#F2E4BE',
+    backgroundElement: '#E8D5A3',
+    backgroundSelected: '#DDC98F',
+    accent: '#3D4A5C',
+    accentMuted: '#D6DFE8',
+    onAccent: '#FDF6EC',
+    outline: '#C8B47A',
+    danger: '#B44B4B',
   },
   dark: {
-    text: '#FFFFFF',
-    textMuted: '#B3B3B3',
-    textSecondary: '#B3B3B3',
-    background: '#121212',
-    surface: '#1E1E1E',
-    surfaceRaised: '#282828',
-    backgroundElement: '#282828',
-    backgroundSelected: '#333333',
-    accent: '#1DB954',
-    accentMuted: '#1a3d2b',
-    outline: '#282828',
-    danger: '#FF4444',
+    text: '#FDF6EC',
+    textMuted: '#CFC6B3',
+    textSecondary: '#CFC6B3',
+    background: '#3D4A5C',
+    surface: '#46566A',
+    surfaceRaised: '#52657C',
+    backgroundElement: '#52657C',
+    backgroundSelected: '#5E738D',
+    accent: '#7B9E87',
+    accentMuted: '#4D6657',
+    onAccent: '#FDF6EC',
+    outline: '#6A8099',
+    danger: '#E08A8A',
   },
 } as const;
 
-export const BackgroundGradient = ['#121212', '#121212'] as const;
-export const AccentText = '#000000';
+export const BackgroundGradient = ['#FDF6EC', '#FDF6EC'] as const;
+export const AccentText = '#FDF6EC';
 
 export type ThemeColor = keyof typeof Colors.light & keyof typeof Colors.dark;
 

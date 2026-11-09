@@ -17,6 +17,6 @@ export function EmptyState({ title, description }: EmptyStateProps) {
 
 const styles = StyleSheet.create({
   container: { alignItems: 'center', gap: Spacing.three, paddingVertical: Spacing.six, paddingHorizontal: Spacing.four },
-  title: { textAlign: 'center', fontSize: 20, fontWeight: '700', color: '#FFFFFF', lineHeight: 26 },
+  title: { textAlign: 'center', fontSize: 20, fontWeight: '700', lineHeight: 26 },
   description: { textAlign: 'center', maxWidth: 320, fontSize: 14, lineHeight: 20 },
 });

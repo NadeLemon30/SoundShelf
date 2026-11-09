@@ -1,7 +1,7 @@
 import { Tabs } from 'expo-router';
 
 import { AppIcon, type AppIconName } from '@/components/ui/app-icon';
-import { Colors } from '@/constants/theme';
+import { useTheme } from '@/hooks/use-theme';
 
 const TAB_ICONS: Record<string, AppIconName> = {
   index: 'home',
@@ -12,16 +12,16 @@ const TAB_ICONS: Record<string, AppIconName> = {
 };
 
 export default function AppTabs() {
-  const colors = Colors.dark;
+  const theme = useTheme();
 
   return (
     <Tabs
       screenOptions={({ route }) => ({
         headerShown: false,
-        tabBarActiveTintColor: colors.accent,
-        tabBarInactiveTintColor: colors.textMuted,
+        tabBarActiveTintColor: theme.accent,
+        tabBarInactiveTintColor: theme.textMuted,
         tabBarHideOnKeyboard: true,
-        tabBarStyle: { backgroundColor: '#000000', borderTopColor: colors.surfaceRaised },
+        tabBarStyle: { backgroundColor: theme.surface, borderTopColor: theme.outline },
         tabBarLabelStyle: { fontSize: 11, fontWeight: '600' },
         tabBarIcon: ({ color }) => <AppIcon name={TAB_ICONS[route.name] ?? 'music'} size={24} color={color as string} />,
       })}>

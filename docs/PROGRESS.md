@@ -38,6 +38,7 @@ Owner explicitly approved proceeding to Phase 10 (2026-11-08) before Phase 9 dev
 | `npx.cmd expo config --type public` | Passed (resolved config). |
 | `git diff --check` | No whitespace/conflict issues (only existing LF→CRLF notices on Windows). |
 | A-fix static review | Accessibility/error-handling gaps addressed in `personal-library.tsx`, `library.tsx`, `app-tabs.web.tsx`; no broad refactors. |
+| Theme/UI overhaul (2026-11-08) | `npx.cmd tsc --noEmit` and `npm.cmd run lint` passed after palette/token updates and hardcoded-color cleanup. Visual/contrast check needed on device in both system light and dark modes. |
 | Signed release AAB / Play Store readiness | **Not done** — requires protected signing credentials and production build setup. |
 | Full device regression matrix | **Not done** — see `docs/RELEASE.md`. |
 

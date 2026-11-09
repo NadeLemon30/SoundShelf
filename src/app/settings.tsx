@@ -156,14 +156,14 @@ function ActionRow({ icon, title, detail, disabled = false, onPress }: {
 const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   content: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', padding: Spacing.three, paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.four, gap: Spacing.four },
-  title: { color: '#FFFFFF', fontSize: 30, fontWeight: '700' },
+  title: { fontSize: 30, fontWeight: '700' },
   section: { gap: Spacing.two },
-  sectionTitle: { color: '#B3B3B3', fontSize: 11, fontWeight: '700', letterSpacing: 1.5 },
+  sectionTitle: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5 },
   rows: { gap: 1, overflow: 'hidden', borderRadius: 12 },
   row: { minHeight: 68, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.three, gap: Spacing.two },
   rowIcon: { width: 24, alignItems: 'center' },
   rowText: { flex: 1, gap: 2 },
-  rowTitle: { color: '#FFFFFF', fontSize: 15, fontWeight: '600' },
-  rowDetail: { color: '#B3B3B3', fontSize: 12, lineHeight: 17 },
+  rowTitle: { fontSize: 15, fontWeight: '600' },
+  rowDetail: { fontSize: 12, lineHeight: 17 },
   pressed: { opacity: 0.68 },
 });

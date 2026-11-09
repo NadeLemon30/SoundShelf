@@ -148,7 +148,7 @@ export default function ListeningScreen() {
               hitSlop={12}
               onPress={goBack}
               style={({ pressed }) => pressed && styles.pressed}>
-              <AppIcon name="back" size={24} color="#FFFFFF" />
+              <AppIcon name="back" size={24} color={theme.text} />
             </Pressable>
             <ThemedText style={styles.title}>Listening</ThemedText>
             <Pressable
@@ -157,7 +157,7 @@ export default function ListeningScreen() {
               hitSlop={12}
               onPress={() => router.push(('/replay?from=' + (from === 'home' ? 'home' : 'settings')) as Href)}
               style={({ pressed }) => pressed && styles.pressed}>
-              <AppIcon name="music" size={24} color="#FFFFFF" />
+              <AppIcon name="music" size={24} color={theme.text} />
             </Pressable>
           </View>
 
@@ -176,7 +176,7 @@ export default function ListeningScreen() {
                     { backgroundColor: active ? theme.accent : theme.surfaceRaised },
                     pressed && styles.pressed,
                   ]}>
-                  <ThemedText style={[styles.pillText, active && styles.pillTextActive]}>{option.label}</ThemedText>
+                  <ThemedText style={[styles.pillText, active && { color: theme.onAccent }]}>{option.label}</ThemedText>
                 </Pressable>
               );
             })}
@@ -223,7 +223,7 @@ export default function ListeningScreen() {
                 accessibilityLabel="Try loading listening history again"
                 onPress={() => { void load(); }}
                 style={({ pressed }) => [styles.retryButton, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
-                <ThemedText style={styles.retryText}>Try again</ThemedText>
+                <ThemedText style={[styles.retryText, { color: theme.onAccent }]}>Try again</ThemedText>
               </Pressable>
             </Notice>
           ) : history.events.length === 0 ? (
@@ -365,48 +365,48 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   content: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', padding: Spacing.three, paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.four, gap: Spacing.three },
   header: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingTop: Spacing.one },
-  title: { flex: 1, color: '#FFFFFF', fontSize: 30, fontWeight: '700', letterSpacing: -0.4 },
+  title: { flex: 1, fontSize: 30, fontWeight: '700', letterSpacing: -0.4 },
   pills: { flexDirection: 'row', gap: Spacing.one },
   pill: { flex: 1, minHeight: 38, borderRadius: 19, alignItems: 'center', justifyContent: 'center' },
   pillText: { fontSize: 13, fontWeight: '700' },
-  pillTextActive: { color: '#000000' },
+  pillTextActive: {},
   rangeCard: { flexDirection: 'row', alignItems: 'center', borderRadius: 12, paddingHorizontal: Spacing.two, minHeight: 64 },
   rangeArrow: { width: 40, height: 44, alignItems: 'center', justifyContent: 'center' },
   rangeCopy: { flex: 1, alignItems: 'center', gap: 2 },
-  rangeLabel: { color: '#FFFFFF', fontSize: 15, fontWeight: '700' },
-  rangeSub: { color: '#B3B3B3', fontSize: 11, lineHeight: 15 },
+  rangeLabel: { fontSize: 15, fontWeight: '700' },
+  rangeSub: { fontSize: 11, lineHeight: 15 },
   loadingBlock: { alignItems: 'center', gap: Spacing.two, paddingVertical: Spacing.five },
   loadingText: { fontSize: 13 },
   tiles: { flexDirection: 'row', flexWrap: 'wrap', gap: Spacing.two },
   tile: { flexGrow: 1, flexBasis: '47%', borderRadius: 12, padding: Spacing.three, gap: 2 },
   tileLabel: { fontSize: 10, fontWeight: '800', letterSpacing: 1.1 },
-  tileValue: { color: '#FFFFFF', fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
+  tileValue: { fontSize: 26, fontWeight: '800', letterSpacing: -0.5 },
   tileDetail: { fontSize: 11, lineHeight: 15 },
   section: { gap: Spacing.two },
-  sectionTitle: { color: '#FFFFFF', fontSize: 19, fontWeight: '800' },
-  sectionSubtitle: { color: '#B3B3B3', fontSize: 12, lineHeight: 17 },
+  sectionTitle: { fontSize: 19, fontWeight: '800' },
+  sectionSubtitle: { fontSize: 12, lineHeight: 17 },
   rows: { gap: 1, overflow: 'hidden', borderRadius: 12 },
   rankRow: { minHeight: 56, flexDirection: 'row', alignItems: 'center', paddingHorizontal: Spacing.three, gap: Spacing.two },
   rank: { width: 18, fontSize: 13, fontWeight: '700' },
   rankCopy: { flex: 1, gap: 1 },
-  rankTitle: { color: '#FFFFFF', fontSize: 14, fontWeight: '600' },
-  rankSub: { color: '#B3B3B3', fontSize: 12 },
+  rankTitle: { fontSize: 14, fontWeight: '600' },
+  rankSub: { fontSize: 12 },
   rankStats: { alignItems: 'flex-end', gap: 1 },
-  rankValue: { color: '#FFFFFF', fontSize: 12, fontWeight: '700' },
+  rankValue: { fontSize: 12, fontWeight: '700' },
   rankDetail: { fontSize: 11 },
   dayRow: { minHeight: 46, flexDirection: 'row', alignItems: 'center', gap: Spacing.two, paddingHorizontal: Spacing.two },
-  dayLabel: { width: 96, color: '#FFFFFF', fontSize: 12 },
+  dayLabel: { width: 96, fontSize: 12 },
   dayTrack: { flex: 1, height: 6, borderRadius: 3, overflow: 'hidden' },
   dayBar: { height: 6, borderRadius: 3 },
   dayStats: { width: 88, alignItems: 'flex-end', gap: 1 },
-  dayValue: { color: '#FFFFFF', fontSize: 12, fontWeight: '600' },
+  dayValue: { fontSize: 12, fontWeight: '600' },
   dayDetail: { fontSize: 10 },
   notice: { borderRadius: 12, padding: Spacing.three, gap: Spacing.two },
-  noticeTitle: { color: '#FFFFFF', fontSize: 16, fontWeight: '700' },
+  noticeTitle: { fontSize: 16, fontWeight: '700' },
   noticeBody: { fontSize: 13, lineHeight: 19 },
   retryButton: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: Spacing.three, paddingVertical: 8 },
-  retryText: { color: '#000000', fontSize: 13, fontWeight: '800' },
+  retryText: { fontSize: 13, fontWeight: '800' },
   ruleCard: { flexDirection: 'row', gap: Spacing.two, borderRadius: 12, padding: Spacing.three, alignItems: 'flex-start' },
-  ruleText: { flex: 1, color: '#B3B3B3', fontSize: 12, lineHeight: 18 },
+  ruleText: { flex: 1, fontSize: 12, lineHeight: 18 },
   pressed: { opacity: 0.68 },
 });

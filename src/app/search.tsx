@@ -141,7 +141,7 @@ const styles = StyleSheet.create({
     gap: Spacing.three,
   },
   headerSection: { gap: Spacing.three },
-  screenTitle: { fontSize: 24, fontWeight: '700', color: '#FFFFFF' },
+  screenTitle: { fontSize: 24, fontWeight: '700' },
   inputWrap: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -150,5 +150,5 @@ const styles = StyleSheet.create({
     gap: Spacing.two,
   },
   input: { flex: 1, minHeight: 48, fontSize: 15 },
-  resultLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, color: '#B3B3B3' },
+  resultLabel: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5 },
 });

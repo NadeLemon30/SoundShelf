@@ -1,16 +1,18 @@
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect, useRef, useState } from 'react';
-import { Animated, Easing, Image, StyleSheet } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { Animated, Easing, Image, StyleSheet, useColorScheme } from 'react-native';
 
 /**
- * Keep these in sync with the `expo-splash-screen` plugin in `app.json` so the native splash
- * screen and this overlay look identical and the hand-off between them is invisible.
+ * Keep the native splash defaults in sync with the `expo-splash-screen` plugin in `app.json`
+ * (light/default). This React overlay follows the active color scheme.
  */
-const BACKGROUND = '#185048';
 const LOGO_SIZE = 160;
 const ICON_HOLD_MS = 2_450;
 const GRAPHIC_EXIT_DURATION_MS = 1_400;
-const SPLASH_ICON = require('../../assets/icon.png');
+const LIGHT_BACKGROUND = '#FDF6EC';
+const DARK_BACKGROUND = '#3D4A5C';
+const LIGHT_ICON = require('../../assets/icon.png');
+const DARK_ICON = require('../../assets/icon_dark.png');
 
 /**
  * Module-level animation driver. `StartupAnimation` renders at most once per app lifetime
@@ -38,6 +40,12 @@ const barThreeScale = _progress.interpolate({ inputRange: [0, 0.32, 0.62, 0.82, 
  * music-inspired exit before revealing the app.
  */
 export function StartupAnimation() {
+  const colorScheme = useColorScheme();
+  const isDark = colorScheme === 'dark';
+  const backgroundColor = useMemo(() => (isDark ? DARK_BACKGROUND : LIGHT_BACKGROUND), [isDark]);
+  const iconSource = isDark ? DARK_ICON : LIGHT_ICON;
+  const accent = isDark ? '#7B9E87' : '#3D4A5C';
+  const accentSoft = isDark ? '#A7C0B0' : '#8FA6BA';
   const [mounted, setMounted] = useState(true);
   const hasStarted = useRef(false);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -72,7 +80,7 @@ export function StartupAnimation() {
   return (
     <Animated.View
       pointerEvents="none"
-      style={[styles.overlay, { opacity: overlayOpacity }]}
+      style={[styles.overlay, { backgroundColor, opacity: overlayOpacity }]}
       onLayout={() => {
         // The overlay has painted, so hide the native layer. The matching React overlay stays still
         // for a short branded pause before starting its graphic exit.
@@ -81,22 +89,22 @@ export function StartupAnimation() {
         exitTimer.current = setTimeout(startExitAnimation, ICON_HOLD_MS);
       }}>
       <Animated.View pointerEvents="none" style={[styles.graphicLayer, { opacity: graphicsOpacity }]}>
-        <Animated.View style={[styles.ring, styles.innerRing, { opacity: innerRingOpacity, transform: [{ scale: innerRingScale }] }]} />
-        <Animated.View style={[styles.ring, styles.outerRing, { opacity: outerRingOpacity, transform: [{ scale: outerRingScale }] }]} />
-        <Animated.View style={[styles.lightSweep, { transform: [{ translateY: sweepTranslateY }, { rotate: '-18deg' }] }]} />
+        <Animated.View style={[styles.ring, styles.innerRing, { borderColor: accentSoft, opacity: innerRingOpacity, transform: [{ scale: innerRingScale }] }]} />
+        <Animated.View style={[styles.ring, styles.outerRing, { borderColor: accent, opacity: outerRingOpacity, transform: [{ scale: outerRingScale }] }]} />
+        <Animated.View style={[styles.lightSweep, { backgroundColor: accent, transform: [{ translateY: sweepTranslateY }, { rotate: '-18deg' }] }]} />
       </Animated.View>
       <Animated.View style={{ opacity: logoOpacity, transform: [{ scale: logoScale }] }}>
         <Image
           accessibilityIgnoresInvertColors
           resizeMode="contain"
-          source={SPLASH_ICON}
+          source={iconSource}
           style={styles.logo}
         />
       </Animated.View>
       <Animated.View pointerEvents="none" style={[styles.equalizer, { opacity: graphicsOpacity }]}>
-        <Animated.View style={[styles.equalizerBar, { transform: [{ scaleY: barOneScale }] }]} />
-        <Animated.View style={[styles.equalizerBar, styles.equalizerBarMiddle, { transform: [{ scaleY: barTwoScale }] }]} />
-        <Animated.View style={[styles.equalizerBar, { transform: [{ scaleY: barThreeScale }] }]} />
+        <Animated.View style={[styles.equalizerBar, { backgroundColor: accentSoft, transform: [{ scaleY: barOneScale }] }]} />
+        <Animated.View style={[styles.equalizerBar, styles.equalizerBarMiddle, { backgroundColor: accent, transform: [{ scaleY: barTwoScale }] }]} />
+        <Animated.View style={[styles.equalizerBar, { backgroundColor: accentSoft, transform: [{ scaleY: barThreeScale }] }]} />
       </Animated.View>
     </Animated.View>
   );
@@ -107,7 +115,6 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     alignItems: 'center',
     justifyContent: 'center',
-    backgroundColor: BACKGROUND,
     zIndex: 100,
   },
   logo: {
@@ -126,21 +133,17 @@ const styles = StyleSheet.create({
     height: 220,
     borderRadius: 110,
     borderWidth: 1.5,
-    borderColor: '#A7EEE0',
   },
   innerRing: {
     width: 185,
     height: 185,
     borderRadius: 92.5,
   },
-  outerRing: {
-    borderColor: '#6BCABA',
-  },
+  outerRing: {},
   lightSweep: {
     position: 'absolute',
     width: '160%',
     height: 110,
-    backgroundColor: '#6BCABA',
     opacity: 0.12,
   },
   equalizer: {
@@ -155,10 +158,8 @@ const styles = StyleSheet.create({
     height: 18,
     marginHorizontal: 3,
     borderRadius: 2,
-    backgroundColor: '#A7EEE0',
   },
   equalizerBarMiddle: {
     height: 26,
-    backgroundColor: '#6BCABA',
   },
 });

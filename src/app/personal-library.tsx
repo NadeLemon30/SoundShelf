@@ -98,7 +98,7 @@ export default function PersonalLibraryScreen() {
               accessibilityRole="button"
               onPress={() => { void create(); }}
               style={({ pressed }) => [styles.createBtn, { backgroundColor: theme.accent }, pressed && styles.pressed]}>
-              <ThemedText style={styles.createBtnText}>Create</ThemedText>
+              <ThemedText style={[styles.createBtnText, { color: theme.onAccent }]}>Create</ThemedText>
             </Pressable>
           </View>
         );
@@ -311,12 +311,11 @@ const styles = StyleSheet.create({
     paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.three,
     gap: Spacing.three,
   },
-  screenTitle: { fontSize: 24, fontWeight: '700', color: '#FFFFFF' },
+  screenTitle: { fontSize: 24, fontWeight: '700' },
   sectionLabel: {
     fontSize: 11,
     fontWeight: '700',
     letterSpacing: 1.5,
-    color: '#B3B3B3',
     marginBottom: -Spacing.one,
   },
   emptyHint: { fontSize: 14, lineHeight: 20 },
@@ -330,7 +329,7 @@ const styles = StyleSheet.create({
   },
   input: { flex: 1, minHeight: 48, fontSize: 15 },
   createBtn: { paddingVertical: 10, paddingHorizontal: Spacing.three, borderRadius: 24 },
-  createBtnText: { fontWeight: '700', fontSize: 14, color: '#000000' },
+  createBtnText: { fontWeight: '700', fontSize: 14 },
   // Playlist card
   playlistCard: {
     flexDirection: 'row',
@@ -343,7 +342,7 @@ const styles = StyleSheet.create({
   playlistOpenArea: { flex: 1, flexDirection: 'row', alignItems: 'center', gap: Spacing.two },
   playlistArtwork: { borderRadius: 6 },
   playlistInfo: { flex: 1, gap: 3 },
-  playlistName: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  playlistName: { fontSize: 15, fontWeight: '600' },
   playlistCount: { fontSize: 13 },
   // Track actions
   listHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },

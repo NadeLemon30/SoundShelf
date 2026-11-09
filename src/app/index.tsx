@@ -39,8 +39,8 @@ export default function HomeScreen() {
               <View style={styles.topBar}>
                 <ThemedText style={styles.greeting}>{greeting()}</ThemedText>
                 <View style={styles.topActions}>
-                  <Link href={'/listening?from=home' as Href} asChild><Pressable accessibilityRole="button" accessibilityLabel="Open listening stats" hitSlop={12} style={({ pressed }) => pressed && styles.pressed}><AppIcon name="chart" size={24} color="#FFFFFF" /></Pressable></Link>
-                  <Link href={'/settings' as Href} asChild><Pressable accessibilityRole="button" accessibilityLabel="Open settings" hitSlop={12} style={({ pressed }) => pressed && styles.pressed}><AppIcon name="settings" size={24} color="#FFFFFF" /></Pressable></Link>
+                  <Link href={'/listening?from=home' as Href} asChild><Pressable accessibilityRole="button" accessibilityLabel="Open listening stats" hitSlop={12} style={({ pressed }) => pressed && styles.pressed}><AppIcon name="chart" size={24} color={theme.text} /></Pressable></Link>
+                  <Link href={'/settings' as Href} asChild><Pressable accessibilityRole="button" accessibilityLabel="Open settings" hitSlop={12} style={({ pressed }) => pressed && styles.pressed}><AppIcon name="settings" size={24} color={theme.text} /></Pressable></Link>
                 </View>
               </View>
 
@@ -87,11 +87,11 @@ const styles = StyleSheet.create({
   safeArea: { flex: 1 },
   listContent: { width: '100%', maxWidth: MaxContentWidth, alignSelf: 'center', paddingHorizontal: Spacing.three, paddingTop: Spacing.two, paddingBottom: BottomTabInset + MiniPlayerInset + Spacing.three },
   header: { gap: Spacing.three, paddingBottom: Spacing.one }, topBar: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }, topActions: { flexDirection: 'row', alignItems: 'center', gap: Spacing.three },
-  greeting: { fontSize: 30, fontWeight: '800', letterSpacing: -0.6, color: '#FFFFFF' },
+  greeting: { fontSize: 30, fontWeight: '800', letterSpacing: -0.6 },
   resumeCard: { minHeight: 92, borderRadius: 10, padding: Spacing.two, flexDirection: 'row', alignItems: 'center', gap: Spacing.two }, resumeArtwork: { borderRadius: 6 }, resumeCopy: { flex: 1, gap: 2 },
-  resumeEyebrow: { fontSize: 10, lineHeight: 14, fontWeight: '800', letterSpacing: 1.1, color: '#1DB954' }, resumeTitle: { fontSize: 16, lineHeight: 21, fontWeight: '700', color: '#FFFFFF' }, resumeSub: { fontSize: 12, lineHeight: 17, color: '#B3B3B3' }, playCircle: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
-  welcomeCard: { borderRadius: 10, padding: Spacing.three, gap: Spacing.two }, welcomeIcon: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' }, welcomeCopy: { gap: Spacing.one }, welcomeTitle: { fontSize: 19, lineHeight: 25, fontWeight: '800', color: '#FFFFFF' }, welcomeSub: { fontSize: 13, lineHeight: 19, color: '#B3B3B3' },
-  scanButton: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: Spacing.three, paddingVertical: 9, marginTop: Spacing.one }, scanButtonText: { color: '#000000', fontSize: 13, lineHeight: 17, fontWeight: '800' },
-  sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingTop: Spacing.one }, sectionTitle: { fontSize: 22, lineHeight: 28, fontWeight: '800', color: '#FFFFFF', letterSpacing: -0.3 }, sectionSubtitle: { fontSize: 12, lineHeight: 17, color: '#B3B3B3' }, showAll: { fontSize: 12, lineHeight: 17, fontWeight: '700' },
+  resumeEyebrow: { fontSize: 10, lineHeight: 14, fontWeight: '800', letterSpacing: 1.1 }, resumeTitle: { fontSize: 16, lineHeight: 21, fontWeight: '700' }, resumeSub: { fontSize: 12, lineHeight: 17 }, playCircle: { width: 42, height: 42, borderRadius: 21, justifyContent: 'center', alignItems: 'center' },
+  welcomeCard: { borderRadius: 10, padding: Spacing.three, gap: Spacing.two }, welcomeIcon: { width: 44, height: 44, borderRadius: 22, justifyContent: 'center', alignItems: 'center' }, welcomeCopy: { gap: Spacing.one }, welcomeTitle: { fontSize: 19, lineHeight: 25, fontWeight: '800' }, welcomeSub: { fontSize: 13, lineHeight: 19 },
+  scanButton: { alignSelf: 'flex-start', borderRadius: 20, paddingHorizontal: Spacing.three, paddingVertical: 9, marginTop: Spacing.one }, scanButtonText: { fontSize: 13, lineHeight: 17, fontWeight: '800' },
+  sectionHeader: { flexDirection: 'row', alignItems: 'flex-end', justifyContent: 'space-between', paddingTop: Spacing.one }, sectionTitle: { fontSize: 22, lineHeight: 28, fontWeight: '800', letterSpacing: -0.3 }, sectionSubtitle: { fontSize: 12, lineHeight: 17 }, showAll: { fontSize: 12, lineHeight: 17, fontWeight: '700' },
   emptyCopy: { paddingTop: Spacing.three, fontSize: 13, textAlign: 'center' }, pressed: { opacity: 0.68 },
 });

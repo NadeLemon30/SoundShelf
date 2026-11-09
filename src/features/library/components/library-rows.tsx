@@ -190,9 +190,9 @@ const styles = StyleSheet.create({
   artworkWrap: { position: 'relative' },
   playingOverlay: { ...StyleSheet.absoluteFill, borderRadius: 4, alignItems: 'center', justifyContent: 'center' },
   details: { flex: 1, gap: 3 },
-  trackTitle: { fontSize: 15, fontWeight: '500', color: '#FFFFFF' },
-  trackSub: { fontSize: 13, color: '#B3B3B3' },
-  albumTitle: { fontSize: 15, fontWeight: '600', color: '#FFFFFF' },
+  trackTitle: { fontSize: 15, fontWeight: '500' },
+  trackSub: { fontSize: 13 },
+  albumTitle: { fontSize: 15, fontWeight: '600' },
   iconBtn: { padding: Spacing.one },
   pressed: { opacity: 0.65 },
   menuBackdrop: {
@@ -207,7 +207,7 @@ const styles = StyleSheet.create({
     padding: Spacing.three,
     gap: Spacing.one,
   },
-  menuTitle: { fontSize: 17, fontWeight: '700', color: '#FFFFFF' },
+  menuTitle: { fontSize: 17, fontWeight: '700' },
   menuSubtitle: { fontSize: 13, marginBottom: Spacing.one },
   menuItem: {
     flexDirection: 'row',
@@ -219,6 +219,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
   },
   menuItemPressed: { opacity: 0.7 },
-  menuItemText: { fontSize: 15, fontWeight: '500', color: '#FFFFFF' },
+  menuItemText: { fontSize: 15, fontWeight: '500' },
   menuCancel: { justifyContent: 'center', marginTop: Spacing.one },
 });

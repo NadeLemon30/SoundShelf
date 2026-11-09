@@ -85,7 +85,7 @@ export default function LibraryScreen() {
                   else void scan();
                 }}
                 style={({ pressed }) => [styles.greenBtn, { backgroundColor: theme.accent }, (pressed || isBusy) && styles.pressed]}>
-                <ThemedText style={styles.greenBtnText}>
+                <ThemedText style={[styles.greenBtnText, { color: theme.onAccent }]}>
                   {isBusy ? 'Scanning…' : isBlocked ? 'Open settings' : isDenied ? 'Allow audio access' : isScannedEmpty ? 'Scan again' : 'Scan music'}
                 </ThemedText>
               </Pressable>
@@ -132,10 +132,10 @@ export default function LibraryScreen() {
             accessibilityLabel={`Back from ${'title' in selectedCollection ? selectedCollection.title : selectedCollection.name}`}
             accessibilityRole="button"
             onPress={() => { setSelectedAlbumId(null); setSelectedArtistId(null); }}
-            style={[styles.filterPill, { backgroundColor: '#FFFFFF' }]}>
+            style={[styles.filterPill, { backgroundColor: theme.accent }]}>
             <View style={styles.backPillContent}>
-              <AppIcon name="back" size={16} color="#000000" />
-              <ThemedText style={[styles.filterPillText, { color: '#000000' }]}>{'title' in selectedCollection ? selectedCollection.title : selectedCollection.name}</ThemedText>
+              <AppIcon name="back" size={16} color={theme.onAccent} />
+              <ThemedText style={[styles.filterPillText, { color: theme.onAccent }]}>{'title' in selectedCollection ? selectedCollection.title : selectedCollection.name}</ThemedText>
             </View>
           </Pressable>
         ) : (
@@ -155,7 +155,7 @@ export default function LibraryScreen() {
                     : { backgroundColor: theme.surfaceRaised },
                   pressed && styles.pressed,
                 ]}>
-                <ThemedText style={[styles.filterPillText, { color: isActive ? '#000000' : '#FFFFFF' }]}>
+                <ThemedText style={[styles.filterPillText, { color: isActive ? theme.onAccent : theme.text }]}>
                   {label}
                 </ThemedText>
               </Pressable>
@@ -245,22 +245,22 @@ const styles = StyleSheet.create({
   listHeaderContent: { gap: Spacing.two, paddingBottom: Spacing.two },
   // Title row
   titleRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  screenTitle: { fontSize: 24, fontWeight: '700', color: '#FFFFFF' },
+  screenTitle: { fontSize: 24, fontWeight: '700' },
   // Filter pills
   filterRow: { flexDirection: 'row', gap: Spacing.two, paddingRight: Spacing.three },
   filterPill: { paddingVertical: 7, paddingHorizontal: 14, borderRadius: 20 },
   backPillContent: { flexDirection: 'row', alignItems: 'center', gap: Spacing.one },
   filterPillText: { fontSize: 13, fontWeight: '600' },
   // Count
-  listMetaText: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, color: '#B3B3B3', marginTop: Spacing.one },
+  listMetaText: { fontSize: 11, fontWeight: '700', letterSpacing: 1.5, marginTop: Spacing.one },
   // Rescan banner
   rescanBanner: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', padding: Spacing.two, borderRadius: 8 },
-  rescanBannerText: { fontSize: 13, fontWeight: '600', color: '#FFFFFF' },
+  rescanBannerText: { fontSize: 13, fontWeight: '600' },
   // Empty page layout
   emptyPage: { flex: 1, padding: Spacing.three, gap: Spacing.three },
   emptyContent: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: Spacing.three },
   greenBtn: { paddingVertical: 12, paddingHorizontal: Spacing.four, borderRadius: 24 },
-  greenBtnText: { fontWeight: '700', fontSize: 14, color: '#000000' },
+  greenBtnText: { fontWeight: '700', fontSize: 14 },
   footer: { gap: Spacing.two, paddingTop: Spacing.four },
   pressed: { opacity: 0.7 },
 });
