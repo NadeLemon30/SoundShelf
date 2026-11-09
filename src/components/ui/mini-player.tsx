@@ -23,7 +23,7 @@ export function MiniPlayer() {
   }
 
   return (
-    <View style={[styles.card, { backgroundColor: '#1E1E1E' }]}>
+    <View style={[styles.card, { backgroundColor: theme.surfaceRaised, borderColor: theme.outline, borderWidth: 1 }]}>
       <View style={styles.inner}>
         {/* Tap artwork/title area to open Now Playing */}
         <Pressable
@@ -39,7 +39,7 @@ export function MiniPlayer() {
                 Could not play
               </ThemedText>
             ) : (
-              <ThemedText numberOfLines={1} style={styles.trackSub}>{currentTrack.filename}</ThemedText>
+              <ThemedText numberOfLines={1} style={styles.trackSub} themeColor="textMuted">{currentTrack.filename}</ThemedText>
             )}
           </View>
         </Pressable>
@@ -51,7 +51,7 @@ export function MiniPlayer() {
           hitSlop={14}
           onPress={togglePlayPause}
           style={({ pressed }) => [styles.control, pressed && styles.pressed]}>
-          <AppIcon name={status.playing ? 'pause' : 'play'} size={20} color="#FFFFFF" />
+          <AppIcon name={status.playing ? 'pause' : 'play'} size={20} color={theme.text} />
         </Pressable>
         <Pressable
           accessibilityLabel="Next track"
@@ -59,12 +59,12 @@ export function MiniPlayer() {
           hitSlop={14}
           onPress={next}
           style={({ pressed }) => [styles.control, pressed && styles.pressed]}>
-          <AppIcon name="next" size={22} color="#FFFFFF" />
+          <AppIcon name="next" size={22} color={theme.text} />
         </Pressable>
       </View>
 
       {/* Thin progress bar at the bottom of the card */}
-      <View style={[styles.progressTrack, { backgroundColor: '#333333' }]}>
+      <View style={[styles.progressTrack, { backgroundColor: theme.outline }]}>
         <View style={[styles.progressFill, { backgroundColor: theme.accent, width: `${percent}%` }]} />
       </View>
 

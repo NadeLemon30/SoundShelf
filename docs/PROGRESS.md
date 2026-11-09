@@ -39,6 +39,8 @@ Owner explicitly approved proceeding to Phase 10 (2026-11-08) before Phase 9 dev
 | `git diff --check` | No whitespace/conflict issues (only existing LF→CRLF notices on Windows). |
 | A-fix static review | Accessibility/error-handling gaps addressed in `personal-library.tsx`, `library.tsx`, `app-tabs.web.tsx`; no broad refactors. |
 | Theme/UI overhaul (2026-11-08) | `npx.cmd tsc --noEmit` and `npm.cmd run lint` passed after palette/token updates and hardcoded-color cleanup. Visual/contrast check needed on device in both system light and dark modes. |
+| Mini-player UI match (2026-11-09) | `src/components/ui/mini-player.tsx` updated to theme tokens (`surfaceRaised`/`outline`/`text`/`textMuted`/`accent`) to match current app UI; removed hardcoded `#1E1E1E/#FFFFFF/#333333`. `npx.cmd tsc --noEmit` and `npm.cmd run lint` passed. Device visual check needed. |
+| Now Playing "Up Next" bar nav-bar inset (2026-11-09) | `src/features/playback/components/now-playing.tsx` uses `useSafeAreaInsets()` to add bottom inset padding to the collapsed "Up Next" launcher (and queue list bottom padding), preventing it from sitting behind the phone navigation bar. Replaced hardcoded queue-row selected background with theme accent tint. `npx.cmd tsc --noEmit` and `npm.cmd run lint` passed. Device visual check needed. |
 | Signed release AAB / Play Store readiness | **Not done** — requires protected signing credentials and production build setup. |
 | Full device regression matrix | **Not done** — see `docs/RELEASE.md`. |
 

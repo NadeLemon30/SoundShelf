@@ -1,7 +1,7 @@
 import { useAudioPlayerStatus } from 'expo-audio';
 import { useCallback, useMemo, useState } from 'react';
 import { FlatList, Modal, PanResponder, Pressable, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { ThemedText } from '@/components/themed-text';
 import { TrackArtwork } from '@/components/ui/track-artwork';
@@ -18,6 +18,7 @@ const REPEAT_LABEL: Record<string, string> = { off: 'Repeat', all: 'Repeat all',
 
 export function NowPlaying({ visible, onClose }: NowPlayingProps) {
   const theme = useTheme();
+  const insets = useSafeAreaInsets();
   const { player, currentTrack, queue, index, repeat, shuffle, errorMessage, togglePlayPause, next, previous, seekTo, cycleRepeat, toggleShuffle, playTrack } = usePlayback();
   const { isFavorite, toggleFavorite } = usePersonalLibrary();
   const status = useAudioPlayerStatus(player);
@@ -28,6 +29,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
   const favorite = currentTrack ? isFavorite(currentTrack.id) : false;
   const displayPercent = seekPreviewPercent ?? percent;
   const displayTime = seekPreviewPercent !== null ? status.duration * (seekPreviewPercent / 100) : status.currentTime;
+  const bottomInset = Math.max(insets.bottom, Spacing.two);
 
   const seekToPercent = useCallback((nextPercent: number) => {
     if (!status.duration) return;
@@ -72,7 +74,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
       keyExtractor={(item, idx) => `${item.id}-${idx}`}
       showsVerticalScrollIndicator={false}
       initialNumToRender={16}
-      contentContainerStyle={styles.queueListContent}
+      contentContainerStyle={[styles.queueListContent, { paddingBottom: bottomInset + Spacing.four }]}
       renderItem={({ item, index: itemIndex }) => {
         const isCurrent = itemIndex === index;
         const subtitle = [item.artist, item.album].filter((v): v is string => Boolean(v)).join(' · ') || item.filename;
@@ -82,7 +84,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
             accessibilityLabel={`${isCurrent ? 'Now playing: ' : 'Play '}${item.title}`}
             accessibilityState={{ selected: isCurrent }}
             onPress={() => playTrack(item, queue)}
-            style={[styles.queueRow, isCurrent && { backgroundColor: 'rgba(255,255,255,0.06)' }]}>
+            style={[styles.queueRow, isCurrent && { backgroundColor: `${theme.accent}18` }]}>
             <TrackArtwork decorative icon="music" size={44} uri={item.uri} style={styles.queueArtwork} />
             <View style={styles.queueRowText}>
               <ThemedText numberOfLines={1} style={[styles.queueRowTitle, isCurrent && { color: theme.accent }]}>{item.title}</ThemedText>
@@ -238,7 +240,7 @@ export function NowPlaying({ visible, onClose }: NowPlayingProps) {
                 accessibilityLabel={`Open queue, ${queue.length} songs`}
                 accessibilityRole="button"
                 onPress={openQueue}
-                style={[styles.queueLauncher, { backgroundColor: theme.surfaceRaised, borderTopColor: theme.outline }]}>
+                style={[styles.queueLauncher, { backgroundColor: theme.surfaceRaised, borderTopColor: theme.outline, paddingBottom: bottomInset }]}>
                 <View style={styles.queueHeaderLeft}>
                   <AppIcon name="library" size={18} color={theme.textMuted} />
                   <ThemedText style={styles.queueTitle}>Up Next</ThemedText>
@@ -281,7 +283,7 @@ const styles = StyleSheet.create({
   smallBtn: { width: 40, alignItems: 'center', padding: Spacing.one },
   skipBtn: { padding: Spacing.one },
   playBtn: { width: 68, height: 68, borderRadius: 34, alignItems: 'center', justifyContent: 'center' },
-  queueLauncher: { marginHorizontal: -Spacing.three, borderTopWidth: 1, borderTopLeftRadius: 16, borderTopRightRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.three, minHeight: 64 },
+  queueLauncher: { marginHorizontal: -Spacing.three, borderTopWidth: 1, borderTopLeftRadius: 16, borderTopRightRadius: 16, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: Spacing.three, paddingTop: Spacing.two, minHeight: 64 },
   queueHeaderLeft: { flexDirection: 'row', alignItems: 'center', gap: Spacing.two, flex: 1 },
   queueTitle: { fontSize: 15, fontWeight: '600' },
   queueCount: { fontSize: 13 },
